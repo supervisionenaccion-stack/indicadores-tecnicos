@@ -91,11 +91,15 @@ async function abrirPagina(llave, nombre, rol) {
   const cifrado = bytes(document.getElementById('datosCifrados').textContent.trim());
   const comprimido = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(CFG.iv) }, k, cifrado);
   let html = await new Response(new Blob([comprimido]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-  // Fija arriba a la derecha, sobre la cabecera blanca de la pagina.
-  const barra = '<div style="position:fixed;right:24px;top:20px;z-index:9999;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir barra-sesion">'
+  // Va dentro de la cabecera de la pagina (que queda pegada arriba), a la
+  // derecha y despues de "Volver al dashboard" para no taparlo. Si la pagina
+  // no tiene cabecera, queda flotando arriba a la derecha.
+  const barra = '<div id="barraSesion" style="position:fixed;right:24px;top:20px;z-index:9999;flex:none;white-space:nowrap;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir barra-sesion">'
     + (rol === 'admin' ? '<a href="admin.html" style="color:#003575;font-weight:600;">Administración</a> &middot; ' : '')
     + '<span class="barra-sesion-nombre">' + escapar(nombre) + ' &middot; </span><a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
-    + '<style>@media print{.no-imprimir{display:none!important}} @media (max-width:640px){.barra-sesion{right:6px!important;top:3px!important;padding:1px 6px!important;font-size:10px!important}.barra-sesion-nombre{display:none}}</style>';
+    + '<script>(function(){var b=document.getElementById("barraSesion"),f=document.querySelector("header .brand-row");'
+    + 'if(b&&f){b.style.position="static";b.style.marginLeft=f.querySelector(".link-portal")?"18px":"auto";f.appendChild(b);}})();<\/script>'
+    + '<style>@media print{.no-imprimir{display:none!important}} @media (max-width:640px){.barra-sesion{padding:3px 7px!important;font-size:10.5px!important}.barra-sesion-nombre{display:none}header .brand-row{flex-wrap:wrap!important;row-gap:0!important}#barraSesion[style*="static"]{flex-basis:100%;text-align:right;margin-left:0!important;border:0!important;padding:0 0 6px!important}}</style>';
   const corte = html.lastIndexOf('</body>');
   html = corte >= 0 ? html.slice(0, corte) + barra + html.slice(corte) : html + barra;
   document.open();
