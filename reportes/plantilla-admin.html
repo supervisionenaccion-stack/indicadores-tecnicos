@@ -10,7 +10,7 @@
     --ok:#1f7a45; --ok-bg:#e2f1e8; --warn:#9a5b00; --warn-bg:#fdf1d8; --bad:#a3261c; --bad-bg:#f8e3e0;
     --font:"Helvetica Neue","Hanken Grotesk",Helvetica,Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
   *{ box-sizing:border-box; }
-  body{ margin:0; font:400 15px/1.55 var(--font); background:#f2f2f2; color:var(--ink); }
+  body{ margin:0; min-height:100vh; display:flex; flex-direction:column; font:400 15px/1.55 var(--font); background:#f2f2f2; color:var(--ink); }
   :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
   header{ background:#fff; border-bottom:1px solid var(--line); }
   .wrap{ max-width:1400px; margin:0 auto; padding-inline:24px; }
@@ -62,7 +62,7 @@
   .ingreso{ max-width:400px; margin:48px auto; background:#fff; border-top:3px solid var(--amber); padding:28px 28px 24px; }
   .ingreso label{ margin-top:14px; }
   .ingreso button{ width:100%; margin-top:20px; padding:12px; }
-  footer{ text-align:center; padding:22px 10px; font-size:7.5px; color:var(--muted); letter-spacing:.06em; }
+  footer{ margin-top:auto; text-align:right; padding:22px 24px 12px; font-size:7.5px; color:var(--muted); letter-spacing:.06em; }
   @media (max-width:900px){ .fila-form{ grid-template-columns:1fr 1fr; } }
 </style>
 </head>
