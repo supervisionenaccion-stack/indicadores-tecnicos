@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Técnicos · Claro/VTR</title>
+<meta name="theme-color" content="#003c71">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Portal Claro/VTR">
+<style>
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0; --celeste-soft:#e8f6fd;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  header.hero{
+    background:linear-gradient(120deg,#ffffff 0%,var(--celeste-soft) 55%,#dcf1fb 100%);
+    padding:34px 6vw 40px; position:relative; overflow:hidden; border-bottom:4px solid var(--celeste);
+  }
+  header.hero::after{
+    content:""; position:absolute; right:-100px; top:-100px; width:340px; height:340px; border-radius:50%;
+    background:radial-gradient(circle, rgba(41,169,224,0.18), transparent 70%);
+  }
+  .brand-row{ display:flex; align-items:center; gap:18px; margin-bottom:22px; }
+  .brand-row img{ height:46px; }
+  .brand-divider{ width:1px; height:34px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12.5px; color:var(--celeste); font-weight:800; }
+  h1{ margin:0 0 6px; font-size:clamp(24px,4vw,34px); font-weight:800; letter-spacing:-0.01em; color:var(--cobra-navy); }
+  .subtitle{ color:#3a4a5c; font-size:14.5px; max-width:640px; line-height:1.55; }
+  /* Fiestas Patrias: solo visible durante septiembre (segun la fecha del
+     navegador, no la fecha en que se genero el sitio). */
+  .banner-fiestas{ margin-top:16px; display:none; }
+  .banner-fiestas-pill{
+    background:#fff; color:var(--cobra-navy); font-weight:800; font-size:13px;
+    padding:8px 18px; border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+    display:inline-flex; align-items:center; gap:9px;
+  }
+  .banner-fiestas-pill .dim{ font-weight:600; color:var(--text-dim); font-size:12px; }
+  .mini-flag-cl{
+    width:20px; height:auto; display:inline-block; border-radius:2px; flex:none;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);
+  }
+  .link-portal{ color:var(--celeste); font-weight:700; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+  main{ padding:36px 6vw 80px; max-width:760px; margin:0 auto; }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px 24px; box-shadow:0 4px 14px rgba(20,50,80,.05); }
+
+  #loginBox{ max-width:400px; margin:40px auto 0; text-align:center; }
+  #loginBox .icono-login{ font-size:38px; margin-bottom:6px; }
+  #loginBox h2{ margin:0 0 8px; font-size:20px; color:var(--cobra-navy); }
+  #loginBox p.desc{ margin:0 0 22px; font-size:13.5px; color:var(--text-dim); line-height:1.6; }
+  .campo{ margin-bottom:14px; text-align:left; }
+  .campo label{ display:block; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .campo input{ width:100%; padding:12px 13px; border:1px solid var(--border); border-radius:8px; font-size:16px; font-family:inherit; }
+  .campo input:focus{ outline:2px solid var(--celeste); border-color:var(--celeste); }
+  .campo .ayuda{ font-size:11.5px; color:var(--text-dim); margin-top:4px; text-align:left; }
+  #loginBtn{ width:100%; padding:13px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; margin-top:8px; }
+  #loginBtn:hover{ background:var(--cobra-blue); }
+  #loginError{ display:none; background:var(--bad-bg); color:var(--bad); border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:14px; text-align:left; }
+
+  #appBox{ display:none; }
+  .top-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:4px; }
+  #logoutBtn{ background:none; border:1px solid var(--border); color:var(--cobra-navy); padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer; white-space:nowrap; }
+  #logoutBtn:hover{ background:var(--panel-2); }
+  .vecino-ordenes{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .vecino-ordenes span{ background:var(--panel-2); border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:12px; }
+  .intro-personal{ font-size:14px; color:var(--text-dim); line-height:1.6; margin:4px 0 22px; }
+
+  .resumen-general{ display:flex; align-items:center; gap:16px; padding:20px 22px; border-radius:14px; margin-bottom:24px; border:1px solid var(--border); }
+  .resumen-general.ok{ background:var(--ok-bg); border-color:rgba(31,169,113,.3); }
+  .resumen-general.warn{ background:var(--warn-bg); border-color:rgba(226,150,46,.3); }
+  .resumen-general.bad{ background:var(--bad-bg); border-color:rgba(226,82,62,.3); }
+  .resumen-general .emoji{ font-size:34px; flex-shrink:0; }
+  .resumen-general .texto b{ display:block; font-size:16px; margin-bottom:2px; }
+  .resumen-general.ok .texto b{ color:var(--ok); }
+  .resumen-general.warn .texto b{ color:var(--warn); }
+  .resumen-general.bad .texto b{ color:var(--bad); }
+  .resumen-general .texto span{ font-size:13px; color:var(--text-dim); }
+
+  .report-card{ margin-bottom:22px; }
+  .report-card .cabecera{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .report-card .cabecera .icono{ font-size:22px; }
+  .report-card .cabecera h2{ font-size:17px; color:var(--cobra-navy); margin:0; }
+  .report-card .cabecera h2.clicable{ cursor:pointer; }
+  .report-card .cabecera h2.clicable:hover{ color:var(--cobra-blue); }
+  .report-card .cabecera h2.clicable .info-ico{ font-size:12px; margin-left:4px; opacity:.7; }
+
+  .modal-fondo{ display:none; position:fixed; inset:0; background:rgba(20,30,45,.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
+  .modal-fondo.abierto{ display:flex; }
+  .modal-caja{ background:#fff; border-radius:14px; max-width:420px; width:100%; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
+  .modal-caja h3{ margin:0 0 10px; font-size:16px; color:var(--cobra-navy); }
+  .modal-caja p{ margin:0; font-size:13.5px; line-height:1.6; color:var(--text); }
+  .modal-cerrar{ margin-top:18px; width:100%; padding:10px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .modal-cerrar:hover{ background:var(--cobra-blue); }
+  .report-card .explica{ font-size:13px; color:var(--text-dim); margin:0 0 16px; line-height:1.55; }
+  .estado-pill{ display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:20px; font-size:13px; font-weight:700; margin-bottom:14px; }
+  .estado-pill.ok{ background:var(--ok-bg); color:var(--ok); }
+  .estado-pill.warn{ background:var(--warn-bg); color:var(--warn); }
+  .estado-pill.bad{ background:var(--bad-bg); color:var(--bad); }
+
+  .barra-wrap{ margin:10px 0 16px; }
+  .barra-label{ font-size:15px; font-weight:800; margin-bottom:5px; }
+  .barra-label.ok{ color:var(--ok); }
+  .barra-label.warn{ color:var(--warn); }
+  .barra-label.bad{ color:var(--bad); }
+  .barra-track{ position:relative; height:14px; background:var(--panel-2); border-radius:7px; overflow:hidden; }
+  .barra-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:7px; min-width:6px; }
+  .barra-fill.ok{ background:var(--ok); }
+  .barra-fill.warn{ background:var(--warn); }
+  .barra-fill.bad{ background:var(--bad); }
+
+  .frase-clave{ font-size:14.5px; line-height:1.6; margin:0 0 14px; }
+  .frase-clave b{ color:var(--cobra-navy); }
+
+  .detalle-toggle{ font-size:12.5px; color:var(--celeste); font-weight:700; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px; margin-top:6px; }
+  .detalle-body{ display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--panel-2); }
+  .detalle-body.abierto{ display:block; }
+  .fila-dato{ display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:13px; }
+  .fila-dato .k{ color:var(--text-dim); }
+  .fila-dato .v{ font-weight:700; color:var(--text); text-align:right; }
+
+  .callout{ border-left:3px solid var(--celeste); background:linear-gradient(90deg, var(--celeste-soft), transparent); padding:12px 16px; border-radius:0 10px 10px 0; font-size:13px; color:#2c3e50; line-height:1.55; margin-top:14px; }
+  .sin-datos{ color:var(--text-dim); font-size:13.5px; font-style:italic; }
+  .comunicados-embed{ border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .comunicados-embed iframe{ width:100%; height:420px; border:none; display:block; }
+  .tabla-repetidos-wrap{ overflow-x:auto; }
+  .tabla-repetidos{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:420px; }
+  .tabla-repetidos th{ text-align:left; padding:6px 8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-dim); border-bottom:1px solid var(--panel-2); white-space:nowrap; }
+  .tabla-repetidos td{ padding:6px 8px; border-bottom:1px solid var(--panel-2); white-space:nowrap; }
+  footer{ text-align:center; padding:26px; color:var(--text-dim); font-size:11.5px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="brand-row">
+    <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="eyebrow">Portal de Técnicos</div>
+  </div>
+  <h1>Mis Indicadores</h1>
+  <div class="subtitle">Acá puedes ver, de forma simple, cómo te va este mes en Claro/VTR y en qué puedes enfocarte para mejorar.</div>
+  <div class="banner-fiestas" id="bannerFiestas">
+    <div class="banner-fiestas-pill">
+      <svg class="mini-flag-cl" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="90" height="30" fill="#ffffff"/>
+        <rect x="0" y="30" width="90" height="30" fill="#D52B1E"/>
+        <rect x="0" y="0" width="30" height="30" fill="#0039A6"/>
+        <polygon points="15,6 17.0,12.25 23.56,12.22 18.23,16.05 20.29,22.28 15,18.4 9.71,22.28 11.77,16.05 6.44,12.22 13.0,12.25" fill="#ffffff"/>
+      </svg>
+      <span>¡Feliz Mes de la Patria!</span><span class="dim" id="fiestasSubtexto"></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="loginBox" class="panel">
+    <div class="icono-login">👋</div>
+    <h2>Bienvenido</h2>
+    <p class="desc">Ingresa con tu ID para ver tu reporte personal. Nadie más puede ver tu información.</p>
+    <div id="loginError"></div>
+    <div class="campo">
+      <label for="inputNombre">ID</label>
+      <input type="text" id="inputNombre" placeholder="Ej: 123456" autocomplete="username" inputmode="numeric" maxlength="6">
+      <div class="ayuda">Son los últimos 6 caracteres de tu RUT, incluido el dígito verificador (si termina en K, usa 0).</div>
+    </div>
+    <button id="loginBtn">Ver mi reporte</button>
+  </div>
+
+  <div id="appBox">
+    <div class="top-row">
+      <div>
+        <h1 id="saludo" style="font-size:22px;margin-bottom:2px;"></h1>
+        <div class="subtitle" id="datosTecnico" style="font-size:13px;"></div>
+      </div>
+      <button id="logoutBtn">Cerrar sesión</button>
+    </div>
+    <p class="intro-personal">Este es tu reporte personal. Te mostramos cómo vas este mes con tus órdenes de trabajo, y en qué puedes enfocarte para mejorar.</p>
+
+    <div id="resumenGeneral"></div>
+
+    <div class="report-card panel" id="seccionCalidad"></div>
+    <div class="panel" id="panelEvolutivoPersonal" style="display:none; padding:20px 22px; margin-bottom:22px;">
+      <h2 style="margin:0 0 3px; font-size:15px; color:var(--cobra-navy);">Tu evolución de Calidad mes a mes</h2>
+      <p class="frase-tendencia" id="evolutivoPersonalExplicacion" style="margin:0 0 14px; font-size:15px; font-weight:800; line-height:1.4;"></p>
+      <div id="evolutivoPersonalChart"></div>
+      <p style="margin:12px 0 0; font-size:12px; color:var(--text-dim); line-height:1.5;">% de repetidos de cada mes completo (no acumulado entre meses). Cada punto lleva el mes en que se reporta: tus órdenes cerradas en enero aparecen como Feb, y así sucesivamente. El último punto es parcial hasta que su mes cumple 30 días de cerrado, porque esas órdenes todavía pueden repetirse.</p>
+    </div>
+    <div class="report-card panel" id="seccionDerivaciones"></div>
+    <div class="report-card panel" id="seccionRgu"></div>
+
+    <div class="report-card panel" id="seccionVecino" style="display:none;"></div>
+
+    <div class="report-card panel" id="seccionComunicados">
+      <div class="cabecera"><span class="icono">📢</span><h2>Comunicados</h2></div>
+      <p class="explica">Novedades y avisos para técnicos Claro/VTR. Hacé clic en cualquier archivo para verlo o descargarlo.</p>
+      <div class="comunicados-embed">
+        <iframe src="https://drive.google.com/embeddedfolderview?id=1ZNMHbP1eVfat_v_Gu6rJp5jziIxNpydk#grid" loading="lazy" title="Comunicados Claro/VTR"></iframe>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-fondo" id="modalInfo" onclick="if (event.target === this) cerrarInfo()">
+  <div class="modal-caja">
+    <h3 id="modalInfoTitulo"></h3>
+    <p id="modalInfoTexto"></p>
+    <button class="modal-cerrar" onclick="cerrarInfo()">Entendido</button>
+  </div>
+</div>
+
+<footer id="footerText"></footer>
+
+<script>
+const DATA = __DATA_JSON__;
+
+function titleCase(s) { return (s || '').split(' ').map(w => w ? w[0] + w.slice(1).toLowerCase() : w).join(' '); }
+function formatFechaLarga(iso) {
+  const [y, m, d] = iso.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+document.getElementById('footerText').innerHTML =
+  'Calidad: ' + DATA.periodoCalidad + ' (mes completo) · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+
+// Meta oficial de Derivaciones (Alta/Migracion): no superar 35%.
+const META_DERIVACIONES = 35;
+
+// goodWhenLow=true: mientras mas bajo el % mejor (Calidad, Derivaciones).
+// goodWhenLow=false: mientras mas alto el % mejor (RGU Completada GSA).
+function estado(pct, goodWhenLow, umbralOk, umbralWarn) {
+  const cumpleOk = goodWhenLow ? pct <= umbralOk : pct >= umbralOk;
+  const cumpleWarn = goodWhenLow ? pct <= umbralWarn : pct >= umbralWarn;
+  if (cumpleOk) return { emoji: '✅', texto: 'Buen desempeño', clase: 'ok' };
+  if (cumpleWarn) return { emoji: '⚠️', texto: 'Atención', clase: 'warn' };
+  return { emoji: '🔴', texto: 'Foco prioritario', clase: 'bad' };
+}
+
+function barra(pct, cls) {
+  const ancho = Math.max(0, Math.min(100, pct));
+  return '<div class="barra-wrap">'
+    + '<div class="barra-label ' + cls + '">' + pct.toFixed(1) + '%</div>'
+    + '<div class="barra-track"><div class="barra-fill ' + cls + '" style="width:' + ancho.toFixed(1) + '%"></div></div>'
+    + '</div>';
+}
+
+// Diccionario de acciones sugeridas por causa de repetido, curado a partir
+// de las causas reales que aparecen en CodigoCierreRepetido. Una causa no
+// mapeada cae en el mensaje generico de abajo.
+const SUGERENCIAS_CAUSA = {
+  'Falla en cable externo Domiciliario': 'Revisa el tendido y la conectorización del cable externo antes de cerrar (crimpado, roseta externa, empalmes expuestos a la intemperie).',
+  'Falla en cable Interno Domiciliario': 'Verifica el cableado interno completo (no solo el punto de falla reportado) y refuerza conectores/rosetas antes de cerrar.',
+  'Configuracion equipo particular cliente': 'Documenta y valida la configuración de equipos propios del cliente (router/switch particular) antes de dar el servicio por cerrado.',
+  'Falla reset plataforma': 'Confirma que el equipo aplicó el último firmware/config tras el reset de plataforma antes de retirarte del domicilio.',
+  'Configuración SSID/Clave/Canal': 'Deja constancia con el cliente del SSID/clave configurados y prueba la conexión real de un dispositivo antes de cerrar.',
+  'Equipo Defectuoso IPTV': 'Prueba el decodificador con contenido en vivo (no solo que encienda) antes de cerrar la orden.',
+  'Equipo Defectuoso ONT': 'Revisa niveles ópticos y el estado del ONT con la herramienta de diagnóstico antes de cerrar.',
+  'Equipo Defectuoso (Control MTA CM dBox VP Fono)': 'Prueba cada equipo de voz/dBox de forma individual, no solo el servicio principal.',
+  'Problemas de cobertura WIFI': 'Evalúa la ubicación del router/extensor según el plano real de la vivienda, no solo el punto de instalación por defecto.',
+  'Falla en equipo de cliente': 'Diferencia explícitamente falla de red vs. equipo del cliente en tus notas de cierre, para evitar reincidencia mal diagnosticada.',
+  'Falla Insumo Telefono': 'Verifica la línea de teléfono con una llamada de prueba antes de cerrar.',
+  'Falla cableado particular del cliente': 'Explica al cliente que el cableado propio no está cubierto y déjalo documentado en el cierre.',
+  'Problema configuración o ubicación de extensor': 'Revisa la ubicación física del extensor Wi-Fi según la intensidad de señal medida, no lo instales por defecto.',
+  'Daño a equipo VTR Domiciliario': 'Revisa el estado físico de los equipos antes de instalarlos, para descartar daños previos.',
+  'Entrega de control remoto': 'Confirma en tu checklist de cierre que entregaste todos los controles.',
+  'Equipo Defectuoso Gateway': 'Revisa el estado del gateway (reinicio de fábrica, actualización de firmware) antes de cerrar.',
+  'Riesgo electrico': 'Reporta el riesgo eléctrico a tu agencia de inmediato, no lo dejes solo como nota de cierre.',
+};
+const SUGERENCIA_GENERICA = 'Revisa en terreno los casos con esta causa para identificar un patrón común y reforzarlo la próxima vez.';
+
+function contarCausas(eventos) {
+  const mapa = new Map();
+  for (const e of eventos) mapa.set(e.causa, (mapa.get(e.causa) || 0) + 1);
+  return [...mapa.entries()].map(([causa, cnt]) => ({ causa, cnt })).sort((a, b) => b.cnt - a.cnt);
+}
+
+let contadorDetalle = 0;
+
+function cabecera(icono, titulo, claveInfo) {
+  return '<div class="cabecera"><span class="icono">' + icono + '</span>'
+    + '<h2 class="clicable" onclick="mostrarInfo(\'' + claveInfo + '\')">' + titulo + '<span class="info-ico">ⓘ</span></h2></div>';
+}
+
+function bloqueCalidad(datos) {
+  const icono = '🔁', titulo = 'Calidad (repetidos 30 días)';
+  const explicacion = 'Mide si una orden tuya vuelve a repetirse antes de 30 días. Mientras más bajo, mejor. Se calcula con el mes anterior completo (' + DATA.periodoCalidad + ') porque el indicador necesita ese tiempo para madurar.';
+  if (!datos) {
+    return cabecera(icono, titulo, 'calidad')
+      + '<p class="explica">' + explicacion + '</p>'
+      + '<p class="sin-datos">No hay órdenes registradas para ti en este período.</p>';
+  }
+  const meta = datos.metaCalidad;
+  const est = estado(datos.pctRepetidos, true, meta, meta);
+  contadorDetalle++;
+  const idDetalle = 'detalle' + contadorDetalle;
+  let html = cabecera(icono, titulo, 'calidad');
+  html += '<p class="explica">' + explicacion + '</p>';
+  html += '<div class="estado-pill ' + est.clase + '">' + est.emoji + ' ' + est.texto + '</div>';
+  html += barra(datos.pctRepetidos, est.clase);
+  html += '<p class="frase-clave">De tus <b>' + datos.totalOrdenes + '</b> órdenes cerradas, <b>' + datos.repetidos30Dias + '</b> se repitieron dentro de 30 días (' + datos.pctRepetidos.toFixed(1) + '%).</p>';
+  html += '<p class="frase-clave">Meta de tu ciudad: no superar <b>' + meta.toFixed(2) + '%</b>.</p>';
+
+  const causas = datos.causas && datos.causas.length > 0 ? contarCausas(datos.causas) : [];
+  if (causas.length > 0) {
+    const top = causas[0];
+    const accion = SUGERENCIAS_CAUSA[top.causa] || SUGERENCIA_GENERICA;
+    html += '<div class="callout">🔍 <b>Tu causa más frecuente de repetido:</b> ' + top.causa + ' (' + top.cnt + ' de ' + datos.repetidos30Dias + ').<br>' + accion + '</div>';
+  }
+
+  html += '<div class="detalle-toggle" onclick="toggleDetalle(\'' + idDetalle + '\')">Ver el detalle en números <span id="' + idDetalle + 'Flecha">▾</span></div>';
+  html += '<div class="detalle-body" id="' + idDetalle + '">';
+  html += '<div class="fila-dato"><span class="k">Total órdenes</span><span class="v">' + datos.totalOrdenes + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Repetidos 30 días</span><span class="v">' + datos.repetidos30Dias + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Umbral ✅ Buen desempeño (hasta)</span><span class="v">' + meta.toFixed(2) + '%</span></div>';
+  if (causas.length > 0) {
+    html += causas.slice(0, 3).map((c) =>
+      '<div class="fila-dato"><span class="k">Causa: ' + c.causa + '</span><span class="v">' + c.cnt + '</span></div>'
+    ).join('');
+  }
+  if (datos.causas && datos.causas.length > 0) {
+    const eventosOrdenados = [...datos.causas].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    html += '<p style="margin:14px 0 6px; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em;">Tus órdenes repetidas</p>';
+    html += '<div class="tabla-repetidos-wrap"><table class="tabla-repetidos"><thead><tr>'
+      + '<th>Fecha</th><th>Días hasta el repetido</th><th>Causa</th><th>N° Orden</th>'
+      + '</tr></thead><tbody>'
+      + eventosOrdenados.map((e) =>
+          '<tr><td>' + (e.fecha ? formatFechaLarga(e.fecha) : '—') + '</td>'
+          + '<td>' + (e.dias != null ? e.dias : '—') + '</td>'
+          + '<td>' + e.causa + '</td>'
+          + '<td>' + (e.ordenTrabajo || '—') + '</td></tr>'
+        ).join('')
+      + '</tbody></table></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function bloqueDerivaciones(datos) {
+  const icono = '↪️', titulo = 'Derivaciones (Alta/Migración)';
+  const explicacion = 'Mide qué porcentaje de tus órdenes de Alta o Migración terminaron derivadas (no realizadas) en vez de completadas. Mientras más bajo, mejor. ' + (DATA.cierreMes ? 'Cierre del mes: ' : 'Avance del mes: ') + DATA.periodoMatriz + '.';
+  if (!datos) {
+    return cabecera(icono, titulo, 'derivaciones')
+      + '<p class="explica">' + explicacion + '</p>'
+      + '<p class="sin-datos">No hay órdenes de Alta/Migración registradas para ti en este período.</p>';
+  }
+  const est = estado(datos.pctDerivaciones, true, META_DERIVACIONES, META_DERIVACIONES * 1.5);
+  contadorDetalle++;
+  const idDetalle = 'detalle' + contadorDetalle;
+  let html = cabecera(icono, titulo, 'derivaciones');
+  html += '<p class="explica">' + explicacion + '</p>';
+  html += '<div class="estado-pill ' + est.clase + '">' + est.emoji + ' ' + est.texto + '</div>';
+  html += barra(datos.pctDerivaciones, est.clase);
+  html += '<p class="frase-clave">De tus <b>' + datos.qOrdenes + '</b> órdenes, <b>' + datos.qDerivaciones + '</b> fueron derivadas (' + datos.pctDerivaciones.toFixed(1) + '%). Meta: no superar <b>' + META_DERIVACIONES + '%</b>.</p>';
+  html += '<div class="detalle-toggle" onclick="toggleDetalle(\'' + idDetalle + '\')">Ver el detalle en números <span id="' + idDetalle + 'Flecha">▾</span></div>';
+  html += '<div class="detalle-body" id="' + idDetalle + '">';
+  html += '<div class="fila-dato"><span class="k">Q Órdenes</span><span class="v">' + datos.qOrdenes + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Q Derivaciones</span><span class="v">' + datos.qDerivaciones + '</span></div>';
+  html += '</div>';
+  return html;
+}
+
+function bloqueRgu(datos) {
+  const icono = '📶', titulo = 'Producción RGU';
+  const explicacion = 'Mide tu producción de RGU completada GSA frente a tu meta (' + (datos ? datos.metaDiaria : '') + ' por día trabajado). Mientras más alto, mejor. ' + (DATA.cierreMes ? 'Cierre del mes: ' : 'Avance del mes: ') + DATA.periodoMatriz + '.';
+  if (!datos) {
+    return cabecera(icono, titulo, 'rgu')
+      + '<p class="explica">Mide tu producción de RGU completada GSA frente a tu meta diaria. ' + (DATA.cierreMes ? 'Cierre del mes: ' : 'Avance del mes: ') + DATA.periodoMatriz + '.</p>'
+      + '<p class="sin-datos">No hay RGU registrados para ti en este período.</p>';
+  }
+  const est = estado(datos.pctCumplimiento, false, 100, 80);
+  contadorDetalle++;
+  const idDetalle = 'detalle' + contadorDetalle;
+  let html = cabecera(icono, titulo, 'rgu');
+  html += '<p class="explica">' + explicacion + '</p>';
+  html += '<div class="estado-pill ' + est.clase + '">' + est.emoji + ' ' + est.texto + '</div>';
+  html += barra(datos.pctCumplimiento, est.clase);
+  html += '<p class="frase-clave">Completaste <b>' + datos.rguCompletadaGsa.toFixed(2) + '</b> RGU GSA en <b>' + datos.diasTrabajados + '</b> día' + (datos.diasTrabajados === 1 ? '' : 's') + ' trabajado' + (datos.diasTrabajados === 1 ? '' : 's') + ', frente a una meta de <b>' + datos.metaPeriodo.toFixed(2) + '</b> (' + datos.metaDiaria + ' por día) — <b>' + datos.pctCumplimiento.toFixed(1) + '%</b> de cumplimiento.</p>';
+  html += '<div class="detalle-toggle" onclick="toggleDetalle(\'' + idDetalle + '\')">Ver el detalle en números <span id="' + idDetalle + 'Flecha">▾</span></div>';
+  html += '<div class="detalle-body" id="' + idDetalle + '">';
+  html += '<div class="fila-dato"><span class="k">RGU Completada GSA</span><span class="v">' + datos.rguCompletadaGsa.toFixed(2) + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">RGU Total (con no completadas)</span><span class="v">' + datos.rguTotal.toFixed(2) + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Días trabajados (con órdenes asignadas)</span><span class="v">' + datos.diasTrabajados + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Meta diaria</span><span class="v">' + datos.metaDiaria + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Meta del período</span><span class="v">' + datos.metaPeriodo.toFixed(2) + '</span></div>';
+  html += '</div>';
+  return html;
+}
+
+// Cada punto de la serie mes a mes se calcula con los cierres de UN mes
+// (ej. julio), pero ese valor es el que se reporta como "Calidad" recien al
+// mes siguiente (agosto), porque el repetido a 30 dias necesita ese tiempo
+// para madurar -- la misma razon por la que "Calidad Agosto" se mide con
+// cierres de julio (ver README). Por eso la etiqueta se corre un mes hacia
+// adelante respecto al mes real de cierre, para mostrar el mes en que ese
+// dato se reporta y no el mes en que se genero.
+function formatMesCorto(iso) {
+  const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const [, m] = iso.split('-');
+  // "iso" viene como "yyyy-mm" con mes de 1 a 12; MESES es de indice 0 a 11.
+  return MESES[parseInt(m, 10) - 1] || iso;
+}
+
+function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos) {
+  const puntos = valores.map((v, i) => ({ x: i, v })).filter((p) => p.v != null);
+  if (puntos.length < 2) {
+    el.innerHTML = '';
+    return false;
+  }
+
+  const W = 700, H = 220, padL = 42, padR = 16, padT = 24, padB = 30;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const maxV = Math.max(...puntos.map((p) => p.v), 1);
+  const yMax = Math.ceil((maxV * 1.15) / 2) * 2 || 2;
+  const n = fechas.length;
+
+  const xAt = (i) => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+  const yAt = (v) => padT + plotH - (v / yMax) * plotH;
+
+  const pathD = puntos.map((p, i) => (i === 0 ? 'M' : 'L') + xAt(p.x).toFixed(1) + ',' + yAt(p.v).toFixed(1)).join(' ');
+  const areaD = pathD
+    + ' L' + xAt(puntos[puntos.length - 1].x).toFixed(1) + ',' + (padT + plotH)
+    + ' L' + xAt(puntos[0].x).toFixed(1) + ',' + (padT + plotH) + ' Z';
+
+  const gridLines = [0, 0.5, 1].map((f) => {
+    const v = yMax * f;
+    const y = yAt(v);
+    return '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="#e0e5ea" stroke-width="1"/>'
+      + '<text x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="10" fill="#6b7a8c" text-anchor="end">' + v.toFixed(0) + '%</text>';
+  }).join('');
+
+  const idxLabels = n <= 12 ? [...Array(n).keys()] : [0, Math.floor((n - 1) / 2), n - 1];
+  // Un rotulo largo en el ultimo punto (ej. "Oct (parcial)") se alinea a la
+  // derecha para que no se corte en el borde del grafico.
+  const xLabels = [...new Set(idxLabels)].map((i) => {
+    const texto = formatLabel(fechas[i]);
+    const alFinal = i === n - 1 && texto.length > 4;
+    return '<text x="' + (alFinal ? W - 2 : xAt(i)).toFixed(1) + '" y="' + (H - 8) + '" font-size="10" fill="#6b7a8c" text-anchor="' + (alFinal ? 'end' : 'middle') + '">' + texto + '</text>';
+  }).join('');
+
+  const puntosAEtiquetar = etiquetarTodos ? puntos : [puntos[puntos.length - 1]];
+  const marcadores = puntosAEtiquetar.map((p) =>
+    '<circle cx="' + xAt(p.x).toFixed(1) + '" cy="' + yAt(p.v).toFixed(1) + '" r="4" fill="var(--cobra-navy)"/>'
+    + '<text x="' + xAt(p.x).toFixed(1) + '" y="' + (yAt(p.v) - 10).toFixed(1) + '" font-size="11" font-weight="700" fill="var(--cobra-navy)" text-anchor="middle">' + p.v.toFixed(1) + '%</text>'
+  ).join('');
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;">'
+    + gridLines
+    + '<path d="' + areaD + '" fill="var(--celeste-soft)" opacity="0.7"/>'
+    + '<path d="' + pathD + '" fill="none" stroke="var(--cobra-blue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+    + marcadores
+    + xLabels
+    + '</svg>';
+  return true;
+}
+
+// Titular corto (una linea) que resume la tendencia, para entenderla de un
+// vistazo. En Calidad, bajar es mejorar (menos repetidos).
+//
+// Compara el ultimo mes contra el promedio de los 2-3 meses inmediatamente
+// anteriores, no contra el primer mes de toda la serie: comparar contra el
+// inicio puede decir "mejorando" solo porque un mes muy lejano (ej. enero)
+// era peor, aunque los ultimos meses esten subiendo otra vez -- que es lo
+// que importa para saber si hay que poner ojo ahora.
+function explicarTendencia(valores) {
+  const puntos = valores.filter((v) => v != null);
+  if (puntos.length < 2) return '';
+  const ultimo = puntos[puntos.length - 1];
+  const min = Math.min(...puntos);
+  const max = Math.max(...puntos);
+
+  const previos = puntos.slice(Math.max(0, puntos.length - 4), puntos.length - 1);
+  const promedioReciente = previos.reduce((a, b) => a + b, 0) / previos.length;
+  const diff = ultimo - promedioReciente;
+
+  let icono, texto, color;
+  if (Math.abs(diff) < 0.5) {
+    icono = '➡️'; texto = 'Se mantiene estable'; color = 'var(--warn)';
+  } else if (diff < 0) {
+    icono = '✅'; texto = 'Mejorando'; color = 'var(--ok)';
+  } else {
+    icono = '🔴'; texto = 'Atención: la curva va al alza'; color = 'var(--bad)';
+  }
+
+  return '<span style="color:' + color + ';">' + icono + ' ' + texto + ': '
+    + 'promedio meses previos ' + promedioReciente.toFixed(1) + '% → último mes ' + ultimo.toFixed(1) + '%</span>'
+    + '<span style="font-weight:400; font-size:12.5px; color:var(--text-dim);"> (rango: ' + min.toFixed(1) + '%–' + max.toFixed(1) + '%)</span>';
+}
+
+function renderEvolutivoPersonal(t) {
+  const panel = document.getElementById('panelEvolutivoPersonal');
+  const ev = t.evolutivoMensualPropio;
+  if (!ev || !ev.valores || ev.valores.filter((v) => v != null).length < 2) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  // Igual que el grafico de Calidad del dashboard de supervisores: cada punto
+  // se rotula con el mes en que se reporta (el siguiente al de sus cierres),
+  // en todos los puntos por igual, y el ultimo se marca como parcial mientras
+  // su mes no cumpla 30 dias de cerrado -- ese valor aun puede subir, asi que
+  // queda fuera de la frase de tendencia.
+  const meses = ev.mesesReales || ev.meses;
+  const ultimo = ev.valores.length - 1;
+  const parcial = !!ev.ultimoMesParcial && ev.valores[ultimo] != null;
+  const mesReporte = (iso) => {
+    const [y, m] = iso.split('-').map(Number);
+    return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0');
+  };
+  const etiqueta = (iso) => formatMesCorto(mesReporte(iso)) + (parcial && iso === meses[ultimo] ? ' (parcial)' : '');
+  dibujarLineChart(document.getElementById('evolutivoPersonalChart'), meses, ev.valores, etiqueta, true);
+
+  let explicacion = explicarTendencia(parcial ? ev.valores.slice(0, -1) : ev.valores);
+  if (parcial) {
+    explicacion += '<span style="display:block; font-weight:400; font-size:12.5px; color:var(--text-dim);">'
+      + formatMesCorto(mesReporte(meses[ultimo])) + ' (' + ev.valores[ultimo].toFixed(1) + '%) es parcial y no se compara: tus repetidos de ese mes aún pueden aumentar.</span>';
+  }
+  document.getElementById('evolutivoPersonalExplicacion').innerHTML = explicacion;
+}
+
+// Consulta de estado vecino: solo los datos del propio tecnico (vienen dentro
+// de su registro en DATA.tecnicos; el reporte de todos los tecnicos es
+// vecino.html, que se abre desde el dashboard de supervisores).
+function bloqueVecino(v) {
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const nombreMes = (iso) => MESES[parseInt(iso.split('-')[1], 10) - 1] + ' de ' + iso.split('-')[0];
+  const fechaCorta = (iso) => iso.slice(8, 10) + '-' + iso.slice(5, 7);
+  const pct = (m) => (m.total ? (m.conConsulta / m.total) * 100 : 0);
+  // Meta 100%: una sola orden sin consulta ya deja el mes bajo la meta.
+  const est = (p) => estado(p, false, v.meta, 90);
+
+  let html = '<div class="cabecera"><span class="icono">🏘️</span><h2>Consulta de estado vecino</h2></div>'
+    + '<p class="explica">Mide en cuántas de tus órdenes completadas (Alta, Migración, Reparación y Alta Traslado) hiciste la consulta de estado vecino. Es obligatoria en todas: la meta es <b>' + v.meta + '%</b>.</p>';
+
+  const actual = v.meses.find((m) => m.mes === v.mesInicial);
+  if (!actual) {
+    html += '<p class="sin-datos">No tienes órdenes completadas en ' + nombreMes(v.mesInicial) + ' todavía.</p>';
+  } else {
+    const p = pct(actual);
+    const e = est(p);
+    const faltan = actual.total - actual.conConsulta;
+    html += '<div class="estado-pill ' + e.clase + '">' + e.emoji + ' ' + (p >= v.meta ? 'Cumples la meta' : e.texto) + '</div>'
+      + barra(p, e.clase)
+      + '<p class="frase-clave">En ' + nombreMes(actual.mes) + ' hiciste la consulta en <b>' + actual.conConsulta + '</b> de tus <b>' + actual.total + '</b> órdenes (' + p.toFixed(1) + '%).'
+      + (faltan ? ' Te falt' + (faltan === 1 ? 'ó' : 'aron') + ' <b>' + faltan + '</b>.' : ' No te faltó ninguna.') + '</p>';
+    if (faltan) {
+      html += '<div class="callout">🔍 <b>Órdenes sin consulta</b> (fecha · tipo · orden):<div class="vecino-ordenes">'
+        + actual.sinConsulta.map((o) => '<span>' + fechaCorta(o.fecha) + ' · ' + o.tipo + ' · ' + o.orden + '</span>').join('') + '</div></div>';
+    }
+  }
+
+  const otros = v.meses.filter((m) => m.mes !== v.mesInicial).sort((a, b) => (a.mes < b.mes ? 1 : -1));
+  if (otros.length) {
+    contadorDetalle++;
+    const idDetalle = 'detalle' + contadorDetalle;
+    html += '<div class="detalle-toggle" onclick="toggleDetalle(\'' + idDetalle + '\')">Ver meses anteriores <span id="' + idDetalle + 'Flecha">▾</span></div>'
+      + '<div class="detalle-body" id="' + idDetalle + '">'
+      + otros.map((m) => '<div class="fila-dato"><span class="k">' + nombreMes(m.mes) + '</span><span class="v">' + pct(m).toFixed(1) + '% (' + m.conConsulta + ' de ' + m.total + ')</span></div>').join('')
+      + '</div>';
+  }
+  return html;
+}
+
+function renderVecino(t) {
+  const panel = document.getElementById('seccionVecino');
+  if (!t.vecino || !t.vecino.meses.length) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = bloqueVecino(t.vecino);
+}
+
+function toggleDetalle(id) {
+  const el = document.getElementById(id);
+  const flecha = document.getElementById(id + 'Flecha');
+  const abierto = el.classList.toggle('abierto');
+  flecha.textContent = abierto ? '▴' : '▾';
+}
+window.toggleDetalle = toggleDetalle;
+
+// Explicaciones que aparecen al hacer clic en el titulo de cada indicador.
+const INFO_METRICAS = {
+  calidad: {
+    titulo: 'Calidad (repetidos)',
+    queMide: 'Si una orden que atendiste requiere una nueva visita por el mismo motivo antes de 30 días. Mientras más bajo el porcentaje, mejor.',
+    comoSeCalcula: 'Se calcula sobre el mes calendario <b>anterior</b> completo, no sobre el mes en curso. Esto es necesario porque el indicador requiere que transcurran los 30 días completos: una orden cerrada hace pocos días aún no ha tenido tiempo de mostrar si se repite.',
+    meta: 'La meta máxima de repetidos varía según tu ciudad (Arica, Santiago, V Región).',
+  },
+  derivaciones: {
+    titulo: 'Derivaciones (Alta/Migración)',
+    queMide: 'Qué porcentaje de tus órdenes de Alta o Migración terminaron derivadas (estado "No Realizada") en vez de completadas. Mientras más bajo el porcentaje, mejor.',
+    comoSeCalcula: 'Se calcula con el avance del mes en curso: desde el día 1 hasta el último día con datos completos en el sistema.',
+    meta: 'La meta oficial es no superar el 35%. Entre 35% y 52,5% se marca en amarillo ("Atención"); por sobre 52,5% queda en foco prioritario (rojo).',
+  },
+  rgu: {
+    titulo: 'Producción RGU',
+    queMide: 'Tu porcentaje de cumplimiento de la meta de producción. Mientras más alto, mejor: 100% o más significa que cumpliste tu meta.',
+    comoSeCalcula: 'RGU completada (orden Completada, o derivada a GSA en vez de perderse) dividida por tu meta del período. La meta del período se calcula como la meta diaria según tu ciudad (Arica 4,3 · Santiago y V Región 4,0) multiplicada por la cantidad de días que trabajaste ese mes (cada día en que tuviste al menos una orden asignada, aunque no hayas completado ninguna).',
+    meta: 'Cumples la meta al llegar o superar el 100% de cumplimiento. Entre 80% y 99% se marca en amarillo ("Atención"); por debajo de 80% queda en foco prioritario (rojo).',
+  },
+};
+
+function mostrarInfo(clave) {
+  const info = INFO_METRICAS[clave];
+  if (!info) return;
+  document.getElementById('modalInfoTitulo').textContent = info.titulo;
+  document.getElementById('modalInfoTexto').innerHTML =
+    '<b>Qué mide:</b> ' + info.queMide + '<br><br>'
+    + '<b>Cómo se calcula:</b> ' + info.comoSeCalcula + '<br><br>'
+    + '<b>Meta:</b> ' + info.meta;
+  document.getElementById('modalInfo').classList.add('abierto');
+}
+function cerrarInfo() {
+  document.getElementById('modalInfo').classList.remove('abierto');
+}
+window.mostrarInfo = mostrarInfo;
+window.cerrarInfo = cerrarInfo;
+
+function mostrarPerfil(t) {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('appBox').style.display = 'block';
+  document.getElementById('saludo').textContent = '👋 Hola, ' + titleCase(t.nombre);
+  let meta = [];
+  if (t.supervisor) meta.push('Supervisor: ' + titleCase(t.supervisor));
+  if (t.agencia) meta.push('Agencia: ' + titleCase(t.agencia));
+  document.getElementById('datosTecnico').textContent = meta.join(' · ');
+
+  const estados = [];
+  if (t.calidad) estados.push(estado(t.calidad.pctRepetidos, true, t.calidad.metaCalidad, t.calidad.metaCalidad).clase);
+  if (t.derivaciones) estados.push(estado(t.derivaciones.pctDerivaciones, true, META_DERIVACIONES, META_DERIVACIONES * 1.5).clase);
+  if (t.rgu) estados.push(estado(t.rgu.pctCumplimiento, false, 100, 80).clase);
+  let claseGeneral = 'ok', mensajeGeneral = '🎉 <b>Vas bien este mes.</b> <span>Tus indicadores están en buen nivel. Sigue así.</span>';
+  if (estados.includes('bad')) {
+    claseGeneral = 'bad';
+    mensajeGeneral = '🔴 <b>Tienes un indicador en foco prioritario.</b> <span>Mira el detalle abajo para saber en qué enfocarte.</span>';
+  } else if (estados.includes('warn')) {
+    claseGeneral = 'warn';
+    mensajeGeneral = '⚠️ <b>Tienes un indicador que requiere atención.</b> <span>Revisa el detalle abajo.</span>';
+  }
+  const emojiGeneral = claseGeneral === 'ok' ? '🎉' : (claseGeneral === 'warn' ? '⚠️' : '🔴');
+  document.getElementById('resumenGeneral').innerHTML =
+    '<div class="resumen-general ' + claseGeneral + '"><div class="emoji">' + emojiGeneral + '</div><div class="texto">' + mensajeGeneral + '</div></div>';
+
+  document.getElementById('seccionCalidad').innerHTML = bloqueCalidad(t.calidad);
+  renderEvolutivoPersonal(t);
+  document.getElementById('seccionDerivaciones').innerHTML = bloqueDerivaciones(t.derivaciones);
+  document.getElementById('seccionRgu').innerHTML = bloqueRgu(t.rgu);
+  renderVecino(t);
+}
+
+function intentarLogin() {
+  const key = document.getElementById('inputNombre').value.trim();
+  const errorBox = document.getElementById('loginError');
+  const t = DATA.tecnicos[key];
+  if (!t || !key) {
+    errorBox.textContent = 'ID no encontrado.';
+    errorBox.style.display = 'block';
+    return;
+  }
+  errorBox.style.display = 'none';
+  sessionStorage.setItem('portalTecnicoKey', key);
+  mostrarPerfil(t);
+}
+
+document.getElementById('loginBtn').addEventListener('click', intentarLogin);
+document.getElementById('inputNombre').addEventListener('keydown', (e) => { if (e.key === 'Enter') intentarLogin(); });
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('portalTecnicoKey');
+  document.getElementById('appBox').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('inputNombre').value = '';
+});
+
+const keyGuardada = sessionStorage.getItem('portalTecnicoKey');
+if (keyGuardada && DATA.tecnicos[keyGuardada]) {
+  mostrarPerfil(DATA.tecnicos[keyGuardada]);
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+
+<!-- Easter egg: 7 clics seguidos en el logo. Aislado en su propio try/catch
+     e IIFE para que, si algo fallara aca, no afecte al resto del portal. -->
+<script>
+try {
+  (function () {
+    var logo = document.getElementById('logoCobra');
+    if (!logo) return;
+
+    var clicks = 0;
+    var lastClick = 0;
+    var activo = false;
+
+    // Nombre del tecnico logueado, para personalizar el mensaje. Se calcula
+    // de nuevo cada vez que se dispara el easter egg (no una sola vez al
+    // cargar la pagina), por si alguien cierra sesion y entra otro tecnico
+    // sin recargar. Si no se puede obtener por cualquier motivo, simplemente
+    // se usan los mensajes genericos -- nunca rompe el easter egg.
+    function obtenerMensajes() {
+      var nombreComa = '';
+      try {
+        var keyGuardada2 = sessionStorage.getItem('portalTecnicoKey');
+        if (keyGuardada2 && typeof DATA !== 'undefined' && DATA.tecnicos && DATA.tecnicos[keyGuardada2] && DATA.tecnicos[keyGuardada2].nombre) {
+          var primerNombre = DATA.tecnicos[keyGuardada2].nombre.trim().split(/\s+/)[0];
+          if (primerNombre) {
+            nombreComa = ', ' + primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+          }
+        }
+      } catch (eNombre) { /* sin nombre disponible: se usan mensajes genericos */ }
+
+      return {
+        generales: [
+          '🎉 ¡Encontraste el easter egg' + nombreComa + '! Gracias por tu trabajo día a día.',
+          '🏆 Cada instalación bien hecha cuenta, aunque no siempre se note. Gracias por tu esfuerzo' + nombreComa + '.',
+          '💪 Sigue así' + nombreComa + ' — tus números lo reflejan.',
+          '🔧 El trabajo bien hecho se nota, aunque el cliente no siempre lo diga. Gracias' + nombreComa + '.',
+          '🚀 Un cliente conforme hoy es un cliente que no repite. Buen trabajo' + nombreComa + '.',
+          '☕ Un cafecito virtual por tu trabajo de todos los días' + nombreComa + '.'
+        ],
+        septiembre: [
+          '🎉 ¡Viva Chile! Gracias por seguir dando el ancho, hasta en Fiestas Patrias' + nombreComa + '.',
+          '🎊 Feliz Dieciocho' + nombreComa + ' — que haya harto asado, cueca y buenos números.',
+          '⭐ ¡Arriba Chile! Gracias por tu trabajo' + nombreComa + '.',
+          '🎈 Que este Dieciocho tenga tanto asado como buenos indicadores' + nombreComa + '.'
+        ]
+      };
+    }
+
+    // Banner de Fiestas Patrias: se muestra/oculta segun la fecha real del
+    // navegador, no segun cuando se genero el sitio.
+    try {
+      var hoy = new Date();
+      if (hoy.getMonth() === 8) {
+        var banner = document.getElementById('bannerFiestas');
+        if (banner) {
+          banner.style.display = 'inline-block';
+          var sub = document.getElementById('fiestasSubtexto');
+          if (sub) { sub.textContent = 'Septiembre ' + hoy.getFullYear(); }
+        }
+      }
+    } catch (eBanner) { /* si algo falla aca, simplemente no se muestra el banner */ }
+
+    function lanzarConfeti() {
+      if (activo) return;
+      activo = true;
+
+      var canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      document.body.appendChild(canvas);
+      var ctx = canvas.getContext('2d');
+
+      var esSeptiembre = new Date().getMonth() === 8;
+      var colores = esSeptiembre
+        ? ['#0039A6', '#ffffff', '#D52B1E', '#0039A6', '#D52B1E']
+        : ['#003c71', '#0071ce', '#29a9e0', '#1fa971', '#e2962e', '#ffd23f'];
+      var piezas = [];
+      var n = 140;
+      for (var i = 0; i < n; i++) {
+        piezas.push({
+          x: Math.random() * canvas.width,
+          y: -20 - Math.random() * canvas.height * 0.5,
+          w: 6 + Math.random() * 6,
+          h: 4 + Math.random() * 8,
+          color: colores[Math.floor(Math.random() * colores.length)],
+          vy: 2 + Math.random() * 3,
+          vx: (Math.random() - 0.5) * 2.5,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (Math.random() - 0.5) * 0.3
+        });
+      }
+
+      var inicio = null;
+      var duracionMs = 2600;
+      var limpiado = false;
+      function limpiarCanvas() {
+        if (limpiado) return;
+        limpiado = true;
+        canvas.remove();
+        activo = false;
+      }
+
+      function frame(ts) {
+        if (!inicio) inicio = ts;
+        var transcurrido = ts - inicio;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < piezas.length; i++) {
+          var p = piezas[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vrot;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if (transcurrido < duracionMs) {
+          requestAnimationFrame(frame);
+        } else {
+          limpiarCanvas();
+        }
+      }
+      requestAnimationFrame(frame);
+      // Respaldo independiente de requestAnimationFrame: si la pestaña pierde
+      // foco o el navegador pausa la animacion, esto igual limpia el canvas.
+      setTimeout(limpiarCanvas, duracionMs + 500);
+
+      var toast = document.createElement('div');
+      var mensajes = obtenerMensajes();
+      var listaMsg = esSeptiembre ? mensajes.septiembre : mensajes.generales;
+      var msg = listaMsg[Math.floor(Math.random() * listaMsg.length)];
+      toast.textContent = msg;
+      toast.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-12px);' +
+        'background:var(--cobra-navy,#003c71);color:#fff;padding:12px 20px;border-radius:10px;' +
+        'font-weight:700;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:10000;' +
+        'max-width:min(90vw,420px);text-align:center;opacity:0;transition:opacity .35s ease,transform .35s ease;';
+      document.body.appendChild(toast);
+      requestAnimationFrame(function () {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      });
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-12px)';
+        setTimeout(function () { toast.remove(); }, 400);
+      }, 2600);
+    }
+
+    logo.addEventListener('click', function () {
+      var ahora = Date.now();
+      if (ahora - lastClick > 800) { clicks = 0; }
+      lastClick = ahora;
+      clicks++;
+      if (clicks >= 7) {
+        clicks = 0;
+        lanzarConfeti();
+      }
+    });
+  })();
+} catch (e) { /* easter egg opcional: cualquier error aca no debe afectar el portal */ }
+</script>
+
+</body>
+</html>

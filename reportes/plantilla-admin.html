@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Administración de accesos — Portal Supervisores</title>
+<style>
+  :root{ --navy:#003575; --navy-dark:#00224d; --blue:#3c62ac; --amber:#f0a500; --ink:#334155; --muted:#62646e; --line:#d9dbe0;
+    --ok:#1f7a45; --ok-bg:#e2f1e8; --warn:#9a5b00; --warn-bg:#fdf1d8; --bad:#a3261c; --bad-bg:#f8e3e0;
+    --font:"Helvetica Neue","Hanken Grotesk",Helvetica,Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font:400 15px/1.55 var(--font); background:#f2f2f2; color:var(--ink); }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  header{ background:#fff; border-bottom:1px solid var(--line); }
+  .wrap{ max-width:1400px; margin:0 auto; padding-inline:24px; }
+  .brand-row{ min-height:72px; display:flex; align-items:center; gap:18px; padding-block:8px; }
+  .brand-row img{ height:40px; }
+  .brand-divider{ width:1px; height:34px; background:var(--line); }
+  .brand-name{ font:300 18px/1.1 var(--font); letter-spacing:.12em; text-transform:uppercase; color:var(--blue); }
+  .brand-name strong{ font-weight:700; color:var(--navy); }
+  .sesion{ margin-left:auto; font-size:13px; color:var(--muted); }
+  .sesion a{ color:var(--navy); font-weight:600; }
+  .franja{ background:var(--navy); color:#fff; padding:22px 0; }
+  .franja h1{ margin:0; font:300 26px/1.2 var(--font); }
+  .franja h1 strong{ font-weight:700; }
+  .franja p{ margin:4px 0 0; font-size:14px; opacity:.85; }
+  h2{ font:300 20px/1.2 var(--font); color:var(--navy); margin:28px 0 4px; }
+  h2 strong{ font-weight:700; }
+  .explica{ margin:0 0 12px; font-size:13.5px; color:var(--muted); }
+  .panel{ background:#fff; border-top:3px solid var(--navy); padding:18px 20px; overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  thead th{ background:var(--navy); color:#fff; font:600 11px/1.3 var(--font); letter-spacing:.1em; text-transform:uppercase; text-align:left; padding:11px 14px; white-space:nowrap; }
+  tbody td{ padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  td.mono{ font-family:var(--mono); font-size:13px; }
+  .pill{ display:inline-block; padding:2px 9px; font:600 11px/1.6 var(--font); letter-spacing:.06em; text-transform:uppercase; border-radius:2px; }
+  .pill.ok{ color:var(--ok); background:var(--ok-bg); } .pill.warn{ color:var(--warn); background:var(--warn-bg); } .pill.bad{ color:var(--bad); background:var(--bad-bg); }
+  label{ display:block; font:600 11px/1.3 var(--font); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 5px; }
+  input, select{ width:100%; padding:9px 10px; font:400 15px/1.3 var(--font); color:var(--ink); border:1px solid #b9c0cc; border-radius:2px; background:#fff; }
+  button{ padding:9px 14px; font:600 12px/1 var(--font); letter-spacing:.08em; text-transform:uppercase; border-radius:2px; cursor:pointer; color:#fff; background:var(--navy); border:1px solid var(--navy); }
+  button:hover{ background:var(--navy-dark); }
+  button.sec{ color:var(--navy); background:#fff; border-color:#b9c0cc; padding:6px 10px; font-size:11px; white-space:nowrap; }
+  button.sec:hover{ border-color:var(--navy); background:#fff; }
+  .fila-form{ display:grid; grid-template-columns:repeat(4,minmax(140px,1fr)) auto; gap:14px; align-items:end; }
+  textarea{ width:100%; padding:9px 10px; font:400 14px/1.5 var(--mono); color:var(--ink); border:1px solid #b9c0cc; border-radius:2px; resize:vertical; }
+  .fila-varios{ display:flex; gap:14px; align-items:end; margin-top:12px; }
+  .fila-varios > div{ width:260px; max-width:100%; }
+  .filtros{ display:flex; flex-wrap:wrap; gap:14px; align-items:end; margin-bottom:14px; }
+  .filtros > div{ min-width:160px; }
+  .acciones{ display:flex; gap:6px; flex-wrap:wrap; }
+  .aviso{ display:none; margin:12px 0 0; padding:9px 12px; font-size:14px; border-left:3px solid; }
+  .aviso.err{ color:var(--bad); background:var(--bad-bg); border-color:var(--bad); }
+  .aviso.bien{ color:var(--ok); background:var(--ok-bg); border-color:var(--ok); }
+  .prueba{ margin:16px 0 0; padding:8px 12px; font-size:13px; color:var(--warn); background:var(--warn-bg); border-left:3px solid var(--amber); }
+  .ingreso{ max-width:400px; margin:48px auto; background:#fff; border-top:3px solid var(--amber); padding:28px 28px 24px; }
+  .ingreso label{ margin-top:14px; }
+  .ingreso button{ width:100%; margin-top:20px; padding:12px; }
+  footer{ text-align:center; padding:22px 10px; font-size:7.5px; color:var(--muted); letter-spacing:.06em; }
+  @media (max-width:900px){ .fila-form{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap brand-row">
+    <img src="__LOGO__" alt="Cobra">
+    <span class="brand-divider"></span>
+    <span class="brand-name">Portal <strong>Supervisores</strong></span>
+    <span class="sesion" id="sesion"></span>
+  </div>
+</header>
+<div class="franja"><div class="wrap">
+  <h1>Administración de <strong>accesos</strong></h1>
+  <p>Usuarios del portal de supervisores y registro de ingresos.</p>
+</div></div>
+
+<div class="wrap">
+  <form class="ingreso" id="formIngreso" style="display:none;">
+    <label for="usuario" style="margin-top:0;">Usuario administrador</label>
+    <input id="usuario" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    <label for="clave">Clave</label>
+    <input id="clave" type="password" autocomplete="current-password" required>
+    <button type="submit">Ingresar</button>
+    <div class="aviso err" id="avisoIngreso" role="alert"></div>
+  </form>
+
+  <div id="panelAdmin" style="display:none;">
+    <div class="prueba" id="avisoPrueba" style="display:none;">Modo prueba: datos de ejemplo. Los botones no guardan nada.</div>
+
+    <h2>Nuevo <strong>usuario</strong></h2>
+    <p class="explica">El supervisor entra con este usuario y la clave que definas. Esa clave es provisoria: en su primer ingreso el portal le pide definir una propia. Si la olvida, se le asigna una nueva.</p>
+    <form class="panel" id="formNuevo">
+      <div class="fila-form">
+        <div><label for="nUsuario">Usuario</label><input id="nUsuario" autocapitalize="none" spellcheck="false" placeholder="jperez" required></div>
+        <div><label for="nNombre">Nombre</label><input id="nNombre" placeholder="Juan Pérez" required></div>
+        <div><label for="nClave">Clave</label><input id="nClave" type="text" minlength="6" autocomplete="off" required></div>
+        <div><label for="nRol">Rol</label><select id="nRol"><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select></div>
+        <button type="submit">Crear</button>
+      </div>
+      <div class="aviso" id="avisoUsuarios" role="status"></div>
+    </form>
+
+    <h2>Crear <strong>varios</strong> a la vez</h2>
+    <p class="explica">Una persona por línea, con el formato <b>usuario, nombre</b>. Todos quedan como supervisores con la clave que escribas acá; después se puede cambiar la de cada uno.</p>
+    <form class="panel" id="formVarios">
+      <textarea id="vLista" rows="6" spellcheck="false" placeholder="jperez, Juan Pérez&#10;mrojas, María Rojas" required></textarea>
+      <div class="fila-varios">
+        <div><label for="vClave">Clave para todos</label><input id="vClave" type="text" minlength="6" autocomplete="off" required></div>
+        <button type="submit" id="btnVarios">Crear todos</button>
+      </div>
+      <div class="aviso" id="avisoVarios" role="status" style="white-space:pre-line;"></div>
+    </form>
+
+    <h2>Usuarios</h2>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Clave</th><th>Último ingreso</th><th>Acciones</th></tr></thead>
+        <tbody id="tablaUsuarios"></tbody>
+      </table>
+    </div>
+
+    <h2>Registro de <strong>ingresos</strong></h2>
+    <p class="explica">Cada vez que alguien abre una página protegida queda una línea. También quedan los intentos con clave incorrecta y los de usuarios desactivados.</p>
+    <div class="panel">
+      <div class="filtros">
+        <div><label for="fUsuario">Usuario</label><select id="fUsuario"><option value="">Todos</option></select></div>
+        <div><label for="fDesde">Desde</label><input id="fDesde" type="date"></div>
+        <div><label for="fResultado">Resultado</label><select id="fResultado"><option value="">Todos</option><option value="ok">Ingresó</option><option value="clave_incorrecta">Clave incorrecta</option><option value="inactivo">Usuario desactivado</option></select></div>
+        <button type="button" class="sec" id="btnCsv" style="padding:10px 14px;">Exportar a Excel</button>
+      </div>
+      <table>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Usuario</th><th>Página</th><th>Resultado</th></tr></thead>
+        <tbody id="tablaIngresos"></tbody>
+      </table>
+      <p class="explica" id="pieIngresos" style="margin:12px 0 0;"></p>
+    </div>
+  </div>
+</div>
+<footer>Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</footer>
+
+<script>
+__CLIENTE_JS__
+</script>
+<script>
+const CFG = { url: '__SUPABASE_URL__', key: '__SUPABASE_KEY__', dominio: '__DOMINIO__', prueba: '__PRUEBA__' === '1' };
+Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
+
+const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'admin': 'Administración', '-': '—' };
+const RESULTADOS = { cambio_clave: ['Definió su clave', 'ok'], ok: ['Ingresó', 'ok'], clave_incorrecta: ['Clave incorrecta', 'bad'], inactivo: ['Usuario desactivado', 'warn'] };
+const MAX_INGRESOS = 2000;
+let token = null, yo = null, usuarios = [], ingresos = [];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+const fmtFecha = new Intl.DateTimeFormat('es-CL', { timeZone: 'America/Santiago', day: '2-digit', month: '2-digit', year: 'numeric' });
+const fmtHora = new Intl.DateTimeFormat('es-CL', { timeZone: 'America/Santiago', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const fmtIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+function avisar(id, texto, clase) { const a = $(id); a.textContent = texto; a.className = 'aviso ' + (clase || 'err'); a.style.display = texto ? 'block' : 'none'; }
+
+function datosDePrueba() {
+  const ahora = Date.now(), h = 3600000;
+  usuarios = [
+    { id: '1', usuario: 'admin', nombre: 'Administrador', rol: 'admin', activo: true },
+    { id: '2', usuario: 'jcabrera', nombre: 'Supervisor de ejemplo 1', rol: 'supervisor', activo: true, debe_cambiar: true },
+    { id: '3', usuario: 'mrojas', nombre: 'Supervisor de ejemplo 2', rol: 'supervisor', activo: false },
+  ];
+  ingresos = [
+    { fecha: new Date(ahora - 0.2 * h).toISOString(), usuario: 'admin', pagina: 'admin', resultado: 'ok' },
+    { fecha: new Date(ahora - 1.5 * h).toISOString(), usuario: 'jcabrera', pagina: 'reiteradas', resultado: 'ok' },
+    { fecha: new Date(ahora - 1.6 * h).toISOString(), usuario: 'jcabrera', pagina: 'supervisor', resultado: 'ok' },
+    { fecha: new Date(ahora - 1.7 * h).toISOString(), usuario: 'jcabrera', pagina: 'supervisor', resultado: 'clave_incorrecta' },
+    { fecha: new Date(ahora - 26 * h).toISOString(), usuario: 'mrojas', pagina: 'supervisor', resultado: 'inactivo' },
+  ];
+}
+
+async function cargar() {
+  if (CFG.prueba) { datosDePrueba(); pintar(); return; }
+  const [u, i] = await Promise.all([
+    Acceso.leer('perfiles?select=id,usuario,nombre,rol,activo,debe_cambiar&order=usuario', token),
+    Acceso.leer('ingresos?select=fecha,usuario,pagina,resultado&order=fecha.desc&limit=' + MAX_INGRESOS, token),
+  ]);
+  if (!u.ok || !i.ok) throw new Error('No se pudieron leer los datos (' + (u.ok ? i.estado : u.estado) + ')');
+  usuarios = u.datos; ingresos = i.datos;
+  pintar();
+}
+
+function pintar() {
+  const ultimo = {};
+  for (const g of ingresos) if (g.resultado === 'ok' && !ultimo[g.usuario]) ultimo[g.usuario] = g.fecha;
+  $('tablaUsuarios').innerHTML = usuarios.map((u) => {
+    const f = ultimo[u.usuario] ? fmtFecha.format(new Date(ultimo[u.usuario])) + ' ' + fmtHora.format(new Date(ultimo[u.usuario])) : '—';
+    return '<tr><td class="mono">' + esc(u.usuario) + '</td><td>' + esc(u.nombre) + '</td>'
+      + '<td>' + (u.rol === 'admin' ? 'Administrador' : 'Supervisor') + '</td>'
+      + '<td><span class="pill ' + (u.activo ? 'ok">Activo' : 'bad">Desactivado') + '</span></td>'
+      + '<td><span class="pill ' + (u.debe_cambiar ? 'warn">Provisoria' : 'ok">Propia') + '</span></td>'
+      + '<td class="mono">' + f + '</td>'
+      + '<td><div class="acciones">'
+      + '<button class="sec" data-a="clave" data-id="' + esc(u.id) + '">Cambiar clave</button>'
+      + '<button class="sec" data-a="nombre" data-id="' + esc(u.id) + '">Cambiar nombre</button>'
+      + '<button class="sec" data-a="estado" data-id="' + esc(u.id) + '">' + (u.activo ? 'Desactivar' : 'Activar') + '</button>'
+      + '</div></td></tr>';
+  }).join('');
+
+  const sel = $('fUsuario'), previo = sel.value;
+  const nombres = [...new Set(ingresos.map((g) => g.usuario))].sort();
+  sel.innerHTML = '<option value="">Todos</option>' + nombres.map((n) => '<option>' + esc(n) + '</option>').join('');
+  sel.value = nombres.includes(previo) ? previo : '';
+  pintarIngresos();
+}
+
+function ingresosFiltrados() {
+  const u = $('fUsuario').value, d = $('fDesde').value, r = $('fResultado').value;
+  return ingresos.filter((g) => (!u || g.usuario === u) && (!r || g.resultado === r) && (!d || fmtIso.format(new Date(g.fecha)) >= d));
+}
+
+function pintarIngresos() {
+  const lista = ingresosFiltrados();
+  $('tablaIngresos').innerHTML = lista.map((g) => {
+    const f = new Date(g.fecha), res = RESULTADOS[g.resultado] || [g.resultado, 'warn'];
+    return '<tr><td class="mono">' + fmtFecha.format(f) + '</td><td class="mono">' + fmtHora.format(f) + '</td><td class="mono">' + esc(g.usuario) + '</td>'
+      + '<td>' + esc(PAGINAS[g.pagina] || g.pagina) + '</td><td><span class="pill ' + res[1] + '">' + res[0] + '</span></td></tr>';
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted);">Sin ingresos para este filtro.</td></tr>';
+  $('pieIngresos').textContent = lista.length + ' registros' + (ingresos.length >= MAX_INGRESOS ? ' (se muestran los ' + MAX_INGRESOS + ' más recientes)' : '') + '. Hora de Chile.';
+}
+
+async function accion(cuerpo, mensajeOk) {
+  if (CFG.prueba) { avisar('avisoUsuarios', 'Modo prueba: no se guardó nada.', 'bien'); return true; }
+  const r = await Acceso.funcion('admin-usuarios', cuerpo, token);
+  if (!r.ok) { avisar('avisoUsuarios', (r.datos && (r.datos.error || r.datos.message)) || 'No se pudo guardar (' + r.estado + ')'); return false; }
+  avisar('avisoUsuarios', mensajeOk, 'bien');
+  await cargar();
+  return true;
+}
+
+$('formNuevo').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const usuario = Acceso.normalizarUsuario($('nUsuario').value);
+  if (await accion({ accion: 'crear', usuario, nombre: $('nNombre').value, clave: $('nClave').value, rol: $('nRol').value }, 'Usuario ' + usuario + ' creado.')) ev.target.reset();
+});
+
+$('formVarios').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const clave = $('vClave').value;
+  const lineas = $('vLista').value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const resultado = [];
+  let creados = 0;
+  $('btnVarios').disabled = true;
+  for (const linea of lineas) {
+    const partes = linea.split(/[,;\t]/);
+    const usuario = Acceso.normalizarUsuario(partes[0]);
+    const nombre = (partes.slice(1).join(' ') || usuario).trim();
+    if (CFG.prueba) { resultado.push(usuario + ': modo prueba, no se creó'); continue; }
+    const r = await Acceso.funcion('admin-usuarios', { accion: 'crear', usuario, nombre, clave, rol: 'supervisor' }, token);
+    if (r.ok) creados++;
+    resultado.push(usuario + ': ' + (r.ok ? 'creado' : 'NO se creó — ' + ((r.datos && (r.datos.error || r.datos.message)) || r.estado)));
+    avisar('avisoVarios', resultado.join('\n'), 'bien');
+  }
+  $('btnVarios').disabled = false;
+  avisar('avisoVarios', creados + ' de ' + lineas.length + ' creados.\n' + resultado.join('\n'), creados === lineas.length ? 'bien' : 'err');
+  if (creados === lineas.length) ev.target.reset();
+  if (!CFG.prueba) await cargar();
+});
+
+$('tablaUsuarios').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('button[data-a]');
+  if (!b) return;
+  const u = usuarios.find((x) => String(x.id) === b.dataset.id);
+  if (b.dataset.a === 'clave') {
+    const clave = prompt('Nueva clave para ' + u.usuario + ' (mínimo 6 caracteres):');
+    if (clave) {
+      // La clave que pone el administrador es provisoria, salvo la suya propia.
+      const ajena = !yo || u.usuario !== yo.usuario;
+      if (!CFG.prueba && ajena) await Acceso.rpc('exigir_cambio', { p_id: u.id }, token);
+      await accion({ accion: 'clave', id: u.id, clave }, 'Clave de ' + u.usuario + ' cambiada.' + (ajena ? ' Deberá definir una propia al entrar.' : ''));
+    }
+  } else if (b.dataset.a === 'nombre') {
+    const nombre = prompt('Nombre de ' + u.usuario + ':', u.nombre);
+    if (nombre !== null) await accion({ accion: 'editar', id: u.id, nombre }, 'Nombre actualizado.');
+  } else if (confirm((u.activo ? 'Desactivar' : 'Activar') + ' a ' + u.usuario + '?')) {
+    await accion({ accion: 'editar', id: u.id, activo: !u.activo }, u.usuario + (u.activo ? ' desactivado.' : ' activado.'));
+  }
+});
+
+for (const id of ['fUsuario', 'fDesde', 'fResultado']) $(id).addEventListener('change', pintarIngresos);
+
+$('btnCsv').addEventListener('click', () => {
+  const filas = [['Fecha', 'Hora', 'Usuario', 'Página', 'Resultado']].concat(ingresosFiltrados().map((g) => {
+    const f = new Date(g.fecha);
+    return [fmtFecha.format(f), fmtHora.format(f), g.usuario, PAGINAS[g.pagina] || g.pagina, (RESULTADOS[g.resultado] || [g.resultado])[0]];
+  }));
+  const csv = '﻿' + filas.map((f) => f.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'ingresos_portal_' + fmtIso.format(new Date()) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// Muestra el panel solo si la sesion es de un administrador activo.
+async function abrirPanel() {
+  const r = await Acceso.rpc('ingresar', { p_pagina: 'admin' }, token);
+  if (!r.ok || !r.datos) throw new Error('No se pudo validar el ingreso (' + r.estado + ')');
+  if (r.datos.motivo === 'cambiar_clave') {
+    await Acceso.pedirClaveNueva(token);
+    return abrirPanel();
+  }
+  if (!r.datos.ok || r.datos.rol !== 'admin') {
+    Acceso.salir();
+    avisar('avisoIngreso', 'Este usuario no es administrador.');
+    return false;
+  }
+  yo = r.datos;
+  $('sesion').innerHTML = esc(yo.nombre || yo.usuario) + ' &middot; <a href="#" id="salir">Cerrar sesión</a>';
+  $('salir').addEventListener('click', (ev) => { ev.preventDefault(); Acceso.salir(); location.reload(); });
+  $('formIngreso').style.display = 'none';
+  $('panelAdmin').style.display = 'block';
+  await cargar();
+  return true;
+}
+
+$('formIngreso').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  avisar('avisoIngreso', '');
+  try {
+    const usuario = Acceso.normalizarUsuario($('usuario').value);
+    token = await Acceso.entrar(usuario, $('clave').value);
+    if (!token) {
+      Acceso.rpc('registrar_fallo', { p_usuario: usuario, p_pagina: 'admin' }).catch(() => {});
+      avisar('avisoIngreso', 'Usuario o clave incorrectos.');
+    } else {
+      await abrirPanel();
+    }
+  } catch (err) {
+    avisar('avisoIngreso', 'No se pudo ingresar: ' + err.message);
+  }
+});
+
+(async () => {
+  if (CFG.prueba) {
+    $('avisoPrueba').style.display = 'block';
+    $('panelAdmin').style.display = 'block';
+    $('sesion').textContent = 'Administrador (prueba)';
+    await cargar();
+    return;
+  }
+  try {
+    token = await Acceso.retomar();
+    if (token && await abrirPanel()) return;
+  } catch (err) { /* queda el formulario */ }
+  $('formIngreso').style.display = 'block';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Estado Vecino · Claro/VTR</title>
+<meta name="theme-color" content="#003c71">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .brand-row{ display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .brand-row img{ height:36px; }
+  .brand-divider{ width:1px; height:28px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--celeste); font-weight:800; }
+  .link-portal{ color:var(--cobra-blue); font-weight:700; font-size:13px; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+  header{ background:var(--panel); padding:22px 6vw; border-bottom:4px solid var(--celeste); }
+  h1{ margin:0 0 6px; font-size:clamp(20px,4vw,26px); font-weight:800; color:var(--cobra-navy); }
+  h2{ margin:22px 0 10px; font-size:15px; color:var(--cobra-navy); }
+  .subtitle{ color:#3a4a5c; font-size:14px; line-height:1.5; max-width:780px; }
+  main{ padding:20px 6vw 40px; }
+  .filtros{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  select{ padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff; color:var(--text); }
+  .resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  .card .lbl{ font-size:12px; color:var(--text-dim); }
+  .card .num{ font-size:26px; font-weight:800; color:var(--cobra-navy); margin-top:2px; }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; }
+  .t-tecnicos{ min-width:760px; }
+  th{ text-align:left; font-size:12px; color:var(--text-dim); font-weight:700; padding:11px 12px; border-bottom:1px solid var(--border); background:var(--panel-2); white-space:nowrap; }
+  td{ padding:10px 12px; border-bottom:1px solid var(--border); font-size:14px; vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .num-col{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .sub{ font-size:12px; color:var(--text-dim); }
+  .barra-wrap{ display:flex; align-items:center; gap:8px; min-width:180px; }
+  .barra{ flex:1; height:9px; background:var(--panel-2); border-radius:5px; }
+  .barra > i{ display:block; height:9px; border-radius:5px; }
+  .pill{ display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .ok{ background:var(--ok-bg); color:#12764e; } .warn{ background:var(--warn-bg); color:#8a5a12; } .bad{ background:var(--bad-bg); color:#a3301f; }
+  .f-ok{ background:var(--ok); } .f-warn{ background:var(--warn); } .f-bad{ background:var(--bad); }
+  button.ver{ border:1px solid var(--border); background:#fff; color:var(--cobra-blue); font-size:12px; font-weight:700; padding:5px 10px; border-radius:8px; cursor:pointer; }
+  tr.detalle td{ background:var(--panel-2); padding:10px 12px 14px; }
+  .ordenes{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ordenes span{ background:#fff; border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .btn-excel{ display:inline-flex; align-items:center; gap:7px; margin-left:auto; padding:9px 14px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:12.5px; font-family:inherit; cursor:pointer; }
+  .btn-excel:hover{ background:var(--cobra-blue); }
+  .btn-excel:disabled{ opacity:.6; cursor:default; }
+  .btn-excel svg{ width:15px; height:15px; }
+  .nota{ font-size:12px; color:var(--text-dim); line-height:1.6; margin-top:14px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica: el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <a class="link-portal" id="linkVolver" href="supervisor.html">&larr; Volver al dashboard</a>
+  </div>
+</header>
+<section class="hero sin-foto" aria-label="Portada">
+  <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow">Claro / VTR &middot; Calidad</p>
+    <h1>Consulta de estado <b>vecino</b></h1>
+    <p class="subtitle" id="subtitulo"></p>
+  </div></div>
+</section>
+<main>
+  <div class="filtros">
+    <select id="filtroMes" aria-label="Mes"></select>
+    <select id="filtroSupervisor" aria-label="Supervisor"></select>
+    <button class="btn-excel" id="btnExcel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span>Exportar a Excel</span></button>
+  </div>
+  <div class="resumen" id="resumen"></div>
+
+  <h2>Por tipo de <b>orden</b></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Tipo</th><th>Órdenes con consulta</th><th class="num-col">Órdenes</th><th class="num-col">Sin consulta</th></tr></thead>
+      <tbody id="filasTipo"></tbody>
+    </table>
+  </div>
+
+  <h2>Mes a <b>mes</b></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Mes</th><th>Órdenes con consulta</th><th class="num-col">Órdenes</th><th class="num-col">Sin consulta</th><th class="num-col">Técnicos en 100 %</th></tr></thead>
+      <tbody id="filasMes"></tbody>
+    </table>
+  </div>
+  <h2>Detalle por <b>técnico</b></h2>
+  <div class="panel">
+    <table class="t-tecnicos">
+      <thead>
+        <tr>
+          <th>Técnico</th>
+          <th>Órdenes con consulta</th>
+          <th class="num-col">Órdenes</th>
+          <th class="num-col">Sin consulta</th>
+          <th class="num-col">Resultado NOK</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="filas"></tbody>
+    </table>
+  </div>
+
+  <p class="nota" id="nota"></p>
+</main>
+<footer class="foot"><div class="wrap">
+  <span class="by">Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</span>
+</div></footer>
+<script>
+const DATA = __DATA_VECINO_JSON__;
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function n(v, dec) {
+  return v.toLocaleString('es-CL', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+function titleCase(s) {
+  return String(s || '').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+function nombreMes(iso) {
+  const [anio, mes] = iso.split('-');
+  return MESES[parseInt(mes, 10) - 1] + ' de ' + anio;
+}
+function mesMayuscula(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function fechaCorta(iso) {
+  const [, m, d] = iso.split('-');
+  return d + '-' + m;
+}
+function pct(con, total) {
+  return total ? (con / total) * 100 : 0;
+}
+// Meta 100%: cualquier orden sin consulta deja al tecnico bajo la meta.
+function estado(p) {
+  if (p >= DATA.meta) return 'ok';
+  return p >= 90 ? 'warn' : 'bad';
+}
+const ESTADOS = { ok: 'Cumple', warn: 'Bajo la meta', bad: 'Lejos de la meta' };
+function barra(p) {
+  const e = estado(p);
+  return '<div class="barra-wrap"><div class="barra"><i class="f-' + e + '" style="width:' + Math.min(p, 100).toFixed(1) + '%"></i></div>'
+    + '<span class="num-col" style="min-width:58px">' + n(p, 1) + ' %</span></div>';
+}
+
+const selMes = document.getElementById('filtroMes');
+const selSup = document.getElementById('filtroSupervisor');
+const mesEnCurso = DATA.ultimoDia ? DATA.ultimoDia.slice(0, 7) : null;
+selMes.innerHTML = DATA.meses.slice().reverse().map((m) =>
+  '<option value="' + m.mes + '">' + mesMayuscula(nombreMes(m.mes)) + (m.mes === mesEnCurso ? ' (en curso)' : '') + '</option>').join('');
+// Parte en el mismo mes que muestra el portal (el dia 1, el mes recien cerrado).
+if (DATA.mesInicial) selMes.value = DATA.mesInicial;
+
+const supervisores = [...new Set(DATA.meses.flatMap((m) => m.tecnicos.map((t) => t.supervisor)).filter(Boolean))].sort();
+selSup.innerHTML = '<option value="">Todos los supervisores</option>' +
+  supervisores.map((s) => '<option value="' + esc(s) + '">' + esc(titleCase(s)) + '</option>').join('');
+// Supervisor que venia seleccionado en el dashboard (vecino.html?supervisor=...)
+const supUrl = new URLSearchParams(location.search).get('supervisor');
+if (supUrl && supervisores.includes(supUrl)) selSup.value = supUrl;
+function actualizarLinkVolver() {
+  document.getElementById('linkVolver').href = 'supervisor.html' + (selSup.value ? '?supervisor=' + encodeURIComponent(selSup.value) : '');
+}
+
+function equipo(mes) {
+  const sup = selSup.value;
+  const m = DATA.meses.find((x) => x.mes === mes);
+  return (m ? m.tecnicos : []).filter((t) => !sup || t.supervisor === sup);
+}
+
+function render() {
+  const mes = selMes.value;
+  const lista = equipo(mes).slice().sort((a, b) => pct(a.conConsulta, a.total) - pct(b.conConsulta, b.total) || b.total - a.total);
+  const total = lista.reduce((s, t) => s + t.total, 0);
+  const con = lista.reduce((s, t) => s + t.conConsulta, 0);
+  const en100 = lista.filter((t) => t.conConsulta === t.total).length;
+
+  document.getElementById('subtitulo').textContent =
+    'Porcentaje de órdenes completadas en las que el técnico hizo la consulta de estado vecino. Meta: ' + DATA.meta + ' %. '
+    + mesMayuscula(nombreMes(mes)) + (mes === mesEnCurso ? ', con datos hasta el ' + fechaCorta(DATA.ultimoDia) + '.' : ', mes completo.');
+
+  const card = (lbl, num) => '<div class="card"><div class="lbl">' + lbl + '</div><div class="num">' + num + '</div></div>';
+  document.getElementById('resumen').innerHTML =
+    card('Órdenes con consulta', n(pct(con, total), 1) + ' %') +
+    card('Órdenes sin consulta', n(total - con, 0) + ' de ' + n(total, 0)) +
+    card('Técnicos en 100 %', en100 + ' de ' + lista.length) +
+    card('Técnicos bajo la meta', lista.length - en100);
+
+  document.getElementById('filas').innerHTML = lista.map((t, i) => {
+    const p = pct(t.conConsulta, t.total);
+    const e = estado(p);
+    const faltan = t.total - t.conConsulta;
+    const fila = '<tr>'
+      + '<td><div>' + esc(titleCase(t.nombre)) + '</div><div class="sub">' + esc(titleCase(t.agencia)) + '</div></td>'
+      + '<td>' + barra(p) + '</td>'
+      + '<td class="num-col">' + t.total + '</td>'
+      + '<td class="num-col">' + (faltan || '—') + '</td>'
+      + '<td class="num-col">' + (t.nok || '—') + '</td>'
+      + '<td><span class="pill ' + e + '">' + ESTADOS[e] + '</span></td>'
+      + '<td>' + (faltan ? '<button class="ver" data-i="' + i + '">Ver órdenes</button>' : '') + '</td>'
+      + '</tr>';
+    const detalle = faltan
+      ? '<tr class="detalle" id="det' + i + '" style="display:none"><td colspan="7"><div class="sub" style="margin-bottom:8px">Órdenes completadas sin consulta de estado vecino (fecha · tipo · orden):</div><div class="ordenes">'
+        + t.sinConsulta.map((o) => '<span>' + fechaCorta(o.fecha) + ' · ' + esc(o.tipo) + ' · ' + esc(o.orden) + '</span>').join('') + '</div></td></tr>'
+      : '';
+    return fila + detalle;
+  }).join('') || '<tr><td colspan="7" class="sub" style="text-align:center; padding:24px;">Sin órdenes en este período.</td></tr>';
+
+  const tipos = {};
+  for (const t of lista) {
+    for (const [tipo, g] of Object.entries(t.porTipo)) {
+      tipos[tipo] = tipos[tipo] || { total: 0, conConsulta: 0 };
+      tipos[tipo].total += g.total;
+      tipos[tipo].conConsulta += g.conConsulta;
+    }
+  }
+  document.getElementById('filasTipo').innerHTML = Object.entries(tipos).sort((a, b) => b[1].total - a[1].total).map(([tipo, g]) =>
+    '<tr><td>' + esc(tipo) + '</td><td>' + barra(pct(g.conConsulta, g.total)) + '</td><td class="num-col">' + g.total + '</td><td class="num-col">' + (g.total - g.conConsulta || '—') + '</td></tr>').join('');
+
+  document.getElementById('filasMes').innerHTML = DATA.meses.map((m) => {
+    const eq = equipo(m.mes);
+    const tot = eq.reduce((s, t) => s + t.total, 0);
+    const c = eq.reduce((s, t) => s + t.conConsulta, 0);
+    return '<tr><td>' + mesMayuscula(nombreMes(m.mes)) + (m.mes === mesEnCurso ? ' <span class="sub">(en curso)</span>' : '') + '</td><td>' + barra(pct(c, tot))
+      + '</td><td class="num-col">' + tot + '</td><td class="num-col">' + (tot - c || '—') + '</td><td class="num-col">'
+      + eq.filter((t) => t.conConsulta === t.total).length + ' de ' + eq.length + '</td></tr>';
+  }).join('');
+}
+
+document.getElementById('filas').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button.ver');
+  if (!btn) return;
+  const det = document.getElementById('det' + btn.dataset.i);
+  const abierto = det.style.display !== 'none';
+  det.style.display = abierto ? 'none' : '';
+  btn.textContent = abierto ? 'Ver órdenes' : 'Ocultar';
+});
+
+// ---------- Animacion de las cifras del resumen ----------
+// Al cargar la pagina, las cifras grandes suben desde 0 hasta su valor. Sirve
+// para cualquier texto con numeros ("75,5 %", "12 de 49"): cada numero se
+// anima por separado y conserva sus decimales. No se anima si el usuario pidio
+// reducir el movimiento en su sistema.
+function animarCifras(contenedor, duracion) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const patron = /\d+(?:[.,]\d+)?/g;
+  const cifras = [...contenedor.querySelectorAll('.num')].map((el) => ({ el, final: el.textContent }));
+  if (!cifras.length || !window.requestAnimationFrame) return;
+  const inicio = performance.now();
+  function paso(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const avance = 1 - Math.pow(1 - t, 3); // parte rapido y frena al llegar
+    for (const c of cifras) {
+      c.el.textContent = t === 1 ? c.final : c.final.replace(patron, (n) => {
+        const coma = n.includes(',');
+        const decimales = (n.split(/[.,]/)[1] || '').length;
+        const valor = (parseFloat(n.replace(',', '.')) * avance).toFixed(decimales);
+        return coma ? valor.replace('.', ',') : valor;
+      });
+    }
+    if (t < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+
+// ---------- Exportar a Excel ----------
+// Exporta lo que se esta viendo (mes y supervisor elegidos) en dos hojas: el
+// resumen por tecnico y el detalle de ordenes sin consulta. Usa SheetJS desde
+// cdnjs para generar un .xlsx real; si no hay internet, cae a un .csv
+// (separado por ";" y con BOM) con el resumen por tecnico, que Excel abre igual.
+function filasExcel() {
+  const mes = selMes.value;
+  const lista = equipo(mes).slice().sort((a, b) => pct(a.conConsulta, a.total) - pct(b.conConsulta, b.total) || b.total - a.total);
+  const tecnicos = [['Técnico', 'Agencia', 'Supervisor', 'Órdenes', 'Con consulta', 'Sin consulta', 'Resultado NOK', '% con consulta']];
+  const ordenes = [['Técnico', 'Agencia', 'Supervisor', 'Fecha', 'Tipo de orden', 'Orden de trabajo']];
+  for (const t of lista) {
+    tecnicos.push([t.nombre, t.agencia, t.supervisor, t.total, t.conConsulta, t.total - t.conConsulta, t.nok, Math.round(pct(t.conConsulta, t.total) * 10) / 10]);
+    for (const o of t.sinConsulta) ordenes.push([t.nombre, t.agencia, t.supervisor, o.fecha, o.tipo, o.orden]);
+  }
+  return { mes, tecnicos, ordenes };
+}
+function nombreArchivo(mes, extension) {
+  const sup = selSup.value ? '_' + selSup.value.split(' ')[0] : '';
+  return 'Consulta_Estado_Vecino_' + mes + sup + '.' + extension;
+}
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+function descargarCsv(filas, nombre) {
+  const celda = (v) => {
+    const t = String(v == null ? '' : v);
+    return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const texto = filas.map((f) => f.map(celda).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + texto], { type: 'text/csv;charset=utf-8' }));
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+async function exportarExcel() {
+  const boton = document.getElementById('btnExcel');
+  const rotulo = boton.querySelector('span');
+  const datos = filasExcel();
+  boton.disabled = true;
+  rotulo.textContent = 'Generando…';
+  try {
+    await cargarSheetJS();
+    const wb = XLSX.utils.book_new();
+    const hoja = (filas, anchos) => {
+      const ws = XLSX.utils.aoa_to_sheet(filas);
+      ws['!cols'] = anchos.map((w) => ({ wch: w }));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length - 1, c: filas[0].length - 1 } }) };
+      return ws;
+    };
+    XLSX.utils.book_append_sheet(wb, hoja(datos.tecnicos, [38, 12, 36, 10, 13, 13, 14, 15]), 'Por técnico');
+    XLSX.utils.book_append_sheet(wb, hoja(datos.ordenes, [38, 12, 36, 12, 16, 18]), 'Órdenes sin consulta');
+    XLSX.writeFile(wb, nombreArchivo(datos.mes, 'xlsx'));
+  } catch (err) {
+    descargarCsv(datos.tecnicos, nombreArchivo(datos.mes, 'csv')); // sin internet: CSV que Excel abre directo
+  }
+  boton.disabled = false;
+  rotulo.textContent = 'Exportar a Excel';
+}
+document.getElementById('btnExcel').addEventListener('click', exportarExcel);
+
+document.getElementById('nota').innerHTML =
+  '<b>Qué se cuenta:</b> órdenes completadas de tipo ' + DATA.tipos.map(esc).join(', ') + '. '
+  + '<b>Con consulta:</b> la orden tiene un resultado registrado de consulta de estado vecino (OK, NOK o en proceso). '
+  + '<b>Resultado NOK:</b> la consulta se hizo, pero el sistema respondió con un problema; cuenta como hecha. '
+  + 'Modificación de Servicio y Upgrade no se incluyen. Generado el ' + esc(DATA.generadoEl) + '.';
+
+selMes.addEventListener('change', render);
+selSup.addEventListener('change', () => { render(); actualizarLinkVolver(); });
+actualizarLinkVolver();
+render();
+animarCifras(document.getElementById('resumen'), 900);
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>__TITULO__ — Ingreso</title>
+<style>
+  :root{ --navy:#003575; --navy-dark:#00224d; --blue:#3c62ac; --amber:#f0a500; --ink:#334155; --muted:#62646e; --line:#d9dbe0; --bad:#a3261c; --bad-bg:#f8e3e0;
+    --font:"Helvetica Neue","Hanken Grotesk",Helvetica,Arial,sans-serif; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; min-height:100vh; display:flex; flex-direction:column; font:400 16px/1.6 var(--font); background:#f2f2f2; color:var(--ink); }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  header{ background:#fff; border-bottom:1px solid var(--line); }
+  .brand-row{ max-width:1400px; margin:0 auto; padding:8px 24px; min-height:72px; display:flex; align-items:center; gap:18px; }
+  .brand-row img{ height:40px; width:auto; display:block; }
+  .brand-divider{ width:1px; height:34px; background:var(--line); }
+  .brand-name{ font:300 18px/1.1 var(--font); letter-spacing:.12em; text-transform:uppercase; color:var(--blue); }
+  .brand-name strong{ font-weight:700; color:var(--navy); }
+  main{ flex:1; display:flex; align-items:center; justify-content:center; padding:32px 16px; background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%); }
+  .tarjeta{ width:100%; max-width:400px; background:#fff; border-top:3px solid var(--amber); padding:32px 32px 28px; }
+  .etiqueta{ font:600 11px/1.3 var(--font); letter-spacing:.14em; text-transform:uppercase; color:var(--blue); margin:0 0 6px; }
+  h1{ font:300 26px/1.2 var(--font); color:var(--navy); margin:0 0 6px; }
+  h1 strong{ font-weight:700; }
+  .bajada{ font-size:14px; color:var(--muted); margin:0 0 22px; }
+  label{ display:block; font:600 11px/1.3 var(--font); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+  input{ width:100%; padding:11px 12px; font:400 16px/1.3 var(--font); color:var(--ink); border:1px solid #b9c0cc; border-radius:2px; background:#fff; }
+  button{ width:100%; margin-top:22px; padding:12px; font:600 13px/1 var(--font); letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--navy); border:0; border-radius:2px; cursor:pointer; }
+  button:hover{ background:var(--navy-dark); }
+  button:disabled{ opacity:.6; cursor:default; }
+  .aviso{ display:none; margin-top:16px; padding:10px 12px; font-size:14px; color:var(--bad); background:var(--bad-bg); border-left:3px solid var(--bad); }
+  .prueba{ margin:0 0 16px; padding:8px 10px; font-size:12.5px; color:#9a5b00; background:#fdf1d8; border-left:3px solid var(--amber); }
+  footer{ background:#fff; border-top:1px solid var(--line); text-align:center; padding:10px; font-size:7.5px; color:var(--muted); letter-spacing:.06em; }
+  @media (max-width:560px){ .brand-row img{ height:30px; } .brand-name{ font-size:14px; } .tarjeta{ padding:24px 20px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand-row">
+    <img src="__LOGO__" alt="Cobra">
+    <span class="brand-divider"></span>
+    <span class="brand-name">Portal <strong>Supervisores</strong></span>
+  </div>
+</header>
+<main>
+  <form class="tarjeta" id="formIngreso" autocomplete="on">
+    <p class="etiqueta">Acceso restringido</p>
+    <h1>Ingreso de <strong>supervisores</strong></h1>
+    <p class="bajada">__TITULO__. Cada ingreso queda registrado.</p>
+    <div class="prueba" id="avisoPrueba" style="display:none;">Modo prueba: acepta cualquier usuario y clave, y no registra el ingreso.</div>
+    <label for="usuario">Usuario</label>
+    <input id="usuario" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    <label for="clave">Clave</label>
+    <input id="clave" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit" id="btnEntrar">Ingresar</button>
+    <div class="aviso" id="aviso" role="alert"></div>
+  </form>
+</main>
+<footer>Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</footer>
+
+<script type="application/octet-stream" id="datosCifrados">__DATOS__</script>
+<script>
+__CLIENTE_JS__
+</script>
+<script>
+// La pagina real viaja cifrada (AES-256-GCM) en #datosCifrados. La llave no
+// esta aca: la entrega la funcion "ingresar" de Supabase, que antes valida al
+// usuario y anota el ingreso. LLAVE_PRUEBA solo existe en las paginas prueba_*.
+const CFG = { pagina: '__PAGINA__', kid: '__KID__', iv: '__IV__', url: '__SUPABASE_URL__', key: '__SUPABASE_KEY__', dominio: '__DOMINIO__', llavePrueba: '__LLAVE_PRUEBA__' };
+Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
+
+const form = document.getElementById('formIngreso');
+const aviso = document.getElementById('aviso');
+const boton = document.getElementById('btnEntrar');
+
+function avisar(texto) { aviso.textContent = texto; aviso.style.display = texto ? 'block' : 'none'; }
+function ocupado(si) { boton.disabled = si; boton.textContent = si ? 'Ingresando…' : 'Ingresar'; }
+function bytes(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }
+function escapar(s) { return String(s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';'); }
+
+async function abrirPagina(llave, nombre) {
+  const k = await crypto.subtle.importKey('raw', bytes(llave), 'AES-GCM', false, ['decrypt']);
+  const cifrado = bytes(document.getElementById('datosCifrados').textContent.trim());
+  const comprimido = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(CFG.iv) }, k, cifrado);
+  let html = await new Response(new Blob([comprimido]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  const barra = '<div style="position:fixed;right:14px;bottom:14px;z-index:9999;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir">'
+    + escapar(nombre) + ' &middot; <a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
+    + '<style>@media print{.no-imprimir{display:none!important}}</style>';
+  const corte = html.lastIndexOf('</body>');
+  html = corte >= 0 ? html.slice(0, corte) + barra + html.slice(corte) : html + barra;
+  document.open();
+  document.write(html);
+  document.close();
+}
+
+// Pide la llave con la sesion ya iniciada. Devuelve false si hay que mostrar el formulario.
+async function ingresarCon(token) {
+  const r = await Acceso.rpc('ingresar', { p_pagina: CFG.pagina, p_kid: CFG.kid }, token);
+  if (!r.ok || !r.datos) throw new Error('No se pudo validar el ingreso (' + r.estado + ')');
+  if (r.datos.motivo === 'cambiar_clave') {
+    await Acceso.pedirClaveNueva(token);
+    return ingresarCon(token);
+  }
+  if (!r.datos.ok) {
+    Acceso.salir();
+    avisar(r.datos.motivo === 'inactivo' ? 'Tu usuario está desactivado. Habla con el administrador.'
+      : r.datos.motivo === 'sin_llave' ? 'Esta página está desactualizada. Recárgala en unos minutos.'
+      : 'Tu usuario no tiene acceso a esta página.');
+    return false;
+  }
+  await abrirPagina(r.datos.llave, r.datos.nombre || r.datos.usuario);
+  return true;
+}
+
+form.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  avisar('');
+  ocupado(true);
+  const usuario = Acceso.normalizarUsuario(document.getElementById('usuario').value);
+  const clave = document.getElementById('clave').value;
+  try {
+    if (CFG.llavePrueba) { await abrirPagina(CFG.llavePrueba, usuario + ' (prueba)'); return; }
+    const token = await Acceso.entrar(usuario, clave);
+    if (!token) {
+      Acceso.rpc('registrar_fallo', { p_usuario: usuario, p_pagina: CFG.pagina }).catch(() => {});
+      avisar('Usuario o clave incorrectos.');
+    } else {
+      await ingresarCon(token);
+    }
+  } catch (err) {
+    avisar('No se pudo ingresar: ' + err.message + '. Revisa tu conexión e intenta de nuevo.');
+  }
+  ocupado(false);
+});
+
+(async () => {
+  if (CFG.llavePrueba) { document.getElementById('avisoPrueba').style.display = 'block'; return; }
+  try {
+    ocupado(true);
+    const token = await Acceso.retomar();
+    if (token) await ingresarCon(token);
+  } catch (err) { /* sin sesion valida: queda el formulario */ }
+  ocupado(false);
+})();
+</script>
+</body>
+</html>

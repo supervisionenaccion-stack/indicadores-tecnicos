@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reiteradas Calidad · Claro/VTR</title>
+<meta name="theme-color" content="#003c71">
+<link rel="icon" type="image/png" href="__ICON_DATAURI__">
+<style>
+  /* Misma linea grafica que template-supervisor.html (Dashboard de Supervisores) */
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0; --celeste-soft:#e8f6fd;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  header.hero{
+    background:linear-gradient(120deg,#ffffff 0%,var(--celeste-soft) 55%,#dcf1fb 100%);
+    padding:28px 6vw 30px; position:relative; overflow:hidden; border-bottom:4px solid var(--celeste);
+  }
+  .brand-row{ display:flex; align-items:center; gap:18px; margin-bottom:18px; }
+  .brand-row img{ height:40px; }
+  .brand-divider{ width:1px; height:30px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--celeste); font-weight:800; }
+  h1{ margin:0 0 6px; font-size:clamp(22px,4vw,30px); font-weight:800; letter-spacing:-0.01em; color:var(--cobra-navy); }
+  .subtitle{ color:#3a4a5c; font-size:14px; max-width:680px; line-height:1.5; }
+  .banner-fiestas{ margin-top:16px; display:none; }
+  .banner-fiestas-pill{
+    background:#fff; color:var(--cobra-navy); font-weight:800; font-size:13px;
+    padding:8px 18px; border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+    display:inline-flex; align-items:center; gap:9px;
+  }
+  .banner-fiestas-pill .dim{ font-weight:600; color:var(--text-dim); font-size:12px; }
+  .link-portal{ font-size:12.5px; color:var(--celeste); font-weight:700; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+  .mini-flag-cl{ width:20px; height:auto; display:inline-block; border-radius:2px; flex:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); }
+
+  main{ padding:24px 6vw 60px; max-width:1280px; margin:0 auto; }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow:0 4px 14px rgba(20,50,80,.05); }
+
+  .controles{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; padding:18px 20px; margin-bottom:18px; }
+  .campo{ display:flex; flex-direction:column; gap:5px; min-width:220px; flex:1 1 220px; }
+  .campo label{ font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .campo select, .campo input{ padding:9px 11px; border:1px solid var(--border); border-radius:8px; font-size:14.5px; font-family:inherit; background:#fff; color:var(--text); }
+  .campo select:focus, .campo input:focus{ outline:2px solid var(--celeste); border-color:var(--celeste); }
+
+  .resumen-row{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+  .resumen-card{ flex:1; min-width:150px; padding:16px 18px; text-align:center; }
+  .resumen-card .num{ font-size:26px; font-weight:800; color:var(--cobra-navy); font-variant-numeric:tabular-nums; }
+  .resumen-card .lbl{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .aviso{ background:var(--warn-bg); border-left:4px solid var(--warn); border-radius:10px; padding:12px 16px; font-size:13px; line-height:1.5; margin-bottom:18px; }
+
+  .grid2{ display:grid; grid-template-columns:repeat(auto-fit, minmax(380px,1fr)); gap:14px; margin-bottom:18px; }
+  section.panel{ padding:18px 20px; min-width:0; }
+  section.panel h2{ margin:0 0 10px; font-size:15px; color:var(--cobra-navy); }
+  .bloque{ margin-bottom:18px; }
+
+  .tabla-wrap{ overflow-x:auto; }
+  .tabla-alta{ max-height:560px; overflow:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th{ text-align:left; padding:10px 12px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); border-bottom:2px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none; position:sticky; top:0; background:var(--panel); }
+  thead th:hover{ color:var(--cobra-blue); }
+  tbody td{ padding:9px 12px; border-bottom:1px solid var(--panel-2); white-space:nowrap; }
+  tbody tr:hover{ background:var(--panel-2); }
+  td.num, th.num{ text-align:center; font-variant-numeric:tabular-nums; }
+  td.wrap{ white-space:normal; min-width:180px; }
+  .valor-pill{ display:inline-block; padding:3px 10px; border-radius:20px; font-weight:700; font-size:12.5px; }
+  .valor-pill.ok{ background:var(--ok-bg); color:var(--ok); }
+  .valor-pill.bad{ background:var(--bad-bg); color:var(--bad); }
+  .barra{ display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  .barra .b{ height:12px; background:var(--cobra-blue); border-radius:6px; }
+  .dim{ color:var(--text-dim); }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .panel-head h2{ margin:0 !important; }
+  .btn-excel{ display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:12.5px; font-family:inherit; cursor:pointer; }
+  .btn-excel:hover{ background:var(--cobra-blue); }
+  .btn-excel svg{ width:15px; height:15px; }
+  footer{ text-align:center; padding:22px; color:var(--text-dim); font-size:11.5px; }
+
+  @media (max-width:520px){
+    header.hero{ padding:22px 16px 24px; }
+    main{ padding:18px 16px 40px; }
+    .grid2{ grid-template-columns:1fr; }
+    .campo{ min-width:0; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica: el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="__LOGO_DATAURI__" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <a class="link-portal" id="linkVolver" href="supervisor.html">&larr; Volver al dashboard</a>
+  </div>
+</header>
+<section class="hero sin-foto" aria-label="Portada">
+  <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow">Claro / VTR &middot; Calidad</p>
+    <h1>Actividades <b>reiteradas</b></h1>
+    <p class="subtitle" id="subtitulo"></p>
+    <div class="banner-fiestas" id="bannerFiestas">
+    <div class="banner-fiestas-pill">
+      <svg class="mini-flag-cl" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="90" height="30" fill="#ffffff"/>
+        <rect x="0" y="30" width="90" height="30" fill="#D52B1E"/>
+        <rect x="0" y="0" width="30" height="30" fill="#0039A6"/>
+        <polygon points="15,6 17.0,12.25 23.56,12.22 18.23,16.05 20.29,22.28 15,18.4 9.71,22.28 11.77,16.05 6.44,12.22 13.0,12.25" fill="#ffffff"/>
+      </svg>
+      <span>¡Feliz Mes de la Patria!</span><span class="dim" id="fiestasSubtexto"></span>
+    </div>
+  </div>
+  </div></div>
+</section>
+
+<main>
+  <div class="panel controles">
+    <div class="campo"><label for="fAgencia">Agencia</label><select id="fAgencia"></select></div>
+    <div class="campo"><label for="fSupervisor">Supervisor / Equipo</label><select id="fSupervisor"></select></div>
+    <div class="campo"><label for="fTecnico">Técnico (nombre o ID)</label><input id="fTecnico" type="search" placeholder="Buscar…"></div>
+  </div>
+
+  <div class="resumen-row" id="kpis"></div>
+  <div class="aviso">
+    <strong>Mes en curso, dato parcial:</strong> las actividades de los últimos días todavía no alcanzan a mostrar sus
+    reiteraciones, así que el % sube a medida que avanza el mes. No es comparable todavía con la Calidad del portal
+    (que mide el mes anterior completo).
+  </div>
+
+  <div class="grid2">
+    <section class="panel"><h2>Por supervisor</h2><div class="tabla-wrap"><table id="tSup"></table></div></section>
+    <section class="panel"><h2>Causas de la reparación reiterada</h2><div class="tabla-wrap"><table id="tCausa"></table></div></section>
+  </div>
+  <div class="grid2">
+    <section class="panel"><h2>Actividad original que se reiteró</h2><div class="tabla-wrap"><table id="tAct"></table></div></section>
+    <section class="panel"><h2>Días entre la actividad y la reparación</h2><div class="tabla-wrap"><table id="tDias"></table></div></section>
+  </div>
+
+  <section class="panel bloque">
+    <div class="panel-head"><h2>Por técnico</h2><button class="btn-excel" data-tabla="tTec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Exportar a Excel</button></div>
+    <div class="tabla-wrap tabla-alta"><table id="tTec"></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Detalle de reiteradas <span class="dim" id="nDet"></span></h2><button class="btn-excel" data-tabla="tDet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Exportar a Excel</button></div>
+    <div class="tabla-wrap tabla-alta"><table id="tDet"></table></div>
+  </section>
+</main>
+<footer class="foot"><div class="wrap">
+  <span id="pie"></span>
+  <span class="by">Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</span>
+</div></footer>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const fmtFecha = (s) => s ? new Date(s).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", timeZone: "UTC" }) : "—";
+const fmtFechaHora = (s) => s ? new Date(s).toLocaleString("es-CL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) : "—";
+const pct = (a, b) => b ? (a / b) * 100 : 0;
+const fmtPct = (v) => v.toFixed(2).replace(".", ",") + "%";
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const mesLabel = new Date(DATA.desde + "T00:00:00Z").toLocaleDateString("es-CL", { month: "long", year: "numeric", timeZone: "UTC" });
+
+document.getElementById("subtitulo").textContent =
+  `Actividades de Cobra cerradas del ${fmtFecha(DATA.desde)} al ${fmtFecha(DATA.hasta)} (${mesLabel}) con una reparación posterior del mismo cliente dentro del mes.`;
+document.getElementById("pie").textContent =
+  `Fuente: CALIDAD_VTR · misma lógica de "repetido más cercano" que el portal · Generado ${DATA.generado} · Técnicos identificados por ID (sin RUT)`;
+
+function opciones(sel, valores, todos) {
+  sel.innerHTML = `<option value="">${todos}</option>` + [...new Set(valores)].sort().map((v) => `<option>${esc(v)}</option>`).join("");
+}
+const fAg = document.getElementById("fAgencia"), fSup = document.getElementById("fSupervisor"), fTec = document.getElementById("fTecnico");
+opciones(fAg, DATA.tecnicos.map((t) => t.agencia), "Todas");
+opciones(fSup, DATA.tecnicos.map((t) => t.supervisor), "Todos");
+
+// Supervisor que venia seleccionado en el dashboard (supervisor.html?supervisor=...)
+const supUrl = new URLSearchParams(location.search).get("supervisor");
+if (supUrl && [...fSup.options].some((o) => o.value === supUrl)) fSup.value = supUrl;
+
+function filtrar(t) {
+  const q = fTec.value.trim().toUpperCase();
+  return (!fAg.value || t.agencia === fAg.value) &&
+         (!fSup.value || t.supervisor === fSup.value) &&
+         (!q || t.nombre.toUpperCase().includes(q) || t.id.includes(q));
+}
+
+// Tabla ordenable generica: cols = [{k, t, num, fmt}]
+const ordenTablas = {};
+const vistaActual = {}; // filas visibles (filtradas y ordenadas) de cada tabla, para exportar
+function tabla(id, cols, filas, ordenInicial) {
+  const estado = ordenTablas[id] || (ordenTablas[id] = ordenInicial);
+  const f = [...filas].sort((a, b) => {
+    const va = a[estado.k], vb = b[estado.k];
+    const r = typeof va === "number" && typeof vb === "number" ? va - vb : String(va ?? "").localeCompare(String(vb ?? ""), "es");
+    return estado.asc ? r : -r;
+  });
+  vistaActual[id] = f;
+  const el = document.getElementById(id);
+  el.innerHTML =
+    "<thead><tr>" + cols.map((c) => `<th class="${c.num ? "num" : ""}" data-k="${c.k}">${c.t}${estado.k === c.k ? (estado.asc ? " ▲" : " ▼") : ""}</th>`).join("") + "</tr></thead>" +
+    "<tbody>" + (f.length ? f.map((r) => "<tr>" + cols.map((c) => `<td class="${c.num ? "num" : ""} ${c.wrap ? "wrap" : ""}">${c.fmt ? c.fmt(r[c.k], r) : esc(r[c.k])}</td>`).join("") + "</tr>").join("")
+      : `<tr><td colspan="${cols.length}" class="dim">Sin datos para el filtro.</td></tr>`) + "</tbody>";
+  el.querySelectorAll("th").forEach((th) => th.onclick = () => {
+    const k = th.dataset.k;
+    ordenTablas[id] = { k, asc: estado.k === k ? !estado.asc : false };
+    render();
+  });
+}
+const barra = (max) => (v) => `<span class="barra"><span class="b" style="width:${max ? Math.max(2, (v / max) * 120) : 0}px"></span>${v}</span>`;
+const pillPct = (v, r) => `<span class="valor-pill ${v <= r.meta ? "ok" : "bad"}">${fmtPct(v)}</span>`;
+
+function agrupar(lista, clave) {
+  const m = new Map();
+  for (const x of lista) m.set(clave(x), (m.get(clave(x)) || 0) + 1);
+  return [...m].map(([nombre, n]) => ({ nombre, n }));
+}
+
+function render() {
+  const tecs = DATA.tecnicos.filter(filtrar);
+  const ids = new Set(tecs.map((t) => t.id));
+  const det = DATA.detalle.filter((d) => ids.has(d.id));
+  const totalOrd = tecs.reduce((s, t) => s + t.ordenes, 0);
+  const totalRei = tecs.reduce((s, t) => s + t.reiteradas, 0);
+  const otraEmp = det.filter((d) => d.empresaRep && d.empresaRep !== "COBRA").length;
+  const tecsCon = tecs.filter((t) => t.reiteradas > 0).length;
+
+  document.getElementById("kpis").innerHTML = [
+    [totalOrd.toLocaleString("es-CL"), "Actividades cerradas"],
+    [totalRei.toLocaleString("es-CL"), "Actividades reiteradas"],
+    [fmtPct(pct(totalRei, totalOrd)), "% reiteradas"],
+    [`${otraEmp} / ${totalRei - otraEmp}`, "Reparación por otra empresa / Cobra"],
+    [`${tecsCon} de ${tecs.length}`, "Técnicos con reiteradas"],
+  ].map(([v, l]) => `<div class="panel resumen-card"><div class="num">${v}</div><div class="lbl">${l}</div></div>`).join("");
+
+  // Por supervisor
+  const sups = new Map();
+  for (const t of tecs) {
+    const s = sups.get(t.supervisor) || { supervisor: t.supervisor, tecnicos: 0, ordenes: 0, reiteradas: 0 };
+    s.tecnicos++; s.ordenes += t.ordenes; s.reiteradas += t.reiteradas;
+    sups.set(t.supervisor, s);
+  }
+  const supFilas = [...sups.values()].map((s) => ({ ...s, pct: pct(s.reiteradas, s.ordenes) }));
+  tabla("tSup", [
+    { k: "supervisor", t: "Supervisor" }, { k: "tecnicos", t: "Téc.", num: 1 },
+    { k: "ordenes", t: "Activ.", num: 1 }, { k: "reiteradas", t: "Reit.", num: 1 },
+    { k: "pct", t: "%", num: 1, fmt: fmtPct },
+  ], supFilas, { k: "pct", asc: false });
+
+  const causas = agrupar(det, (d) => d.causa);
+  const maxC = Math.max(0, ...causas.map((c) => c.n));
+  tabla("tCausa", [{ k: "nombre", t: "Código de cierre", wrap: 1 }, { k: "n", t: "Reit.", num: 1, fmt: barra(maxC) }], causas, { k: "n", asc: false });
+
+  const acts = agrupar(det, (d) => d.actividad || "Sin tipo").map((a) => ({ ...a, pctRei: pct(a.n, totalRei) }));
+  const maxA = Math.max(0, ...acts.map((a) => a.n));
+  tabla("tAct", [{ k: "nombre", t: "Actividad original" }, { k: "n", t: "Reit.", num: 1, fmt: barra(maxA) }, { k: "pctRei", t: "% del total", num: 1, fmt: fmtPct }], acts, { k: "n", asc: false });
+
+  const tramos = [["0–3 días", 0, 3], ["4–7 días", 4, 7], ["8–14 días", 8, 14], ["15–30 días", 15, 30]];
+  const dias = tramos.map(([nombre, a, b], i) => ({ orden: i, nombre, n: det.filter((d) => d.dias != null && d.dias >= a && d.dias <= b).length }));
+  const maxD = Math.max(0, ...dias.map((d) => d.n));
+  tabla("tDias", [{ k: "nombre", t: "Tramo" }, { k: "n", t: "Reit.", num: 1, fmt: barra(maxD) }], dias, { k: "orden", asc: true });
+
+  const tecFilas = tecs.map((t) => ({ ...t, pct: pct(t.reiteradas, t.ordenes) }));
+  tabla("tTec", [
+    { k: "id", t: "ID" }, { k: "nombre", t: "Técnico" }, { k: "supervisor", t: "Supervisor" }, { k: "agencia", t: "Agencia" },
+    { k: "ordenes", t: "Activ.", num: 1 }, { k: "reiteradas", t: "Reit.", num: 1 },
+    { k: "pct", t: "%", num: 1, fmt: pillPct }, { k: "meta", t: "Meta", num: 1, fmt: fmtPct },
+  ], tecFilas, { k: "reiteradas", asc: false });
+
+  document.getElementById("nDet").textContent = `(${det.length})`;
+  tabla("tDet", [
+    { k: "cierre", t: "Cierre orig.", fmt: fmtFechaHora }, { k: "id", t: "ID" }, { k: "tecnico", t: "Técnico" },
+    { k: "supervisor", t: "Supervisor" }, { k: "ciudad", t: "Ciudad" }, { k: "orden", t: "Orden original" },
+    { k: "cliente", t: "N° cliente" }, { k: "actividad", t: "Actividad", fmt: (v, r) => esc(v) + (r.subtipo ? ` <span class="dim">· ${esc(r.subtipo)}</span>` : "") },
+    { k: "ordenRep", t: "Orden reiterada" }, { k: "cierreRep", t: "Cierre reit.", fmt: fmtFechaHora },
+    { k: "dias", t: "Días", num: 1 }, { k: "empresaRep", t: "Empresa reit." }, { k: "tecnicoRep", t: "Técnico reit." },
+    { k: "causa", t: "Causa (código cierre)", wrap: 1 },
+  ], det, { k: "cierreRep", asc: false });
+}
+
+// ---------- Exportar a Excel ----------
+// Exporta exactamente lo que se ve en la tabla (filtros y orden aplicados).
+// Usa SheetJS desde cdnjs para generar un .xlsx real; si no hay internet,
+// cae a un .csv (separado por ";" y con BOM) que Excel abre igual.
+// Las fechas vienen de la BD como hora local guardada en UTC: se pasan a Excel
+// como numero de serie (dias desde 1899-12-30) para no depender de la zona del PC.
+class Fecha {
+  constructor(s) { this.ms = new Date(s).getTime(); }
+  get serial() { return this.ms / 86400000 + 25569; }
+  toString() { return fmtFechaHora(this.ms).replace(",", ""); }
+}
+const fecha = (s) => (s ? new Fecha(s) : null);
+const EXPORTS = {
+  tTec: {
+    hoja: "Por tecnico",
+    cols: [
+      ["ID", (r) => r.id], ["Técnico", (r) => r.nombre], ["Supervisor", (r) => r.supervisor], ["Agencia", (r) => r.agencia],
+      ["Actividades", (r) => r.ordenes], ["Reiteradas", (r) => r.reiteradas],
+      ["% Reiteradas", (r) => r.pct / 100, "0.00%"], ["Meta", (r) => r.meta / 100, "0.00%"],
+      ["Cumple meta", (r) => (r.pct <= r.meta ? "Sí" : "No")],
+    ],
+  },
+  tDet: {
+    hoja: "Detalle reiteradas",
+    cols: [
+      ["Cierre original", (r) => fecha(r.cierre), "dd-mm-yyyy hh:mm"], ["ID", (r) => r.id], ["Técnico", (r) => r.tecnico],
+      ["Supervisor", (r) => r.supervisor], ["Agencia", (r) => r.agencia], ["Ciudad", (r) => r.ciudad],
+      ["Orden original", (r) => r.orden], ["N° cliente", (r) => r.cliente], ["Actividad", (r) => r.actividad], ["Subtipo", (r) => r.subtipo],
+      ["Orden reiterada", (r) => r.ordenRep], ["Cierre reiterada", (r) => fecha(r.cierreRep), "dd-mm-yyyy hh:mm"],
+      ["Días", (r) => r.dias], ["Empresa reiterada", (r) => r.empresaRep], ["Técnico reiterada", (r) => r.tecnicoRep],
+      ["Causa (código cierre)", (r) => r.causa],
+    ],
+  },
+};
+
+function nombreArchivo(id, ext) {
+  const filtro = [fAg.value, fSup.value, fTec.value.trim()].filter(Boolean).join("_").replace(/[^\wÁÉÍÓÚÑáéíóúñ-]+/g, "_");
+  return `Reiteradas_${EXPORTS[id].hoja.replace(/ /g, "_")}_${DATA.mes}${filtro ? "_" + filtro : ""}.${ext}`;
+}
+
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, fallo) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = ok;
+    s.onerror = fallo;
+    document.head.appendChild(s);
+  });
+}
+
+function exportarCsv(id) {
+  const { cols } = EXPORTS[id];
+  const celda = (v) => {
+    if (v == null) return "";
+    if (v instanceof Fecha) v = String(v);
+    else if (typeof v === "number") v = String(v).replace(".", ",");
+    v = String(v);
+    return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  };
+  const lineas = [cols.map((c) => c[0]).join(";"), ...vistaActual[id].map((r) => cols.map((c) => celda(c[1](r))).join(";"))];
+  const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nombreArchivo(id, "csv");
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function exportar(id, boton) {
+  const { hoja, cols } = EXPORTS[id];
+  const textoOriginal = boton.innerHTML;
+  boton.disabled = true;
+  try {
+    await cargarSheetJS();
+    const filas = [cols.map((c) => c[0]), ...vistaActual[id].map((r) => cols.map((c) => { const v = c[1](r); return v instanceof Fecha ? v.serial : v ?? ""; }))];
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    // Formatos de % y fecha por columna
+    cols.forEach((c, j) => {
+      if (!c[2]) return;
+      for (let i = 1; i < filas.length; i++) {
+        const ref = XLSX.utils.encode_cell({ r: i, c: j });
+        if (ws[ref]) ws[ref].z = c[2];
+      }
+    });
+    ws["!cols"] = cols.map((c, j) => ({ wch: Math.min(45, Math.max(c[0].length, ...filas.slice(1).map((f) => (c[2] ? 16 : String(f[j]).length))) + 2) }));
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length - 1, c: cols.length - 1 } }) };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, hoja);
+    XLSX.writeFile(wb, nombreArchivo(id, "xlsx"));
+  } catch (e) {
+    exportarCsv(id); // sin internet: CSV que Excel abre directo
+  } finally {
+    boton.disabled = false;
+    boton.innerHTML = textoOriginal;
+  }
+}
+document.querySelectorAll(".btn-excel").forEach((b) => b.onclick = () => exportar(b.dataset.tabla, b));
+
+[fAg, fSup].forEach((s) => s.onchange = render);
+fTec.oninput = render;
+render();
+
+// ---------- Animacion de las cifras del resumen ----------
+// Al cargar la pagina, las cifras grandes suben desde 0 hasta su valor (igual
+// que en vecino.html). Anima cada numero de cada texto por separado y conserva
+// sus decimales; trabaja sobre los nodos de texto, para no borrar los puntos o
+// iconos que acompanan a la cifra. No se anima si el usuario pidio reducir el
+// movimiento en su sistema.
+function animarCifras(selector, duracion) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!window.requestAnimationFrame) return;
+  const patron = /\d+(?:[.,]\d+)?/g;
+  const textos = [];
+  document.querySelectorAll(selector).forEach((el) => {
+    const recorrer = (nodo) => {
+      if (nodo.nodeType === 3 && /\d/.test(nodo.nodeValue)) textos.push({ nodo, final: nodo.nodeValue });
+      else nodo.childNodes.forEach(recorrer);
+    };
+    recorrer(el);
+  });
+  if (!textos.length) return;
+  const inicio = performance.now();
+  function paso(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const avance = 1 - Math.pow(1 - t, 3); // parte rapido y frena al llegar
+    for (const c of textos) {
+      c.nodo.nodeValue = t === 1 ? c.final : c.final.replace(patron, (n) => {
+        const coma = n.includes(',');
+        const decimales = (n.split(/[.,]/)[1] || '').length;
+        const valor = (parseFloat(n.replace(',', '.')) * avance).toFixed(decimales);
+        return coma ? valor.replace('.', ',') : valor;
+      });
+    }
+    if (t < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+// Solo en la primera carga, no cada vez que se cambia un filtro.
+animarCifras('div.num', 900);
+
+// Banner de Fiestas Patrias: igual que en el dashboard de supervisores, segun la fecha del navegador.
+try {
+  const hoy = new Date();
+  if (hoy.getMonth() === 8) {
+    document.getElementById("bannerFiestas").style.display = "inline-block";
+    document.getElementById("fiestasSubtexto").textContent = "Septiembre " + hoy.getFullYear();
+  }
+} catch (e) { /* si falla, simplemente no se muestra el banner */ }
+</script>
+</body>
+</html>

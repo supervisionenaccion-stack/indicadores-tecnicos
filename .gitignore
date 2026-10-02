@@ -1,0 +1,27 @@
+# dependencies
+/node_modules
+
+# env files
+.env*
+
+# credenciales de tecnicos: SOLO local, nunca se sube
+Credenciales_Tecnicos_NO_SUBIR.xlsx
+~$Credenciales_Tecnicos_NO_SUBIR.xlsx
+
+# lista de tecnicos de baja (contiene RUT completo): SOLO local, nunca se sube
+Tecnicos_Baja_NO_SUBIR.json
+
+# historico local mensual del reporte de reiteradas (lo publicado es reiteradas.html)
+reportes/Reiteradas_Calidad_*.html
+
+# misc
+.DS_Store
+
+# logs de la actualizacion automatica
+logs/
+
+# paginas de supervisores SIN cifrar (lo publicado va cifrado en la raiz)
+/privado/
+
+# paginas de prueba: nunca se publican
+prueba_*.html

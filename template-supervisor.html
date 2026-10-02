@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Supervisores · Claro/VTR</title>
+<meta name="theme-color" content="#003c71">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0; --celeste-soft:#e8f6fd;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  header.hero{
+    background:linear-gradient(120deg,#ffffff 0%,var(--celeste-soft) 55%,#dcf1fb 100%);
+    /* Mismo borde izquierdo que <main> cuando este queda centrado (tope de 1400px). */
+    padding:28px max(clamp(16px,3vw,56px), calc((100% - 1400px) / 2 + clamp(16px,3vw,56px))) 30px; position:relative; overflow:hidden; border-bottom:4px solid var(--celeste);
+  }
+  .brand-row{ display:flex; align-items:center; gap:18px; margin-bottom:18px; }
+  .brand-row img{ height:40px; }
+  .brand-divider{ width:1px; height:30px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--celeste); font-weight:800; }
+  h1{ margin:0 0 6px; font-size:clamp(22px,4vw,30px); font-weight:800; letter-spacing:-0.01em; color:var(--cobra-navy); }
+  .subtitle{ color:#3a4a5c; font-size:14px; max-width:640px; line-height:1.5; }
+  /* Fiestas Patrias: solo visible durante septiembre (controlado por JS segun
+     la fecha del navegador, no por el mes en que se genero el sitio -- asi
+     aparece y desaparece solo, sin que haga falta volver a publicar). */
+  .banner-fiestas{ margin-top:16px; display:none; }
+  .banner-fiestas-pill{
+    background:#fff; color:var(--cobra-navy); font-weight:800; font-size:13px;
+    padding:8px 18px; border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+    display:inline-flex; align-items:center; gap:9px;
+  }
+  .banner-fiestas-pill .dim{ font-weight:600; color:var(--text-dim); font-size:12px; }
+  .mini-flag-cl{
+    width:20px; height:auto; display:inline-block; border-radius:2px; flex:none;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);
+  }
+  .link-portal{ font-size:12.5px; color:var(--celeste); font-weight:700; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+
+  /* Mas ancho que antes (1100px), pero con tope: a pantalla completa las tarjetas y el grafico quedaban muy estirados. */
+  main{ padding:24px clamp(16px,3vw,56px) 60px; max-width:1400px; margin:0 auto; }
+  /* En pantallas anchas, el grafico de Calidad y Produccion y los tecnicos con
+     mas repetidos van lado a lado, para que ninguno quede estirado. */
+  .fila-doble{ display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:18px; align-items:start; }
+  @media (max-width:1250px){ .fila-doble{ grid-template-columns:minmax(0,1fr); gap:0; } }
+  /* El grafico de causas crece con el ancho, pero sin volverse mas alto que la pantalla. */
+  #paretoChart svg{ max-height:420px; }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow:0 4px 14px rgba(20,50,80,.05); }
+
+  .controles{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; padding:18px 20px; margin-bottom:18px; }
+  .campo{ display:flex; flex-direction:column; gap:5px; min-width:220px; }
+  .campo label{ font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .campo select, .campo input{ padding:9px 11px; border:1px solid var(--border); border-radius:8px; font-size:14.5px; font-family:inherit; background:#fff; }
+  .campo select:focus, .campo input:focus{ outline:2px solid var(--celeste); border-color:var(--celeste); }
+  /* Grafico combinado Calidad + Produccion RGU */
+  .comb-resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin:0 0 14px; }
+  .comb-ind{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
+  .comb-ind i{ flex:none; width:6px; align-self:stretch; border-radius:3px; }
+  .comb-ind .nombre{ font-size:12px; color:var(--text-dim); }
+  .comb-ind .valor{ font-size:15px; font-weight:800; line-height:1.3; }
+  .comb-pie{ margin:10px 0 0; font-size:12px; color:var(--text-dim); line-height:1.5; }
+  .comb-detalle{ margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
+  .comb-detalle summary{ cursor:pointer; font-size:13px; font-weight:700; color:var(--cobra-blue); }
+  .comb-explicaciones{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-top:12px; }
+  .comb-explica{ border:1px solid var(--border); border-left-width:4px; border-radius:8px; padding:12px 14px; font-size:13px; line-height:1.55; }
+  .comb-explica h3{ margin:0 0 6px; font-size:14px; }
+  .comb-explica p{ margin:0 0 6px; }
+  .comb-explica p:last-child{ margin-bottom:0; }
+  /* Las lineas del grafico combinado se descubren de izquierda a derecha al cargar. */
+  .comb-dibujar{ animation:combDibujar 1.4s cubic-bezier(.25,.1,.25,1) .15s both; }
+  @keyframes combDibujar{ from{ clip-path:inset(-20px 100% -20px -20px); } to{ clip-path:inset(-20px -20px -20px -20px); } }
+  @media (prefers-reduced-motion:reduce){ .comb-dibujar{ animation:none; } }
+  /* Botones de reportes: en una fila a la derecha del filtro, del mismo alto que el select. */
+  .acciones{ flex:1; }
+  .acciones-row{ display:flex; flex-wrap:wrap; gap:10px; }
+  .btn-reiteradas{
+    display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:8px;
+    background:var(--cobra-navy); color:#fff; font-weight:700; font-size:13.5px; text-decoration:none; white-space:nowrap;
+  }
+  .btn-reiteradas:hover{ background:var(--cobra-blue); }
+  .btn-reiteradas svg{ width:16px; height:16px; }
+  @media (max-width:520px){ .acciones-row{ flex-direction:column; } .btn-reiteradas{ justify-content:center; white-space:normal; } }
+
+  .titulo-seccion{ margin:0 0 3px; font-size:15px; color:var(--cobra-navy); }
+  .explica-seccion{ margin:0 0 10px; font-size:12.5px; color:var(--text-dim); line-height:1.5; }
+
+  th.clicable{ cursor:pointer; }
+  th.clicable:hover{ color:var(--cobra-blue); }
+  th.clicable .info-ico{ font-size:10px; margin-left:3px; opacity:.7; }
+  thead .ordenable{ cursor:pointer; user-select:none; }
+  thead .ordenable:hover{ color:var(--cobra-blue); }
+  thead .info-ico{ font-size:10px; margin-left:4px; opacity:.7; cursor:pointer; }
+  thead .info-ico:hover{ opacity:1; color:var(--cobra-blue); }
+  thead .th-explica{ display:block; margin-top:3px; font-size:10.5px; font-weight:400; text-transform:none; letter-spacing:0; opacity:.75; white-space:normal; }
+  .sort-arrow{ display:inline-block; margin-left:3px; font-size:9px; width:8px; }
+
+  .modal-fondo{ display:none; position:fixed; inset:0; background:rgba(20,30,45,.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
+  .modal-fondo.abierto{ display:flex; }
+  .modal-caja{ background:#fff; border-radius:14px; max-width:420px; width:100%; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
+  .modal-caja h3{ margin:0 0 10px; font-size:16px; color:var(--cobra-navy); }
+  .modal-caja p{ margin:0; font-size:13.5px; line-height:1.6; color:var(--text); }
+  .modal-cerrar{ margin-top:18px; width:100%; padding:10px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .modal-cerrar:hover{ background:var(--cobra-blue); }
+
+  .resumen-row{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+  .resumen-card{ flex:1; min-width:140px; padding:16px 18px; text-align:center; }
+  .resumen-card .num{ font-size:26px; font-weight:800; color:var(--cobra-navy); }
+  .resumen-card .lbl{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .resumen-card .desv{ font-size:11px; color:var(--text-dim); margin-top:8px; }
+  .resumen-card .barra-segmentada{ display:flex; height:10px; border-radius:6px; overflow:hidden; margin:0 0 8px; background:var(--panel-2); }
+  .resumen-card .seg-ok{ background:var(--ok); }
+  .resumen-card .seg-warn{ background:var(--warn); }
+  .resumen-card .seg-bad{ background:var(--bad); }
+  .resumen-card .chips{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; font-size:13px; font-weight:700; }
+  .resumen-card .chip-ok{ color:var(--ok); }
+  .resumen-card .chip-warn{ color:var(--warn); }
+  .resumen-card .chip-bad{ color:var(--bad); }
+
+  .ranking-row{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:18px; }
+  .ranking-card{ padding:16px 18px; }
+  .ranking-card h3{ margin:0 0 10px; font-size:13.5px; color:var(--cobra-navy); }
+  /* Mejores y peores lado a lado cuando la tarjeta es ancha (en vez de dejar el
+     nombre y el % en extremos opuestos); en tarjetas angostas se apilan. */
+  .ranking-cols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px 28px; }
+  .ranking-grupo{ min-width:0; }
+  .ranking-grupo .titulo{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+  .ranking-grupo.mejores .titulo{ color:var(--ok); }
+  .ranking-grupo.peores .titulo{ color:var(--bad); }
+  .ranking-item{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:3px 0; }
+  .ranking-item .nom{ color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ranking-item .val{ font-weight:700; flex-shrink:0; }
+  .ranking-grupo.mejores .val{ color:var(--ok); }
+  .ranking-grupo.peores .val{ color:var(--bad); }
+  .ranking-vacio{ font-size:12px; color:var(--text-dim); font-style:italic; }
+
+  .tabla-wrap{ overflow-x:auto; padding:4px; }
+  .tabla-acciones{ display:flex; justify-content:flex-end; margin:0 0 10px; }
+  .btn-excel{ display:inline-flex; align-items:center; gap:7px; padding:9px 14px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:12.5px; font-family:inherit; cursor:pointer; }
+  .btn-excel:hover{ background:var(--cobra-blue); }
+  .btn-excel:disabled{ opacity:.6; cursor:default; }
+  .btn-excel svg{ width:15px; height:15px; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:720px; }
+  thead th{ text-align:left; padding:12px 14px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); border-bottom:2px solid var(--border); white-space:nowrap; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--panel-2); }
+  tbody tr:hover{ background:var(--panel-2); }
+  td.num, th.num{ text-align:center; }
+  .valor-pill{ display:inline-block; padding:3px 10px; border-radius:20px; font-weight:700; font-size:12.5px; }
+  .valor-pill.ok{ background:var(--ok-bg); color:var(--ok); }
+  .valor-pill.warn{ background:var(--warn-bg); color:var(--warn); }
+  .valor-pill.bad{ background:var(--bad-bg); color:var(--bad); }
+  .valor-pill.na{ background:var(--panel-2); color:var(--text-dim); }
+  .sin-resultados{ padding:40px 20px; text-align:center; color:var(--text-dim); font-size:14px; }
+
+  .pareto-fila{ display:grid; grid-template-columns:minmax(120px,220px) 1fr minmax(90px,150px); align-items:center; gap:10px; margin-bottom:7px; font-size:12.5px; }
+  .pareto-etiqueta{ color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pareto-barra-wrap{ background:var(--panel-2); border-radius:6px; height:16px; overflow:hidden; }
+  .pareto-barra{ background:var(--cobra-blue); height:100%; border-radius:6px; }
+  .pareto-valor{ text-align:right; font-weight:700; color:var(--cobra-navy); white-space:nowrap; }
+  .pareto-pct{ font-weight:400; color:var(--text-dim); }
+
+  .sugerencia-item{ padding:10px 0; border-bottom:1px solid var(--panel-2); }
+  .sugerencia-item:last-child{ border-bottom:none; }
+  .sugerencia-causa{ font-weight:700; font-size:13px; color:var(--cobra-navy); margin-bottom:3px; }
+  .sugerencia-n{ font-weight:400; color:var(--text-dim); font-size:12px; }
+  .sugerencia-accion{ font-size:12.5px; color:var(--text); line-height:1.5; }
+
+  .peor-tecnico-item{ padding:12px 0; border-bottom:1px solid var(--panel-2); }
+  .peor-tecnico-item:last-child{ border-bottom:none; }
+  .peor-tecnico-cabecera{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .peor-tecnico-nombre{ font-weight:700; font-size:13.5px; color:var(--text); }
+  .peor-tecnico-pct{ font-weight:800; font-size:13.5px; color:var(--bad); white-space:nowrap; }
+  .peor-tecnico-meta{ font-size:11.5px; color:var(--text-dim); margin:2px 0 4px; }
+  .peor-tecnico-causas{ font-size:12.5px; color:var(--text); line-height:1.5; }
+
+  footer{ text-align:center; padding:22px; color:var(--text-dim); font-size:11.5px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica: el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+  </div>
+</header>
+<section class="hero" aria-label="Portada">
+  <div class="photo" role="img" aria-label="T&eacute;cnico con EPP trabajando en un poste"></div>
+  <div class="shade" aria-hidden="true"></div>
+  <svg class="fibers" viewBox="0 0 1440 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow">Claro / VTR &middot; Calidad &amp; Producci&oacute;n</p>
+    <h1>Mi <b>Equipo</b></h1>
+    <p class="subtitle">Calidad, Derivaciones, Producci&oacute;n RGU y Consulta de estado vecino de cada t&eacute;cnico, filtrado por equipo.</p>
+    <div class="banner-fiestas" id="bannerFiestas">
+    <div class="banner-fiestas-pill">
+      <svg class="mini-flag-cl" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="0" width="90" height="30" fill="#ffffff"/>
+        <rect x="0" y="30" width="90" height="30" fill="#D52B1E"/>
+        <rect x="0" y="0" width="30" height="30" fill="#0039A6"/>
+        <polygon points="15,6 17.0,12.25 23.56,12.22 18.23,16.05 20.29,22.28 15,18.4 9.71,22.28 11.77,16.05 6.44,12.22 13.0,12.25" fill="#ffffff"/>
+      </svg>
+      <span>¡Feliz Mes de la Patria!</span><span class="dim" id="fiestasSubtexto"></span>
+    </div>
+  </div>
+  </div></div>
+</section>
+
+<main>
+  <div class="panel controles">
+    <div class="campo">
+      <label for="filtroSupervisor">Supervisor / Equipo</label>
+      <select id="filtroSupervisor"></select>
+    </div>
+    <div class="campo acciones">
+      <label>Reportes del equipo</label>
+      <div class="acciones-row">
+      <a class="btn-reiteradas" id="btnReiteradas" href="reiteradas.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+        Reiterados dentro del mes en curso
+      </a>
+      <a class="btn-reiteradas" id="btnVecino" href="vecino.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 14l2 2 4-4"/></svg>
+        Consulta de estado vecino
+      </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="ranking-row" id="rankingRow"></div>
+
+  <h2 class="titulo-seccion">Resumen del equipo <b>seleccionado</b></h2>
+  <p class="explica-seccion">Cuántos técnicos están en cada nivel de cumplimiento por indicador (<i class="punto ok"></i>cumple, <i class="punto warn"></i>atención, <i class="punto bad"></i>crítico), y cuánto se alejan en promedio de la meta los que no cumplen.</p>
+  <div class="resumen-row" id="resumenRow"></div>
+
+  <div class="fila-doble">
+  <div class="panel" id="panelCombinado" style="padding:20px 22px; margin-bottom:18px;">
+    <h2 style="margin:0 0 10px; font-size:15px; color:var(--cobra-navy);">Calidad y Producción — <span id="combinadoTitulo"></span></h2>
+    <div class="comb-resumen">
+      <div class="comb-ind"><i style="background:#0071ce"></i><div><div class="nombre">Producción RGU · más alto es mejor</div><div class="valor" id="combinadoTendenciaRgu"></div></div></div>
+      <div class="comb-ind"><i style="background:#d9480f"></i><div><div class="nombre">Calidad, % de repetidos · más bajo es mejor</div><div class="valor" id="combinadoTendenciaCalidad"></div></div></div>
+    </div>
+    <div id="combinadoChart"></div>
+    <div class="sin-resultados" id="combinadoSinDatos" style="display:none; padding:20px 0;">No hay suficientes meses con datos de ambos indicadores todavía.</div>
+    <p class="comb-pie" id="combinadoPie"></p>
+    <details class="comb-detalle">
+      <summary>Cómo leer este gráfico y cómo se calcula cada indicador</summary>
+      <p class="comb-pie">
+        Cada línea usa su propia escala (Producción a la izquierda, Calidad a la derecha): la altura de una no se compara con la de la otra, solo sus subidas y bajadas.
+        La Calidad de cada mes corresponde a las órdenes cerradas el mes anterior (el punto de Ene son las órdenes cerradas en diciembre); la Producción es la de ese mismo mes.
+        La línea punteada horizontal marca el 100% de la meta de producción. Un punto hueco con línea punteada es un mes parcial.
+      </p>
+    <div class="comb-explicaciones">
+      <div class="comb-explica" style="border-left-color:#0071ce;">
+        <h3 style="color:#0071ce;">Producción RGU</h3>
+        <p><b>Qué mide:</b> cuánto de su meta de producción cumplió el equipo ese mes. Mientras más alto, mejor; 100% es la meta.</p>
+        <p><b>Cómo se calcula:</b> para cada técnico, su RGU completada dividida por su meta (meta diaria de su ciudad × días trabajados). El valor del equipo es el promedio de sus técnicos, todos con el mismo peso.</p>
+        <p><b>Mes en curso:</b> es parcial; cambia cada día hasta que el mes cierra.</p>
+      </div>
+      <div class="comb-explica" style="border-left-color:#d9480f;">
+        <h3 style="color:#d9480f;">Calidad (repetidos a 30 días)</h3>
+        <p><b>Qué mide:</b> qué porcentaje de las órdenes del equipo necesitó una nueva visita por el mismo motivo antes de 30 días. Mientras más bajo, mejor.</p>
+        <p><b>Cómo se calcula:</b> órdenes repetidas dividido por órdenes cerradas. Cada mes muestra las órdenes cerradas el mes anterior, porque hay que esperar 30 días para saber si se repiten.</p>
+        <p><b>Último mes:</b> es parcial hasta que cumple esos 30 días; mientras tanto el porcentaje solo puede subir.</p>
+      </div>
+    </div>
+    </details>
+  </div>
+
+  <div class="panel" id="panelPeoresTecnicos" style="padding:20px 22px; margin-bottom:18px;">
+    <h2 style="margin:0 0 3px; font-size:15px; color:var(--cobra-navy);">Los 4 técnicos con más repetidos — <span id="peoresTecnicosTitulo"></span></h2>
+    <p class="explica-seccion">Dentro del filtro de arriba, los técnicos con mayor % de repetidos y sus causas más frecuentes, para saber en qué conversar primero con cada uno.</p>
+    <div id="peoresTecnicosBody"></div>
+    <div class="ranking-vacio" id="peoresTecnicosVacio" style="display:none;">Sin datos suficientes</div>
+  </div>
+
+  </div>
+
+  <div class="panel" id="panelCausas" style="padding:20px 22px; margin-bottom:18px;">
+    <h2 style="margin:0 0 3px; font-size:15px; color:var(--cobra-navy);">Análisis de causas de repetidos — <span id="causasTitulo"></span></h2>
+    <p class="explica-seccion">Motivo de cierre registrado en la visita repetida (no en la orden original), sobre <b id="causasTotal">0</b> repetidos del período, según el filtro de arriba.</p>
+    <div id="causasContenido">
+      <div id="paretoChart" style="margin-bottom:16px;"></div>
+      <div id="causasInsights" style="font-size:13px; line-height:1.6; margin-bottom:16px;"></div>
+      <h3 style="margin:0 0 8px; font-size:13px; color:var(--cobra-navy);">Sugerencias sobre las causas principales</h3>
+      <div id="sugerenciasBody"></div>
+    </div>
+    <div class="sin-resultados" id="causasSinDatos" style="display:none;">No hay repetidos registrados con causa para este filtro.</div>
+  </div>
+
+  <div class="tabla-acciones">
+    <button class="btn-excel" id="btnExcelTecnicos" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span>Exportar a Excel</span></button>
+  </div>
+  <div class="panel tabla-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="ordenable" onclick="ordenarPor('nombre')">Técnico<span class="sort-arrow" id="flecha-nombre"></span></th>
+          <th class="ordenable" onclick="ordenarPor('agencia')">Agencia<span class="sort-arrow" id="flecha-agencia"></span></th>
+          <th class="ordenable" onclick="ordenarPor('supervisor')">Supervisor<span class="sort-arrow" id="flecha-supervisor"></span></th>
+          <th class="num">
+            <span class="ordenable" onclick="ordenarPor('calidad')">Calidad (repetidos)<span class="sort-arrow" id="flecha-calidad"></span></span>
+            <span class="info-ico clicable" onclick="mostrarInfo('calidad')">ⓘ</span>
+          </th>
+          <th class="num">
+            <span class="ordenable" onclick="ordenarPor('derivaciones')">Derivaciones<span class="sort-arrow" id="flecha-derivaciones"></span></span>
+            <span class="info-ico clicable" onclick="mostrarInfo('derivaciones')">ⓘ</span>
+          </th>
+          <th class="num">
+            <span class="ordenable" onclick="ordenarPor('rgu')">Producción RGU<span class="sort-arrow" id="flecha-rgu"></span></span>
+            <span class="info-ico clicable" onclick="mostrarInfo('rgu')">ⓘ</span>
+          </th>
+          <th class="num">
+            <span class="ordenable" onclick="ordenarPor('vecino')">Estado vecino<span class="sort-arrow" id="flecha-vecino"></span></span>
+            <span class="info-ico clicable" onclick="mostrarInfo('vecino')">ⓘ</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="tablaBody"></tbody>
+    </table>
+    <div class="sin-resultados" id="sinResultados" style="display:none;">No hay técnicos que coincidan con el filtro.</div>
+  </div>
+
+  <h2 class="titulo-seccion">Causa anual vs. causa del mes — <span id="causasComparacionTitulo"></span></h2>
+  <p class="explica-seccion">Compara la causa que más se repite en todo el año (problema de fondo) contra la del último mes cerrado (<span id="causasComparacionPeriodo"></span>), para ver si algo cambió puntualmente.</p>
+  <div class="panel tabla-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Técnico</th>
+          <th>Agencia</th>
+          <th>Supervisor</th>
+          <th>Causa anual<span class="th-explica">La que más se repite en el año (n.º de repetidos)</span></th>
+          <th>Causa del mes<span class="th-explica">La que más se repite en el último mes cerrado</span></th>
+        </tr>
+      </thead>
+      <tbody id="tablaCausasComparacionBody"></tbody>
+    </table>
+    <div class="sin-resultados" id="causasComparacionSinResultados" style="display:none;">No hay técnicos que coincidan con el filtro.</div>
+  </div>
+</main>
+
+<div class="modal-fondo" id="modalInfo" onclick="if (event.target === this) cerrarInfo()">
+  <div class="modal-caja">
+    <h3 id="modalInfoTitulo"></h3>
+    <p id="modalInfoTexto"></p>
+    <button class="modal-cerrar" onclick="cerrarInfo()">Entendido</button>
+  </div>
+</div>
+
+<footer class="foot"><div class="wrap">
+  <span id="footerText"></span>
+  <span class="by">Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</span>
+</div></footer>
+
+<script>
+const DATA = __DATA_SUPERVISOR_JSON__;
+
+document.getElementById('footerText').innerHTML =
+  'Calidad: ' + DATA.periodoCalidad + ' (mes completo) · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+document.getElementById('causasComparacionPeriodo').textContent = DATA.periodoCalidad;
+
+const META_DERIVACIONES = 35;
+
+function estadoCalidad(pct, meta) {
+  if (pct == null) return 'na';
+  return pct <= meta ? 'ok' : 'bad';
+}
+function estadoDerivaciones(pct) {
+  if (pct == null) return 'na';
+  if (pct <= META_DERIVACIONES) return 'ok';
+  if (pct <= META_DERIVACIONES * 1.5) return 'warn';
+  return 'bad';
+}
+function estadoRgu(pct) {
+  if (pct == null) return 'na';
+  if (pct >= 100) return 'ok';
+  if (pct >= 80) return 'warn';
+  return 'bad';
+}
+// Consulta de estado vecino: es obligatoria en todas las ordenes, asi que
+// solo el 100% cumple. Mismos cortes que vecino.html.
+function estadoVecino(pct) {
+  if (pct == null) return 'na';
+  if (pct >= 100) return 'ok';
+  return pct >= 90 ? 'warn' : 'bad';
+}
+function pill(pct, clase, sufijo) {
+  if (pct == null) return '<span class="valor-pill na">Sin datos</span>';
+  return '<span class="valor-pill ' + clase + '">' + pct.toFixed(1) + (sufijo || '%') + '</span>';
+}
+
+function llenarSelect(el, valores, etiquetaTodos) {
+  el.innerHTML = '<option value="">' + etiquetaTodos + '</option>' +
+    valores.map((v) => '<option value="' + v + '">' + v + '</option>').join('');
+}
+
+const supervisores = [...new Set(DATA.tecnicos.map((t) => t.supervisor).filter(Boolean))].sort();
+llenarSelect(document.getElementById('filtroSupervisor'), supervisores, 'Todos los supervisores');
+
+// Promedio de cuanto se alejan de la meta los tecnicos que NO cumplen (ni
+// 'ok'): un conteo por si solo no dice si estan apenas sobre el limite o
+// muy lejos -- la desviacion promedio si lo dice.
+function promedioDesviacion(items, calcularDesvio) {
+  if (items.length === 0) return null;
+  return items.reduce((s, t) => s + calcularDesvio(t), 0) / items.length;
+}
+
+// Cuenta cuantos tecnicos caen en cada nivel (ok/atencion/critico) segun su
+// funcion de estado. Mostrar los 3 niveles por separado -- en vez de un
+// unico "no cumple" que junta atencion y critico -- evita que dos
+// indicadores muy distintos (uno con la mayoria en atencion leve, otro con
+// la mayoria en critico) terminen mostrando el mismo numero total y
+// parezcan iguales cuando no lo son.
+function desglosarEstados(items, calcularEstado) {
+  const d = { ok: 0, warn: 0, bad: 0 };
+  for (const t of items) {
+    const e = calcularEstado(t);
+    if (d[e] !== undefined) d[e]++;
+  }
+  return d;
+}
+
+function barraSegmentada(d) {
+  const total = d.ok + d.warn + d.bad;
+  if (total === 0) return '';
+  const seg = (n, clase) => (n > 0 ? '<div class="' + clase + '" style="width:' + ((n / total) * 100).toFixed(1) + '%"></div>' : '');
+  return '<div class="barra-segmentada">' + seg(d.ok, 'seg-ok') + seg(d.warn, 'seg-warn') + seg(d.bad, 'seg-bad') + '</div>';
+}
+
+function tarjetaIndicador(titulo, d, desvTexto, incluyeWarn) {
+  const chips = ['<span class="chip-ok"><i class="punto ok"></i>' + d.ok + '</span>'];
+  if (incluyeWarn) chips.push('<span class="chip-warn"><i class="punto warn"></i>' + d.warn + '</span>');
+  chips.push('<span class="chip-bad"><i class="punto bad"></i>' + d.bad + '</span>');
+  return '<div class="panel resumen-card">'
+    + '<div class="lbl" style="margin-bottom:8px;">' + titulo + '</div>'
+    + barraSegmentada(d)
+    + '<div class="chips">' + chips.join('') + '</div>'
+    + (desvTexto ? '<div class="desv">' + desvTexto + '</div>' : '')
+    + '</div>';
+}
+
+function renderResumen(lista) {
+  const conCalidad = lista.filter((t) => t.calidad);
+  const conDeriv = lista.filter((t) => t.derivaciones);
+  const conRgu = lista.filter((t) => t.rgu);
+
+  const dCalidad = desglosarEstados(conCalidad, (t) => estadoCalidad(t.calidad.pctRepetidos, t.calidad.metaCalidad));
+  const dDeriv = desglosarEstados(conDeriv, (t) => estadoDerivaciones(t.derivaciones.pctDerivaciones));
+  const dRgu = desglosarEstados(conRgu, (t) => estadoRgu(t.rgu.pctCumplimiento));
+
+  const desvCalidad = promedioDesviacion(
+    conCalidad.filter((t) => estadoCalidad(t.calidad.pctRepetidos, t.calidad.metaCalidad) !== 'ok'),
+    (t) => t.calidad.pctRepetidos - t.calidad.metaCalidad
+  );
+  const desvDeriv = promedioDesviacion(
+    conDeriv.filter((t) => estadoDerivaciones(t.derivaciones.pctDerivaciones) !== 'ok'),
+    (t) => t.derivaciones.pctDerivaciones - META_DERIVACIONES
+  );
+  const desvRgu = promedioDesviacion(
+    conRgu.filter((t) => estadoRgu(t.rgu.pctCumplimiento) !== 'ok'),
+    (t) => 100 - t.rgu.pctCumplimiento
+  );
+
+  document.getElementById('resumenRow').innerHTML =
+    '<div class="panel resumen-card"><div class="num">' + lista.length + '</div><div class="lbl">Técnicos en el equipo seleccionado</div></div>'
+    + tarjetaIndicador('Calidad (repetidos)', dCalidad, desvCalidad != null ? 'Promedio: +' + desvCalidad.toFixed(1) + ' pts sobre la meta' : null, false)
+    + tarjetaIndicador('Derivaciones', dDeriv, desvDeriv != null ? 'Promedio: +' + desvDeriv.toFixed(1) + ' pts sobre la meta' : null, true)
+    + tarjetaIndicador('Producción RGU', dRgu, desvRgu != null ? 'Promedio: -' + desvRgu.toFixed(1) + ' pts bajo la meta' : null, true);
+}
+
+// Cuenta ocurrencias de cada causa dentro de una lista de eventos de
+// repetido ({causa, dias, tipoActividad}), de mayor a menor frecuencia.
+function contarCausas(eventos) {
+  const mapa = new Map();
+  for (const e of eventos) {
+    mapa.set(e.causa, (mapa.get(e.causa) || 0) + 1);
+  }
+  return [...mapa.entries()].map(([causa, cnt]) => ({ causa, cnt })).sort((a, b) => b.cnt - a.cnt);
+}
+function nombreCorto(nombreCompleto) {
+  const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+  if (partes.length <= 2) return nombreCompleto;
+  // Nombre + apellido PATERNO -- no el ultimo token, que para un nombre
+  // chileno tipico de 4 partes (Nombre [Segundo nombre] ApellidoPaterno
+  // ApellidoMaterno) es el apellido MATERNO. Mismo criterio ya usado en
+  // usuarioFromNombre() de generar_portal.js/.ps1 para las credenciales.
+  const apellido = partes.length >= 4 ? partes[2] : partes[1];
+  return partes[0] + ' ' + apellido;
+}
+
+function listaRanking(items, clase) {
+  if (items.length === 0) return '<div class="ranking-vacio">Sin datos suficientes</div>';
+  return items.map((i) =>
+    '<div class="ranking-item"><span class="nom">' + nombreCorto(i.nombre) + '</span><span class="val">' + i.val.toFixed(1) + '%</span></div>'
+  ).join('');
+}
+
+// Top 3 mejores / peores por indicador, dentro del filtro actual. En
+// Calidad y Derivaciones, mejor = % mas bajo; en RGU, mejor = % mas alto.
+function renderRanking(lista) {
+  function construirTarjeta(titulo, extraerPct, mejorEsBajo) {
+    const valores = lista
+      .map((t) => (extraerPct(t) != null ? { nombre: t.nombre, val: extraerPct(t) } : null))
+      .filter(Boolean);
+    const ordenAsc = [...valores].sort((a, b) => a.val - b.val);
+    const mejores = mejorEsBajo ? ordenAsc.slice(0, 3) : ordenAsc.slice(-3).reverse();
+    const peores = mejorEsBajo ? ordenAsc.slice(-3).reverse() : ordenAsc.slice(0, 3);
+
+    return '<div class="panel ranking-card">'
+      + '<h3>' + titulo + '</h3>'
+      + '<div class="ranking-cols">'
+      + '<div class="ranking-grupo mejores"><div class="titulo">🏆 3 mejores</div>' + listaRanking(mejores) + '</div>'
+      + '<div class="ranking-grupo peores"><div class="titulo">⚠ 3 peores</div>' + listaRanking(peores) + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  document.getElementById('rankingRow').innerHTML =
+    construirTarjeta('Calidad (repetidos)', (t) => (t.calidad ? t.calidad.pctRepetidos : null), true)
+    + construirTarjeta('Derivaciones', (t) => (t.derivaciones ? t.derivaciones.pctDerivaciones : null), true)
+    + construirTarjeta('Producción RGU', (t) => (t.rgu ? t.rgu.pctCumplimiento : null), false);
+}
+
+// Orden actual de la tabla principal. Por defecto alfabetico por tecnico;
+// un clic en un encabezado ordena por esa columna, otro clic invierte el
+// sentido. Los "Sin datos" siempre quedan al final, sin importar el
+// sentido, para no mezclar el vacio con valores reales.
+const ordenTabla = { columna: 'nombre', sentido: 'asc' };
+
+function valorOrdenTabla(t, columna) {
+  switch (columna) {
+    case 'nombre': return t.nombre || '';
+    case 'agencia': return t.agencia || '';
+    case 'supervisor': return t.supervisor || '';
+    case 'calidad': return t.calidad ? t.calidad.pctRepetidos : null;
+    case 'derivaciones': return t.derivaciones ? t.derivaciones.pctDerivaciones : null;
+    case 'rgu': return t.rgu ? t.rgu.pctCumplimiento : null;
+    case 'vecino': return t.vecino ? t.vecino.pct : null;
+    default: return null;
+  }
+}
+
+function compararOrdenTabla(a, b) {
+  const va = valorOrdenTabla(a, ordenTabla.columna);
+  const vb = valorOrdenTabla(b, ordenTabla.columna);
+  if (va == null && vb == null) return 0;
+  if (va == null) return 1;
+  if (vb == null) return -1;
+  const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+  return ordenTabla.sentido === 'asc' ? cmp : -cmp;
+}
+
+function ordenarPor(columna) {
+  if (ordenTabla.columna === columna) {
+    ordenTabla.sentido = ordenTabla.sentido === 'asc' ? 'desc' : 'asc';
+  } else {
+    ordenTabla.columna = columna;
+    ordenTabla.sentido = 'asc';
+  }
+  renderTabla();
+}
+window.ordenarPor = ordenarPor;
+
+function actualizarFlechasOrden() {
+  ['nombre', 'agencia', 'supervisor', 'calidad', 'derivaciones', 'rgu', 'vecino'].forEach((columna) => {
+    const el = document.getElementById('flecha-' + columna);
+    if (!el) return;
+    el.textContent = columna !== ordenTabla.columna ? '' : (ordenTabla.sentido === 'asc' ? '▲' : '▼');
+  });
+}
+
+function renderTabla() {
+  const supervisor = document.getElementById('filtroSupervisor').value;
+
+  const filtrados = DATA.tecnicos.filter((t) =>
+    (!supervisor || t.supervisor === supervisor)
+  );
+
+  renderResumen(filtrados);
+  renderRanking(filtrados);
+  renderPeoresTecnicosCausas(filtrados, supervisor);
+  renderAnalisisCausas(filtrados, supervisor);
+  renderCausasComparacion(filtrados, supervisor);
+
+  const tbody = document.getElementById('tablaBody');
+  const sinResultados = document.getElementById('sinResultados');
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '';
+    sinResultados.style.display = 'block';
+    return;
+  }
+  sinResultados.style.display = 'none';
+  actualizarFlechasOrden();
+
+  tbody.innerHTML = filtrados
+    .sort(compararOrdenTabla)
+    .map((t) => {
+      const calPct = t.calidad ? t.calidad.pctRepetidos : null;
+      const calClase = t.calidad ? estadoCalidad(calPct, t.calidad.metaCalidad) : 'na';
+      const derPct = t.derivaciones ? t.derivaciones.pctDerivaciones : null;
+      const derClase = t.derivaciones ? estadoDerivaciones(derPct) : 'na';
+      const rguPct = t.rgu ? t.rgu.pctCumplimiento : null;
+      const rguClase = t.rgu ? estadoRgu(rguPct) : 'na';
+      const vecPct = t.vecino ? t.vecino.pct : null;
+      const vecClase = t.vecino ? estadoVecino(vecPct) : 'na';
+      return '<tr>'
+        + '<td>' + t.nombre + '</td>'
+        + '<td>' + (t.agencia || '—') + '</td>'
+        + '<td>' + (t.supervisor || '—') + '</td>'
+        + '<td class="num">' + pill(calPct, calClase) + '</td>'
+        + '<td class="num">' + pill(derPct, derClase) + '</td>'
+        + '<td class="num">' + pill(rguPct, rguClase) + '</td>'
+        + '<td class="num"' + (t.vecino ? ' title="' + t.vecino.conConsulta + ' de ' + t.vecino.total + ' órdenes con consulta"' : '') + '>' + pill(vecPct, vecClase) + '</td>'
+        + '</tr>';
+    })
+    .join('');
+}
+
+// Los 4 tecnicos con mayor % de repetidos dentro del filtro actual, con sus
+// causas mas frecuentes, para saber con quien conversar primero y sobre que.
+function renderPeoresTecnicosCausas(lista, supervisorFiltro) {
+  document.getElementById('peoresTecnicosTitulo').textContent = supervisorFiltro || 'Todos los equipos';
+
+  const conCalidad = lista.filter((t) => t.calidad && t.calidad.totalOrdenes > 0);
+  const peores = [...conCalidad].sort((a, b) => b.calidad.pctRepetidos - a.calidad.pctRepetidos).slice(0, 4);
+
+  const cont = document.getElementById('peoresTecnicosBody');
+  const vacio = document.getElementById('peoresTecnicosVacio');
+  if (peores.length === 0) {
+    cont.innerHTML = '';
+    vacio.style.display = 'block';
+    return;
+  }
+  vacio.style.display = 'none';
+
+  cont.innerHTML = peores.map((t) => {
+    const causas = t.calidad.causas && t.calidad.causas.length > 0 ? contarCausas(t.calidad.causas) : [];
+    const listaCausas = causas.length > 0
+      ? causas.slice(0, 3).map((c) => c.causa + ' (' + c.cnt + ')').join(' · ')
+      : 'Sin causa registrada';
+    return '<div class="peor-tecnico-item">'
+      + '<div class="peor-tecnico-cabecera"><span class="peor-tecnico-nombre">' + t.nombre + '</span>'
+      + '<span class="peor-tecnico-pct">' + t.calidad.pctRepetidos.toFixed(1) + '% (' + t.calidad.repetidos30Dias + '/' + t.calidad.totalOrdenes + ')</span></div>'
+      + '<div class="peor-tecnico-meta">' + (t.agencia || '—') + (t.supervisor ? ' · ' + t.supervisor : '') + '</div>'
+      + '<div class="peor-tecnico-causas">' + listaCausas + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Tabla comparativa: causa mas frecuente en todo el anio (problema de
+// fondo, mas datos y mas estable) vs. causa mas frecuente solo en el ultimo
+// mes cerrado (para detectar si algo cambio puntualmente ese mes).
+function renderCausasComparacion(lista, supervisorFiltro) {
+  document.getElementById('causasComparacionTitulo').textContent = supervisorFiltro || 'Todos los equipos';
+
+  const tbody = document.getElementById('tablaCausasComparacionBody');
+  const sinResultados = document.getElementById('causasComparacionSinResultados');
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '';
+    sinResultados.style.display = 'block';
+    return;
+  }
+  sinResultados.style.display = 'none';
+
+  function textoCausa(eventos) {
+    if (!eventos || eventos.length === 0) return '—';
+    const top = contarCausas(eventos)[0];
+    return top.causa + ' (' + top.cnt + ')';
+  }
+
+  tbody.innerHTML = [...lista]
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .map((t) => {
+      const causasMes = t.calidad ? t.calidad.causas : null;
+      return '<tr>'
+        + '<td>' + t.nombre + '</td>'
+        + '<td>' + (t.agencia || '—') + '</td>'
+        + '<td>' + (t.supervisor || '—') + '</td>'
+        + '<td>' + textoCausa(t.causasAnual) + '</td>'
+        + '<td>' + textoCausa(causasMes) + '</td>'
+        + '</tr>';
+    })
+    .join('');
+}
+
+// Diccionario de acciones sugeridas por causa de repetido. Curado a partir
+// de las causas reales que aparecen en CodigoCierreRepetido; una causa no
+// mapeada cae en el mensaje generico de abajo.
+const SUGERENCIAS_CAUSA = {
+  'Falla en cable externo Domiciliario': 'Revisar el tendido y la conectorización del cable externo antes de cerrar (crimpado, roseta externa, empalmes expuestos a la intemperie).',
+  'Falla en cable Interno Domiciliario': 'Verificar el cableado interno completo (no solo el punto de falla reportado) y reforzar conectores/rosetas antes de cerrar.',
+  'Configuracion equipo particular cliente': 'Documentar y validar la configuración de equipos propios del cliente (router/switch particular) antes de dar el servicio por cerrado.',
+  'Falla reset plataforma': 'Confirmar que el equipo aplicó el último firmware/config tras el reset de plataforma antes de retirarse del domicilio.',
+  'Configuración SSID/Clave/Canal': 'Dejar constancia con el cliente del SSID/clave configurados y probar la conexión real de un dispositivo antes de cerrar.',
+  'Equipo Defectuoso IPTV': 'Probar el decodificador con contenido en vivo (no solo verificar que encienda) antes de cerrar la orden.',
+  'Equipo Defectuoso ONT': 'Revisar niveles ópticos y el estado del ONT con la herramienta de diagnóstico antes de cerrar.',
+  'Equipo Defectuoso (Control MTA CM dBox VP Fono)': 'Probar cada equipo de voz/dBox de forma individual, no solo el servicio principal.',
+  'Problemas de cobertura WIFI': 'Evaluar la ubicación del router/extensor según el plano real de la vivienda, no solo el punto de instalación por defecto.',
+  'Falla en equipo de cliente': 'Diferenciar explícitamente falla de red vs. equipo del cliente en las notas de cierre, para evitar reincidencia mal diagnosticada.',
+  'Falla Insumo Telefono': 'Verificar la línea de teléfono con una llamada de prueba antes de cerrar.',
+  'Falla cableado particular del cliente': 'Explicar al cliente que el cableado propio no está cubierto y dejarlo documentado en el cierre.',
+  'Problema configuración o ubicación de extensor': 'Revisar la ubicación física del extensor Wi-Fi según la intensidad de señal medida, no instalarlo por defecto.',
+  'Daño a equipo VTR Domiciliario': 'Revisar el estado físico de los equipos antes de instalarlos, para descartar daños previos.',
+  'Entrega de control remoto': 'Confirmar en el checklist de cierre que todos los controles fueron entregados.',
+  'Equipo Defectuoso Gateway': 'Revisar el estado del gateway (reinicio de fábrica, actualización de firmware) antes de cerrar.',
+  'Riesgo electrico': 'Reportar el riesgo eléctrico a la agencia de inmediato, no dejarlo solo como nota de cierre.',
+};
+const SUGERENCIA_GENERICA = 'Revisar en terreno los casos con esta causa para identificar un patrón común y reforzarlo en la próxima capacitación.';
+
+// Analisis de causas de repetidos, reactivo al filtro de supervisor actual:
+// Pareto de causas, patrones de velocidad (rapido vs tardio) y por tipo de
+// actividad, y sugerencias sobre las causas mas frecuentes.
+function renderAnalisisCausas(lista, supervisorFiltro) {
+  document.getElementById('causasTitulo').textContent = supervisorFiltro || 'Todos los equipos';
+
+  const eventos = [];
+  for (const t of lista) {
+    if (t.calidad && t.calidad.causas) eventos.push(...t.calidad.causas);
+  }
+  const total = eventos.length;
+  document.getElementById('causasTotal').textContent = total;
+
+  const contenido = document.getElementById('causasContenido');
+  const sinDatos = document.getElementById('causasSinDatos');
+  if (total === 0) {
+    contenido.style.display = 'none';
+    sinDatos.style.display = 'block';
+    return;
+  }
+  contenido.style.display = '';
+  sinDatos.style.display = 'none';
+
+  // Pareto: top causas + resto agrupado en "Otras causas"
+  const conteo = contarCausas(eventos);
+  const TOP_N = 7;
+  const top = conteo.slice(0, TOP_N);
+  const restoCount = conteo.slice(TOP_N).reduce((s, c) => s + c.cnt, 0);
+  const barras = restoCount > 0 ? [...top, { causa: 'Otras causas', cnt: restoCount }] : top;
+  const maxCnt = Math.max(...barras.map((b) => b.cnt));
+
+  let acumulado = 0;
+  document.getElementById('paretoChart').innerHTML = barras.map((b) => {
+    acumulado += b.cnt;
+    const pct = (b.cnt / total) * 100;
+    const pctAcum = (acumulado / total) * 100;
+    const anchoBarra = (b.cnt / maxCnt) * 100;
+    return '<div class="pareto-fila">'
+      + '<div class="pareto-etiqueta" title="' + b.causa + '">' + b.causa + '</div>'
+      + '<div class="pareto-barra-wrap"><div class="pareto-barra" style="width:' + anchoBarra.toFixed(1) + '%"></div></div>'
+      + '<div class="pareto-valor">' + b.cnt + ' <span class="pareto-pct">(' + pct.toFixed(1) + '%'
+      + (b.causa !== 'Otras causas' ? ', acum. ' + pctAcum.toFixed(0) + '%' : '') + ')</span></div>'
+      + '</div>';
+  }).join('');
+
+  // Patron 1: velocidad del repetido. Compara el ritmo diario de repetidos
+  // en los primeros 3 dias vs el resto de la ventana de 30 dias -- un ritmo
+  // mucho mas alto al inicio sugiere reparaciones que no quedaron resueltas
+  // del todo, en vez de fallas nuevas que aparecen con el tiempo.
+  const conDias = eventos.filter((e) => e.dias != null && e.dias >= 0);
+  const rapidos = conDias.filter((e) => e.dias <= 3).length;
+  const tardios = conDias.length - rapidos;
+  let insightVelocidad = '';
+  if (conDias.length >= 8) {
+    const tasaRapida = rapidos / 3;
+    const tasaTardia = tardios / 27;
+    if (tasaTardia === 0 && rapidos > 0) {
+      insightVelocidad = 'Todos los repetidos con fecha registrada ocurrieron dentro de los primeros 3 días — fuerte señal de reparaciones que no quedaron resueltas del todo al cerrar.';
+    } else if (tasaTardia > 0) {
+      const factor = tasaRapida / tasaTardia;
+      if (factor >= 1.3) {
+        insightVelocidad = 'El riesgo de repetido está concentrado en los primeros 3 días después del cierre (ocurre a un ritmo ' + factor.toFixed(1) + 'x más alto que en el resto del mes). Suele indicar que el problema no quedó resuelto del todo al cerrar la orden.';
+      } else if (factor <= 0.7) {
+        insightVelocidad = 'Los repetidos ocurren más hacia el final de la ventana de 30 días (ritmo ' + (1 / factor).toFixed(1) + 'x más alto después del día 3), lo que sugiere fallas que aparecen con el uso o el tiempo, más que una reparación incompleta.';
+      } else {
+        insightVelocidad = 'Los repetidos se distribuyen de forma pareja a lo largo de los 30 días, sin concentrarse en los primeros días.';
+      }
+    }
+  }
+
+  // Patron 2: causa dominante segun el tipo de actividad de la orden
+  // original (Alta, Reparacion, Migracion, etc.) -- una Alta que se repite
+  // apunta a calidad de instalacion; una Reparacion que se repite apunta a
+  // diagnostico o reparacion incompleta.
+  const porTipo = new Map();
+  for (const e of eventos) {
+    if (!e.tipoActividad) continue;
+    if (!porTipo.has(e.tipoActividad)) porTipo.set(e.tipoActividad, []);
+    porTipo.get(e.tipoActividad).push(e);
+  }
+  const tiposOrdenados = [...porTipo.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 2);
+  const insightTipo = tiposOrdenados
+    .map(([tipo, evs]) => {
+      const c = contarCausas(evs)[0];
+      return '<b>' + tipo + '</b> (' + evs.length + ' repetidos): la causa más frecuente es "' + c.causa + '" (' + c.cnt + ')';
+    })
+    .join('<br>');
+
+  document.getElementById('causasInsights').innerHTML =
+    (insightVelocidad ? '<p style="margin:0 0 8px;">' + insightVelocidad + '</p>' : '')
+    + (insightTipo ? '<p style="margin:0;">' + insightTipo + '</p>' : '');
+
+  // Sugerencias sobre las 3 causas mas frecuentes del filtro actual
+  const top3 = conteo.slice(0, 3);
+  document.getElementById('sugerenciasBody').innerHTML = top3.map((c) => {
+    const accion = SUGERENCIAS_CAUSA[c.causa] || SUGERENCIA_GENERICA;
+    return '<div class="sugerencia-item">'
+      + '<div class="sugerencia-causa">' + c.causa + ' <span class="sugerencia-n">(' + c.cnt + ' casos, ' + ((c.cnt / total) * 100).toFixed(1) + '%)</span></div>'
+      + '<div class="sugerencia-accion">' + accion + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Para series mes a mes (varios meses cerrados, no acumulados entre si):
+// comparar el primer mes de toda la serie contra el ultimo puede decir
+// "mejorando" aunque los ultimos meses esten subiendo otra vez, solo porque
+// el primer mes (a veces muchos meses atras) era peor. Por eso aca se
+// compara el ultimo mes contra el promedio de los 2-3 meses inmediatamente
+// anteriores, que es lo que importa para saber si hay que poner ojo ahora.
+// masEsMejor=false (default): bajar es mejorar, como en Calidad (menos
+// repetidos). masEsMejor=true: subir es mejorar, como en RGU (mas
+// cumplimiento de meta).
+function explicarTendenciaMensual(valores, masEsMejor) {
+  const puntos = valores.filter((v) => v != null);
+  if (puntos.length < 2) return '';
+  const ultimo = puntos[puntos.length - 1];
+  const min = Math.min(...puntos);
+  const max = Math.max(...puntos);
+
+  const previos = puntos.slice(Math.max(0, puntos.length - 4), puntos.length - 1);
+  const promedioReciente = previos.reduce((a, b) => a + b, 0) / previos.length;
+  const diff = ultimo - promedioReciente;
+  const mejoro = masEsMejor ? diff > 0 : diff < 0;
+
+  let icono, texto, color;
+  if (Math.abs(diff) < 0.5) {
+    icono = ''; texto = 'Se mantiene estable'; color = 'var(--warn)';
+  } else if (mejoro) {
+    icono = ''; texto = 'Mejorando'; color = 'var(--ok)';
+  } else {
+    icono = ''; texto = masEsMejor ? 'Atención: la curva va a la baja' : 'Atención: la curva va al alza'; color = 'var(--bad)';
+  }
+
+  return '<span style="color:' + color + ';">' + icono + ' ' + texto + ': '
+    + 'promedio meses previos ' + promedioReciente.toFixed(1) + '% → último mes ' + ultimo.toFixed(1) + '%</span>'
+    + '<span style="font-weight:400; font-size:12.5px; color:var(--text-dim);"> (rango: ' + min.toFixed(1) + '%–' + max.toFixed(1) + '%)</span>';
+}
+
+// Calidad y Produccion RGU en un solo grafico. Cada linea usa su propio eje
+// (RGU a la izquierda, Calidad a la derecha), asi que solo se comparan sus
+// subidas y bajadas, no la altura de una contra la otra. La Calidad se rotula
+// con el mes en que se reporta (el siguiente al de sus cierres), igual que en
+// "Evolucion de Calidad mes a mes"; por eso el punto de Ene son los cierres
+// de diciembre (DATA.evolutivoMensual.previo).
+let combinadoYaDibujado = false;
+function renderCombinado() {
+  const COLOR_RGU = '#0071ce', COLOR_CAL = '#d9480f';
+  const CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const corto = (iso) => CORTOS[parseInt(iso.split('-')[1], 10) - 1];
+  const largo = (iso) => LARGOS[parseInt(iso.split('-')[1], 10) - 1] + ' de ' + iso.slice(0, 4);
+  const num = (v, dec) => v.toLocaleString('es-CL', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const escXml = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const mesSiguiente = (iso) => {
+    const [y, m] = iso.split('-').map(Number);
+    return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0');
+  };
+  const mesAnterior = (iso) => {
+    const [y, m] = iso.split('-').map(Number);
+    return m === 1 ? (y - 1) + '-12' : y + '-' + String(m - 1).padStart(2, '0');
+  };
+
+  const evCal = DATA.evolutivoMensual, evRgu = DATA.evolutivoMensualRgu;
+  const el = document.getElementById('combinadoChart');
+  const sinDatos = document.getElementById('combinadoSinDatos');
+  const pie = document.getElementById('combinadoPie');
+  const supervisor = document.getElementById('filtroSupervisor').value;
+  document.getElementById('combinadoTitulo').textContent = supervisor || 'Todos los equipos';
+
+  // mes del eje ("yyyy-mm") -> { v, parcial }
+  const rgu = new Map();
+  if (evRgu && evRgu.meses) {
+    const valores = (supervisor && evRgu.porSupervisor[supervisor]) || evRgu.todos;
+    evRgu.meses.forEach((mes, i) => {
+      if (valores[i] != null) rgu.set(mes, { v: valores[i], parcial: !!evRgu.ultimoMesParcial && i === evRgu.meses.length - 1, i });
+    });
+  }
+  const cal = new Map();
+  if (evCal && evCal.meses) {
+    const mesesReales = evCal.mesesReales || evCal.meses;
+    const valores = (supervisor && evCal.porSupervisor[supervisor]) || evCal.todos;
+    mesesReales.forEach((mes, i) => {
+      if (valores[i] != null) cal.set(mesSiguiente(mes), { v: valores[i], parcial: !!evCal.ultimoMesParcial && i === mesesReales.length - 1 });
+    });
+    const previo = evCal.previo;
+    if (previo) {
+      const v = supervisor ? previo.porSupervisor[supervisor] : previo.todos;
+      if (v != null) cal.set(mesSiguiente(previo.mes), { v, parcial: false });
+    }
+  }
+
+  const meses = [...new Set([...rgu.keys(), ...cal.keys()])].sort();
+  const tendRgu = document.getElementById('combinadoTendenciaRgu');
+  const tendCal = document.getElementById('combinadoTendenciaCalidad');
+  if (meses.length < 2 || rgu.size === 0 || cal.size === 0) {
+    el.innerHTML = '';
+    pie.textContent = '';
+    tendRgu.innerHTML = tendCal.innerHTML = '';
+    sinDatos.style.display = 'block';
+    return;
+  }
+  sinDatos.style.display = 'none';
+
+  // Tendencia de cada indicador, solo con sus meses completos (el parcial no
+  // se compara): ultimo mes completo contra el promedio de los 2-3 anteriores.
+  const completos = (mapa) => meses.filter((mes) => mapa.has(mes) && !mapa.get(mes).parcial).map((mes) => mapa.get(mes).v);
+  // Frase corta: ultimo mes completo contra el promedio de los 2-3 anteriores.
+  function tendencia(valores, masEsMejor) {
+    if (valores.length < 2) return '';
+    const ultimo = valores[valores.length - 1];
+    const previos = valores.slice(Math.max(0, valores.length - 4), valores.length - 1);
+    const promedio = previos.reduce((a, b) => a + b, 0) / previos.length;
+    const diff = ultimo - promedio;
+    let icono = '', texto = 'Estable', color = 'var(--warn)';
+    if (Math.abs(diff) >= 0.5) {
+      const mejoro = masEsMejor ? diff > 0 : diff < 0;
+      icono = mejoro ? '' : '';
+      texto = mejoro ? 'Mejorando' : 'Empeorando';
+      color = mejoro ? 'var(--ok)' : 'var(--bad)';
+    }
+    return '<span style="color:' + color + ';">' + icono + ' ' + texto + '</span> · ' + promedio.toFixed(1) + '% → ' + ultimo.toFixed(1) + '%';
+  }
+  tendRgu.innerHTML = tendencia(completos(rgu), true);
+  tendCal.innerHTML = tendencia(completos(cal), false);
+
+  // Se dibuja al ancho real del panel, con alto fijo: en pantallas anchas el
+  // grafico se alarga en vez de escalarse (las letras no crecen).
+  const W = Math.max(600, Math.round(el.clientWidth) || 760), H = 320, padL = 48, padR = 48, padT = 30, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const ejeMax = (mapa, paso) => Math.ceil((Math.max(...[...mapa.values()].map((p) => p.v), 1) * 1.15) / paso) * paso;
+  const maxRgu = ejeMax(rgu, 20), maxCal = ejeMax(cal, 2);
+  const xAt = (i) => padL + (i / (meses.length - 1)) * plotW;
+  // De enero a diciembre son 12 puntos: si quedan muy juntos, los porcentajes
+  // se escriben con letra un poco menor para que no se toquen.
+  const paso = plotW / (meses.length - 1);
+  const letra = paso < 44 ? 9 : paso < 54 ? 10 : 11;
+  const yRgu = (v) => padT + plotH - (v / maxRgu) * plotH;
+  const yCal = (v) => padT + plotH - (v / maxCal) * plotH;
+
+  let svg = '';
+  for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+    const y = padT + plotH - f * plotH;
+    svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="#e0e5ea" stroke-width="1"/>'
+      + '<text x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="10" fill="' + COLOR_RGU + '" text-anchor="end">' + (maxRgu * f).toFixed(0) + '%</text>'
+      + '<text x="' + (W - padR + 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="10" fill="' + COLOR_CAL + '" text-anchor="start">' + (maxCal * f).toFixed((maxCal * 0.25) % 1 ? 1 : 0) + '%</text>';
+  }
+  // Linea de la meta de produccion (100%).
+  if (maxRgu > 100) {
+    svg += '<line x1="' + padL + '" y1="' + yRgu(100).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yRgu(100).toFixed(1) + '" stroke="' + COLOR_RGU + '" stroke-width="1" stroke-dasharray="3 4" opacity="0.6"/>';
+  }
+
+  // Un mes es parcial si lo es cualquiera de las dos lineas en ese mes.
+  const parciales = meses.filter((mes) => (rgu.get(mes) || {}).parcial || (cal.get(mes) || {}).parcial);
+  meses.forEach((mes, i) => {
+    const esParcial = parciales.includes(mes);
+    const alFinal = esParcial && i === meses.length - 1;
+    svg += '<text x="' + (alFinal ? W - 4 : xAt(i)).toFixed(1) + '" y="' + (H - 10) + '" font-size="11" fill="' + (esParcial ? '#8a5a12' : '#6b7a8c') + '"'
+      + (esParcial ? ' font-weight="700"' : '') + ' text-anchor="' + (alFinal ? 'end' : 'middle') + '">' + corto(mes) + (esParcial ? ' (parcial)' : '') + '</text>';
+  });
+  pie.textContent = parciales.length
+    ? parciales.map(corto).join(', ') + ' es parcial y no entra en la tendencia. Pasa el cursor sobre un porcentaje para ver su detalle.'
+    : 'Pasa el cursor sobre un porcentaje para ver su detalle.';
+
+  const detallesRgu = evRgu.detalle ? (supervisor && evRgu.detalle.porSupervisor[supervisor]) || evRgu.detalle.todos : null;
+  // Texto que aparece al pasar el cursor sobre un punto o su porcentaje.
+  function descripcion(mes, p, esRgu) {
+    if (esRgu) {
+      const d = detallesRgu && detallesRgu[p.i];
+      let t = 'Producción RGU · ' + largo(mes) + (p.parcial ? ' (parcial)' : '') + '\n'
+        + num(p.v, 1) + '% de cumplimiento de la meta, promedio de ' + (d ? d.tecnicos + ' técnico' + (d.tecnicos === 1 ? '' : 's') : 'los técnicos') + '.';
+      if (d) {
+        t += '\n' + d.cumplen + ' de ' + d.tecnicos + ' cumplieron su meta (100% o más).'
+          + '\nProdujeron ' + num(d.rgu, 2) + ' RGU en ' + d.dias + ' días trabajados (' + num(d.rgu / d.dias, 2) + ' por día).';
+      }
+      if (p.parcial) t += '\nEl mes aún no cierra: este valor cambia cada día.';
+      return t;
+    }
+    return 'Calidad · ' + largo(mes) + (p.parcial ? ' (parcial)' : '') + '\n'
+      + num(p.v, 1) + '% de las órdenes cerradas en ' + largo(mesAnterior(mes)) + ' se repitieron antes de 30 días.'
+      + (p.parcial ? '\nAún no pasan 30 días desde esos cierres: el porcentaje puede subir.' : '\nMientras más bajo, mejor.');
+  }
+
+  // En cada mes, el porcentaje de la linea que queda mas arriba va sobre su
+  // punto y el de la otra va debajo, para que no se pisen donde se cruzan.
+  const rguArriba = (mes) => !cal.has(mes) || !rgu.has(mes) || yRgu(rgu.get(mes).v) <= yCal(cal.get(mes).v);
+
+  function linea(mapa, yAt, color, esRgu) {
+    const puntos = meses.map((mes, i) => (mapa.has(mes) ? { x: i, mes, p: mapa.get(mes) } : null)).filter(Boolean);
+    let out = '';
+    for (let k = 1; k < puntos.length; k++) {
+      const a = puntos[k - 1], b = puntos[k];
+      // El tramo que llega a un mes parcial va punteado: ese valor todavia cambia.
+      out += '<line x1="' + xAt(a.x).toFixed(1) + '" y1="' + yAt(a.p.v).toFixed(1) + '" x2="' + xAt(b.x).toFixed(1) + '" y2="' + yAt(b.p.v).toFixed(1)
+        + '" stroke="' + color + '" stroke-width="2.5" stroke-linecap="round"' + (b.p.parcial ? ' stroke-dasharray="5 5"' : '') + '/>';
+    }
+    for (const q of puntos) {
+      const y = yAt(q.p.v);
+      const arriba = esRgu ? rguArriba(q.mes) : !rguArriba(q.mes);
+      out += '<g style="cursor:help;"><title>' + escXml(descripcion(q.mes, q.p, esRgu)) + '</title>'
+        + '<circle cx="' + xAt(q.x).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4.5" fill="' + (q.p.parcial ? '#fff' : color) + '" stroke="' + color + '" stroke-width="2"/>'
+        + '<text x="' + xAt(q.x).toFixed(1) + '" y="' + (arriba ? y - 10 : y + 18).toFixed(1) + '" font-size="' + letra + '" font-weight="700" fill="' + color + '" text-anchor="middle">' + q.p.v.toFixed(1) + '%</text></g>';
+    }
+    return out;
+  }
+  // Al cargar la pagina, las dos lineas se dibujan de izquierda a derecha (una
+  // ventana de recorte que se abre a lo ancho). Solo la primera vez: al
+  // filtrar o cambiar el tamano de la ventana el grafico aparece completo.
+  // No se anima si el usuario pidio reducir el movimiento en su sistema.
+  const animar = !combinadoYaDibujado && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  combinadoYaDibujado = true;
+  // Se hace con una animacion CSS sobre el recorte del grupo: si el navegador
+  // no la soporta, el grafico simplemente aparece completo (nunca queda oculto).
+  if (animar) svg += '<g class="comb-dibujar">';
+  svg += linea(rgu, yRgu, COLOR_RGU, true);
+  svg += linea(cal, yCal, COLOR_CAL, false);
+  if (animar) svg += '</g>';
+
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;" role="img" aria-label="Producción RGU y Calidad mes a mes">' + svg + '</svg>';
+}
+
+// ---------- Exportar a Excel ----------
+// Exporta la tabla de tecnicos tal como se esta viendo (supervisor elegido y
+// orden actual), con el detalle detras de cada porcentaje. Usa SheetJS desde
+// cdnjs para generar un .xlsx real; si no hay internet, cae a un .csv
+// (separado por ";" y con BOM) que Excel abre igual. Mismo mecanismo que
+// reiteradas.html y vecino.html.
+function filasExcelTecnicos() {
+  const supervisor = document.getElementById('filtroSupervisor').value;
+  const lista = DATA.tecnicos.filter((t) => !supervisor || t.supervisor === supervisor).sort(compararOrdenTabla);
+  const r1 = (v) => (v == null ? '' : Math.round(v * 10) / 10);
+  const r2 = (v) => (v == null ? '' : Math.round(v * 100) / 100);
+  const filas = [[
+    'Técnico', 'Agencia', 'Supervisor',
+    '% Calidad (repetidos)', 'Órdenes cerradas', 'Repetidos 30 días', 'Meta calidad %',
+    '% Derivaciones', 'Órdenes Alta/Migración', 'Derivaciones',
+    '% Producción RGU', 'RGU completada', 'Días trabajados', 'Meta diaria', 'Meta del período',
+    '% Estado vecino', 'Órdenes completadas', 'Con consulta',
+  ]];
+  for (const t of lista) {
+    const c = t.calidad || {}, d = t.derivaciones || {}, g = t.rgu || {}, v = t.vecino || {};
+    filas.push([
+      t.nombre, t.agencia || '', t.supervisor || '',
+      r1(c.pctRepetidos), c.totalOrdenes ?? '', c.repetidos30Dias ?? '', c.metaCalidad ?? '',
+      r1(d.pctDerivaciones), d.qOrdenes ?? '', d.qDerivaciones ?? '',
+      r1(g.pctCumplimiento), r2(g.rguCompletadaGsa), g.diasTrabajados ?? '', g.metaDiaria ?? '', r2(g.metaPeriodo),
+      r1(v.pct), v.total ?? '', v.conConsulta ?? '',
+    ]);
+  }
+  return { filas, supervisor };
+}
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+function descargarCsv(filas, nombre) {
+  const celda = (v) => {
+    const t = String(v == null ? '' : v);
+    return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const texto = filas.map((f) => f.map(celda).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + texto], { type: 'text/csv;charset=utf-8' }));
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+async function exportarTecnicos() {
+  const boton = document.getElementById('btnExcelTecnicos');
+  const rotulo = boton.querySelector('span');
+  const { filas, supervisor } = filasExcelTecnicos();
+  const nombre = 'Indicadores_Tecnicos' + (supervisor ? '_' + supervisor.split(' ')[0] : '') + '_' + DATA.generadoEl.slice(0, 10);
+  boton.disabled = true;
+  rotulo.textContent = 'Generando…';
+  try {
+    await cargarSheetJS();
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = filas[0].map((t, i) => ({ wch: i === 0 || i === 2 ? 38 : Math.max(12, t.length + 2) }));
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length - 1, c: filas[0].length - 1 } }) };
+    // Segunda hoja: a que periodo corresponde cada indicador.
+    const notas = XLSX.utils.aoa_to_sheet([
+      ['Indicador', 'Período'],
+      ['Calidad (repetidos)', DATA.periodoCalidad + ' (mes completo)'],
+      ['Derivaciones, Producción RGU y Estado vecino', DATA.periodoMatriz],
+      ['Generado', DATA.generadoEl],
+      ['Equipo', supervisor || 'Todos los supervisores'],
+    ]);
+    notas['!cols'] = [{ wch: 44 }, { wch: 44 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Técnicos');
+    XLSX.utils.book_append_sheet(wb, notas, 'Períodos');
+    XLSX.writeFile(wb, nombre + '.xlsx');
+  } catch (err) {
+    descargarCsv(filas, nombre + '.csv'); // sin internet: CSV que Excel abre directo
+  }
+  boton.disabled = false;
+  rotulo.textContent = 'Exportar a Excel';
+}
+document.getElementById('btnExcelTecnicos').addEventListener('click', exportarTecnicos);
+
+// Explicaciones que aparecen al hacer clic en cada encabezado de la tabla.
+const INFO_METRICAS = {
+  calidad: {
+    titulo: 'Calidad (repetidos)',
+    queMide: 'Si una orden atendida por el técnico requiere una nueva visita por el mismo motivo antes de 30 días. Mientras más bajo el porcentaje, mejor.',
+    comoSeCalcula: 'Se calcula sobre el mes calendario <b>anterior</b> completo, no sobre el mes en curso. Esto es necesario porque el indicador requiere que transcurran los 30 días completos: una orden cerrada hace pocos días aún no ha tenido tiempo de mostrar si se repite.',
+    meta: 'La meta máxima de repetidos varía según la ciudad del técnico (Arica, Santiago, V Región).',
+  },
+  derivaciones: {
+    titulo: 'Derivaciones (Alta/Migración)',
+    queMide: 'Qué porcentaje de las órdenes de Alta o Migración del técnico terminaron derivadas (estado "No Realizada") en vez de completadas. Mientras más bajo el porcentaje, mejor.',
+    comoSeCalcula: 'Se calcula con el avance del mes en curso: desde el día 1 hasta el último día con datos completos en el sistema.',
+    meta: 'La meta oficial es no superar el 35%. Entre 35% y 52,5% se marca en amarillo ("Atención"); por sobre 52,5% queda en foco crítico (rojo).',
+  },
+  rgu: {
+    titulo: 'Producción RGU',
+    queMide: 'El porcentaje de cumplimiento de la meta de producción del técnico. Mientras más alto, mejor: 100% o más significa que cumplió su meta.',
+    comoSeCalcula: 'RGU completada (orden Completada, o derivada a GSA en vez de perderse) dividida por la meta del período. La meta del período se calcula como la meta diaria según la ciudad del técnico (Arica 4,3 · Santiago y V Región 4,0) multiplicada por la cantidad de días que el técnico trabajó ese mes (cada día en que tuvo al menos una orden asignada, aunque no haya completado ninguna).',
+    meta: 'Cumple la meta al llegar o superar el 100% de cumplimiento. Entre 80% y 99% se marca en amarillo ("Atención"); por debajo de 80% queda en foco crítico (rojo).',
+  },
+  vecino: {
+    titulo: 'Consulta de estado vecino',
+    queMide: 'En qué porcentaje de sus órdenes completadas el técnico hizo la consulta de estado vecino. Mientras más alto, mejor.',
+    comoSeCalcula: 'Órdenes con consulta registrada (con resultado OK, NOK o en proceso) dividido por las órdenes completadas de Alta, Migración, Reparación y Alta Traslado, en el mismo mes que Derivaciones y Producción RGU. El detalle por técnico y por orden está en el botón "Consulta de estado vecino".',
+    meta: 'La consulta es obligatoria en todas las órdenes: la meta es 100%. Entre 90% y 99,9% se marca en amarillo; por debajo de 90% queda en rojo.',
+  },
+};
+
+function mostrarInfo(clave) {
+  const info = INFO_METRICAS[clave];
+  if (!info) return;
+  document.getElementById('modalInfoTitulo').textContent = info.titulo;
+  document.getElementById('modalInfoTexto').innerHTML =
+    '<b>Qué mide:</b> ' + info.queMide + '<br><br>'
+    + '<b>Cómo se calcula:</b> ' + info.comoSeCalcula + '<br><br>'
+    + '<b>Meta:</b> ' + info.meta;
+  document.getElementById('modalInfo').classList.add('abierto');
+}
+function cerrarInfo() {
+  document.getElementById('modalInfo').classList.remove('abierto');
+}
+window.mostrarInfo = mostrarInfo;
+window.cerrarInfo = cerrarInfo;
+
+// El boton "Reiteradas del mes" abre reiteradas.html con el mismo supervisor ya filtrado.
+function actualizarLinkReiteradas() {
+  const supervisor = document.getElementById('filtroSupervisor').value;
+  document.getElementById('btnReiteradas').href = 'reiteradas.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnVecino').href = 'vecino.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+}
+
+document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });
+
+renderTabla();
+actualizarLinkReiteradas();
+renderCombinado();
+
+// ---------- Animacion de las cifras del resumen ----------
+// Al cargar la pagina, las cifras grandes suben desde 0 hasta su valor (igual
+// que en vecino.html). Anima cada numero de cada texto por separado y conserva
+// sus decimales; trabaja sobre los nodos de texto, para no borrar los puntos o
+// iconos que acompanan a la cifra. No se anima si el usuario pidio reducir el
+// movimiento en su sistema.
+function animarCifras(selector, duracion) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!window.requestAnimationFrame) return;
+  const patron = /\d+(?:[.,]\d+)?/g;
+  const textos = [];
+  document.querySelectorAll(selector).forEach((el) => {
+    const recorrer = (nodo) => {
+      if (nodo.nodeType === 3 && /\d/.test(nodo.nodeValue)) textos.push({ nodo, final: nodo.nodeValue });
+      else nodo.childNodes.forEach(recorrer);
+    };
+    recorrer(el);
+  });
+  if (!textos.length) return;
+  const inicio = performance.now();
+  function paso(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const avance = 1 - Math.pow(1 - t, 3); // parte rapido y frena al llegar
+    for (const c of textos) {
+      c.nodo.nodeValue = t === 1 ? c.final : c.final.replace(patron, (n) => {
+        const coma = n.includes(',');
+        const decimales = (n.split(/[.,]/)[1] || '').length;
+        const valor = (parseFloat(n.replace(',', '.')) * avance).toFixed(decimales);
+        return coma ? valor.replace('.', ',') : valor;
+      });
+    }
+    if (t < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+// Solo en la primera carga, no cada vez que se cambia el supervisor.
+animarCifras('#resumenRow .num, #resumenRow .chips span', 900);
+// El grafico combinado depende del ancho del panel: se redibuja al cambiar el tamano de la ventana.
+let esperaResize = null;
+window.addEventListener('resize', () => { clearTimeout(esperaResize); esperaResize = setTimeout(renderCombinado, 150); });
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+
+<!-- Easter egg: 7 clics seguidos en el logo. Aislado en su propio try/catch
+     e IIFE para que, si algo fallara aca, no afecte al resto del dashboard. -->
+<script>
+try {
+  (function () {
+    var logo = document.getElementById('logoCobra');
+    if (!logo) return;
+
+    var clicks = 0;
+    var lastClick = 0;
+    var activo = false;
+
+    var MENSAJES = [
+      '🎉 ¡Encontraste el easter egg! Gracias por revisar a tu equipo todos los días.',
+      '🏆 Detrás de cada número hay un técnico haciendo bien su pega. Gracias por notarlo.',
+      '✨ Sigue así — el equipo lo nota, aunque no siempre lo diga.',
+      '💪 Cada punto que baja en Calidad es un cliente que no tuvo que volver a llamar.',
+      '🚀 Los números mejoran cuando alguien los mira de cerca. Gracias por ser esa persona.',
+      '☕ Un cafecito virtual por acompañar a tu equipo, número a número.',
+      '🙌 Liderar es esto: mirar los datos y después ir a conversar con la persona. Bien ahí.'
+    ];
+    var MENSAJES_SEPTIEMBRE = [
+      '🎉 ¡Viva Chile! Gracias por acompañar al equipo también en el mes de la Patria.',
+      '🎊 Feliz Dieciocho — que haya harta terremoto, cueca y buenos números.',
+      '⭐ ¡Arriba Chile! El equipo sigue firme, hasta en Fiestas Patrias.',
+      '🎈 Que este Dieciocho tenga tanto asado como buenos indicadores.',
+      '🎊 Septiembre de celebrar — y tu equipo también se lo ganó este mes.'
+    ];
+
+    // Banner de Fiestas Patrias: se muestra/oculta segun la fecha real del
+    // navegador, no segun cuando se genero el sitio -- asi aparece y
+    // desaparece solo con el calendario, sin tener que volver a publicar.
+    try {
+      var hoy = new Date();
+      if (hoy.getMonth() === 8) {
+        var banner = document.getElementById('bannerFiestas');
+        if (banner) {
+          banner.style.display = 'inline-block';
+          var sub = document.getElementById('fiestasSubtexto');
+          if (sub) { sub.textContent = 'Septiembre ' + hoy.getFullYear(); }
+        }
+      }
+    } catch (eBanner) { /* si algo falla aca, simplemente no se muestra el banner */ }
+
+    function lanzarConfeti() {
+      if (activo) return;
+      activo = true;
+
+      var canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      document.body.appendChild(canvas);
+      var ctx = canvas.getContext('2d');
+
+      var esSeptiembre = new Date().getMonth() === 8;
+      var colores = esSeptiembre
+        ? ['#0039A6', '#ffffff', '#D52B1E', '#0039A6', '#D52B1E']
+        : ['#003c71', '#0071ce', '#29a9e0', '#1fa971', '#e2962e', '#ffd23f'];
+      var piezas = [];
+      var n = 140;
+      for (var i = 0; i < n; i++) {
+        piezas.push({
+          x: Math.random() * canvas.width,
+          y: -20 - Math.random() * canvas.height * 0.5,
+          w: 6 + Math.random() * 6,
+          h: 4 + Math.random() * 8,
+          color: colores[Math.floor(Math.random() * colores.length)],
+          vy: 2 + Math.random() * 3,
+          vx: (Math.random() - 0.5) * 2.5,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (Math.random() - 0.5) * 0.3
+        });
+      }
+
+      var inicio = null;
+      var duracionMs = 2600;
+      var limpiado = false;
+      function limpiarCanvas() {
+        if (limpiado) return;
+        limpiado = true;
+        canvas.remove();
+        activo = false;
+      }
+
+      function frame(ts) {
+        if (!inicio) inicio = ts;
+        var transcurrido = ts - inicio;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < piezas.length; i++) {
+          var p = piezas[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vrot;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if (transcurrido < duracionMs) {
+          requestAnimationFrame(frame);
+        } else {
+          limpiarCanvas();
+        }
+      }
+      requestAnimationFrame(frame);
+      // Respaldo independiente de requestAnimationFrame: si la pestaña pierde
+      // foco o el navegador pausa la animacion (ahorro de bateria, pestaña en
+      // segundo plano), esto igual limpia el canvas para que nunca quede
+      // pegado en pantalla.
+      setTimeout(limpiarCanvas, duracionMs + 500);
+
+      var toast = document.createElement('div');
+      var listaMsg = esSeptiembre ? MENSAJES_SEPTIEMBRE : MENSAJES;
+      var msg = listaMsg[Math.floor(Math.random() * listaMsg.length)];
+      toast.textContent = msg;
+      toast.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-12px);' +
+        'background:var(--cobra-navy,#003c71);color:#fff;padding:12px 20px;border-radius:10px;' +
+        'font-weight:700;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:10000;' +
+        'max-width:min(90vw,420px);text-align:center;opacity:0;transition:opacity .35s ease,transform .35s ease;';
+      document.body.appendChild(toast);
+      requestAnimationFrame(function () {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      });
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-12px)';
+        setTimeout(function () { toast.remove(); }, 400);
+      }, 2600);
+    }
+
+    logo.addEventListener('click', function () {
+      var ahora = Date.now();
+      if (ahora - lastClick > 800) { clicks = 0; }
+      lastClick = ahora;
+      clicks++;
+      if (clicks >= 7) {
+        clicks = 0;
+        lanzarConfeti();
+      }
+    });
+  })();
+} catch (e) { /* easter egg opcional: cualquier error aca no debe afectar el dashboard */ }
+</script>
+
+</body>
+</html>
