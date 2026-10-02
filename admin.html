@@ -419,7 +419,7 @@ async function abrirPanel() {
     return false;
   }
   yo = r.datos;
-  $('sesion').innerHTML = esc(yo.nombre || yo.usuario) + ' &middot; <a href="#" id="salir">Cerrar sesión</a>';
+  $('sesion').innerHTML = '<a href="supervisor.html">Ir al dashboard</a> &middot; ' + esc(yo.nombre || yo.usuario) + ' &middot; <a href="#" id="salir">Cerrar sesión</a>';
   $('salir').addEventListener('click', (ev) => { ev.preventDefault(); Acceso.salir(); location.reload(); });
   $('formIngreso').style.display = 'none';
   $('panelAdmin').style.display = 'block';

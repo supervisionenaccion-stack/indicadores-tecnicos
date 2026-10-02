@@ -86,13 +86,14 @@ function ocupado(si) { boton.disabled = si; boton.textContent = si ? 'Ingresando
 function bytes(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }
 function escapar(s) { return String(s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';'); }
 
-async function abrirPagina(llave, nombre) {
+async function abrirPagina(llave, nombre, rol) {
   const k = await crypto.subtle.importKey('raw', bytes(llave), 'AES-GCM', false, ['decrypt']);
   const cifrado = bytes(document.getElementById('datosCifrados').textContent.trim());
   const comprimido = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(CFG.iv) }, k, cifrado);
   let html = await new Response(new Blob([comprimido]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
   // Fija arriba a la derecha, sobre la cabecera blanca de la pagina.
   const barra = '<div style="position:fixed;right:24px;top:20px;z-index:9999;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir barra-sesion">'
+    + (rol === 'admin' ? '<a href="admin.html" style="color:#003575;font-weight:600;">Administración</a> &middot; ' : '')
     + '<span class="barra-sesion-nombre">' + escapar(nombre) + ' &middot; </span><a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
     + '<style>@media print{.no-imprimir{display:none!important}} @media (max-width:640px){.barra-sesion{right:6px!important;top:3px!important;padding:1px 6px!important;font-size:10px!important}.barra-sesion-nombre{display:none}}</style>';
   const corte = html.lastIndexOf('</body>');
@@ -117,7 +118,7 @@ async function ingresarCon(token) {
       : 'Tu usuario no tiene acceso a esta página.');
     return false;
   }
-  await abrirPagina(r.datos.llave, r.datos.nombre || r.datos.usuario);
+  await abrirPagina(r.datos.llave, r.datos.nombre || r.datos.usuario, r.datos.rol);
   return true;
 }
 
@@ -128,7 +129,7 @@ form.addEventListener('submit', async (ev) => {
   const usuario = Acceso.normalizarUsuario(document.getElementById('usuario').value);
   const clave = document.getElementById('clave').value;
   try {
-    if (CFG.llavePrueba) { await abrirPagina(CFG.llavePrueba, usuario + ' (prueba)'); return; }
+    if (CFG.llavePrueba) { await abrirPagina(CFG.llavePrueba, usuario + ' (prueba)', usuario === 'admin' ? 'admin' : ''); return; }
     const token = await Acceso.entrar(usuario, clave);
     if (!token) {
       Acceso.rpc('registrar_fallo', { p_usuario: usuario, p_pagina: CFG.pagina }).catch(() => {});
