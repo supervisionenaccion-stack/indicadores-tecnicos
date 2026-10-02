@@ -53,7 +53,8 @@
   .fila-varios > div{ width:260px; max-width:100%; }
   .filtros{ display:flex; flex-wrap:wrap; gap:14px; align-items:end; margin-bottom:14px; }
   .filtros > div{ min-width:160px; }
-  .acciones{ display:flex; gap:6px; flex-wrap:wrap; }
+  .acciones{ display:grid; grid-template-columns:repeat(4,max-content); gap:6px; }
+  .acciones button{ min-width:112px; text-align:center; }
   .aviso{ display:none; margin:12px 0 0; padding:9px 12px; font-size:14px; border-left:3px solid; }
   .aviso.err{ color:var(--bad); background:var(--bad-bg); border-color:var(--bad); }
   .aviso.bien{ color:var(--ok); background:var(--ok-bg); border-color:var(--ok); }
@@ -256,7 +257,7 @@ function pintar() {
       + '<td><div class="acciones">'
       + '<button class="sec" data-a="clave" data-id="' + esc(u.id) + '">Cambiar clave</button>'
       + '<button class="sec" data-a="nombre" data-id="' + esc(u.id) + '">Cambiar nombre</button>'
-      + '<button class="sec" data-a="rol" data-id="' + esc(u.id) + '">' + (u.rol === 'admin' ? 'Pasar a supervisor' : 'Hacer administrador') + '</button>'
+      + '<button class="sec" data-a="rol" data-id="' + esc(u.id) + '">' + 'Cambiar rol' + '</button>'
       + '<button class="sec" data-a="estado" data-id="' + esc(u.id) + '">' + (u.activo ? 'Desactivar' : 'Activar') + '</button>'
       + '</div></td></tr>';
   }).join('');
