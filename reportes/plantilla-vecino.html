@@ -381,6 +381,13 @@ function aparecerAlBajar() {
     // La transicion va solo en el estado final: asi el bloque no se desvanece al ocultarlo.
     + '.rv.rv-ver{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);}'
     + '.comb-dibujar{animation-play-state:paused;}.en-vista .comb-dibujar{animation-play-state:running;}'
+    // Barras: parten vacias y se llenan de izquierda a derecha cuando su bloque entra en pantalla.
+    + ':is(.pareto-barra,.barra .b,.barra > i){transform-origin:left center;}'
+    + '.rv:not(.rv-ver) :is(.pareto-barra,.barra .b,.barra > i){transform:scaleX(0);}'
+    + '.rv-ver :is(.pareto-barra,.barra .b,.barra > i){transition:transform 1.1s cubic-bezier(.2,.7,.2,1) .3s;}'
+    + [1, 2, 3, 4, 5, 6, 7, 8].map((n) => '.rv-ver .pareto-fila:nth-child(' + n + ') .pareto-barra{transition-delay:' + (0.25 + n * 0.08).toFixed(2) + 's;}').join('')
+    + '.rv:not(.rv-ver) .barra-segmentada{clip-path:inset(0 100% 0 0);}'
+    + '.rv-ver .barra-segmentada{clip-path:inset(0 0 0 0);transition:clip-path 1.1s cubic-bezier(.2,.7,.2,1) .3s;}'
     + '@media print{.rv{opacity:1!important;transform:none!important;}}';
   document.head.appendChild(estilo);
   // En las filas de tarjetas entra cada tarjeta, una tras otra; el resto entra como bloque.
