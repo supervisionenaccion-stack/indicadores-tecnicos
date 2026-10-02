@@ -130,6 +130,11 @@ async function ingresarCon(token) {
       : 'Tu usuario no tiene acceso a esta página.');
     return false;
   }
+  // Llego desde la administracion sin sesion: tras ingresar vuelve alla.
+  if (r.datos.rol === 'admin' && new URLSearchParams(location.search).get('ir') === 'admin') {
+    location.replace('admin.html' + location.hash);
+    return true;
+  }
   await abrirPagina(r.datos.llave, r.datos.nombre || r.datos.usuario, r.datos.rol);
   return true;
 }

@@ -592,13 +592,13 @@ async function abrirPanel() {
     return abrirPanel();
   }
   if (!r.datos.ok || r.datos.rol !== 'admin') {
-    Acceso.salir();
-    avisar('avisoIngreso', 'Este usuario no es administrador.');
-    return false;
+    // Sesion valida pero sin rol de administrador: va al dashboard.
+    location.replace('supervisor.html');
+    return true;
   }
   yo = r.datos;
   $('sesion').innerHTML = '<a href="supervisor.html">Ir al dashboard</a> &middot; ' + esc(yo.nombre || yo.usuario) + ' &middot; <a href="#" id="salir">Cerrar sesión</a>';
-  $('salir').addEventListener('click', (ev) => { ev.preventDefault(); Acceso.salir(); location.reload(); });
+  $('salir').addEventListener('click', (ev) => { ev.preventDefault(); Acceso.salir(); location.href = 'supervisor.html'; });
   $('formIngreso').style.display = 'none';
   $('panelAdmin').style.display = 'block';
   await cargar();
@@ -632,8 +632,12 @@ $('formIngreso').addEventListener('submit', async (ev) => {
   }
   try {
     token = await Acceso.retomar();
-    if (token && await abrirPanel()) return;
-  } catch (err) { /* queda el formulario */ }
+    if (!token) { location.replace('supervisor.html?ir=admin' + location.hash); return; }
+    if (await abrirPanel()) return;
+  } catch (err) {
+    // Supabase no respondio: queda el formulario de respaldo con el motivo.
+    avisar('avisoIngreso', 'No se pudo abrir la administración: ' + err.message);
+  }
   $('formIngreso').style.display = 'block';
 })();
 </script>
