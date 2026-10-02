@@ -149,7 +149,9 @@
 // correo ficticio usuario@DOMINIO, porque Supabase exige un correo.
 const Acceso = (() => {
   const CLAVE_SESION = 'portal_sesion';
-  const DURACION_MS = 12 * 60 * 60 * 1000; // pasado este tiempo se pide la clave de nuevo
+  const CLAVE_USUARIO = 'portal_usuario';   // ultimo usuario que entro en este navegador (nunca la clave)
+  const DURACION_MS = 12 * 60 * 60 * 1000;  // pasado este tiempo se pide la clave de nuevo
+  const DURACION_LARGA_MS = 30 * 24 * 60 * 60 * 1000; // si marco "Mantener la sesion iniciada"
   let cfg = { url: '', key: '', dominio: 'portal.local' };
 
   function configurar(c) { cfg = Object.assign(cfg, c); }
@@ -167,18 +169,19 @@ const Acceso = (() => {
   function leerSesion() {
     try {
       const s = JSON.parse(localStorage.getItem(CLAVE_SESION));
-      if (s && s.rt && Date.now() - s.desde < DURACION_MS) return s;
+      if (s && s.rt && Date.now() - s.desde < (s.dura || DURACION_MS)) return s;
     } catch (e) { /* sin sesion */ }
     salir();
     return null;
   }
   // d = respuesta de Supabase Auth. El token de acceso se guarda con su
   // vencimiento para reutilizarlo al pasar de una pagina a otra.
-  function guardarSesion(d, desde) {
-    const sesion = { rt: d.refresh_token, desde, at: d.access_token, vence: Date.now() + (d.expires_in || 3600) * 1000 };
+  function guardarSesion(d, desde, dura) {
+    const sesion = { rt: d.refresh_token, desde, dura, at: d.access_token, vence: Date.now() + (d.expires_in || 3600) * 1000 };
     try { localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (e) { /* modo privado */ }
   }
   function haySesion() { return !!leerSesion(); }
+  function ultimoUsuario() { try { return localStorage.getItem(CLAVE_USUARIO) || ''; } catch (e) { return ''; } }
   function salir() {
     try { localStorage.removeItem(CLAVE_SESION); } catch (e) { /* nada que borrar */ }
   }
@@ -186,13 +189,15 @@ const Acceso = (() => {
   function normalizarUsuario(u) { return String(u || '').trim().toLowerCase(); }
 
   // Devuelve el token de acceso, o null si usuario o clave no corresponden.
-  async function entrar(usuario, clave) {
+  // Con mantener = true la sesion dura 30 dias en este navegador en vez de 12 horas.
+  async function entrar(usuario, clave, mantener) {
     const r = await pedir('POST', '/auth/v1/token?grant_type=password', { email: normalizarUsuario(usuario) + '@' + cfg.dominio, password: clave });
     if (!r.ok) {
       if (r.estado === 400 || r.estado === 401 || r.estado === 422) return null;
       throw new Error('El servicio de acceso respondió ' + r.estado);
     }
-    guardarSesion(r.datos, Date.now());
+    guardarSesion(r.datos, Date.now(), mantener ? DURACION_LARGA_MS : DURACION_MS);
+    try { localStorage.setItem(CLAVE_USUARIO, normalizarUsuario(usuario)); } catch (e) { /* modo privado */ }
     return r.datos.access_token;
   }
 
@@ -204,7 +209,7 @@ const Acceso = (() => {
     if (!renovar && s.at && Date.now() < s.vence - 60000) return s.at;
     const r = await pedir('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: s.rt });
     if (!r.ok) { salir(); return null; }
-    guardarSesion(r.datos, s.desde);
+    guardarSesion(r.datos, s.desde, s.dura);
     return r.datos.access_token;
   }
 
@@ -249,7 +254,7 @@ const Acceso = (() => {
     });
   }
 
-  return { pedirClaveNueva, configurar, entrar, retomar, haySesion, salir, rpc, leer, funcion, normalizarUsuario };
+  return { pedirClaveNueva, configurar, entrar, retomar, haySesion, ultimoUsuario, salir, rpc, leer, funcion, normalizarUsuario };
 })();
 
 </script>
