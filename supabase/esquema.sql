@@ -28,7 +28,7 @@ create table if not exists public.ingresos (
   user_id   uuid,
   usuario   text not null,
   pagina    text not null,
-  resultado text not null default 'ok'   -- ok | inactivo | clave_incorrecta | cambio_clave
+  resultado text not null default 'ok'   -- ok | inactivo | clave_incorrecta | cambio_clave | borro_N_registros
 );
 create index if not exists ingresos_fecha_idx on public.ingresos (fecha desc);
 
@@ -145,6 +145,25 @@ begin
 end;
 $$;
 
+-- Limpieza del registro: la llama admin.html despues de exportar. Solo borra
+-- ingresos con mas de 30 dias (los 29 dias dan margen por la hora del
+-- navegador) y deja anotado quien borro y cuantos.
+create or replace function public.borrar_ingresos(p_hasta timestamptz) returns integer
+language plpgsql security definer set search_path = public as $$
+declare
+  p public.perfiles;
+  n integer;
+begin
+  select * into p from public.perfiles where id = auth.uid();
+  if p.id is null or p.rol <> 'admin' or not p.activo then raise exception 'solo el administrador'; end if;
+  if p_hasta is null or p_hasta > now() - interval '29 days' then raise exception 'solo se pueden borrar registros de mas de un mes'; end if;
+  delete from public.ingresos where fecha < p_hasta;
+  get diagnostics n = row_count;
+  insert into public.ingresos (user_id, usuario, pagina, resultado) values (p.id, p.usuario, '-', 'borro_' || n || '_registros');
+  return n;
+end;
+$$;
+
 -- Intentos con clave incorrecta (lo llama la pantalla de ingreso sin sesion).
 -- Con tope por minuto para que nadie llene la tabla.
 create or replace function public.registrar_fallo(p_usuario text, p_pagina text) returns void
@@ -185,6 +204,8 @@ revoke all on function public.crear_perfil()                  from public, anon,
 revoke all on function public.cambiar_clave(text) from public, anon;
 revoke all on function public.exigir_cambio(uuid) from public, anon;
 grant execute on function public.cambiar_clave(text) to authenticated;
+revoke all on function public.borrar_ingresos(timestamptz) from public, anon;
+grant execute on function public.borrar_ingresos(timestamptz) to authenticated;
 grant execute on function public.exigir_cambio(uuid) to authenticated;
 grant execute on function public.ingresar(text, text)            to authenticated;
 grant execute on function public.registrar_fallo(text, text)     to anon, authenticated;

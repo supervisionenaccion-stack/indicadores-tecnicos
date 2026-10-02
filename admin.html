@@ -121,6 +121,10 @@
     <h2>Registro de <strong>ingresos</strong></h2>
     <p class="explica">Cada vez que alguien abre una página protegida queda una línea. También quedan los intentos con clave incorrecta y los de usuarios desactivados.</p>
     <div class="panel">
+      <div class="prueba" id="avisoAntiguos" style="display:none;margin:0 0 16px;">
+        <span id="textoAntiguos"></span>
+        <button type="button" id="btnExportarBorrar" style="margin-left:10px;">Exportar y borrar</button>
+      </div>
       <div class="filtros">
         <div><label for="fUsuario">Usuario</label><select id="fUsuario"><option value="">Todos</option></select></div>
         <div><label for="fDesde">Desde</label><input id="fDesde" type="date"></div>
@@ -255,7 +259,14 @@ Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
 
 const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'admin': 'Administración', '-': '—' };
 const RESULTADOS = { cambio_clave: ['Definió su clave', 'ok'], ok: ['Ingresó', 'ok'], clave_incorrecta: ['Clave incorrecta', 'bad'], inactivo: ['Usuario desactivado', 'warn'] };
+function etiquetaResultado(r) {
+  const m = /^borro_(\d+)_registros$/.exec(r);
+  return m ? ['Borró ' + m[1] + ' registros antiguos', 'warn'] : (RESULTADOS[r] || [r, 'warn']);
+}
 const MAX_INGRESOS = 2000;
+// Pasado este plazo aparece el boton para exportar y borrar los registros viejos.
+const DIAS_REGISTRO = 30;
+let masAntiguo = null;
 let token = null, yo = null, usuarios = [], ingresos = [];
 
 const $ = (id) => document.getElementById(id);
@@ -279,17 +290,20 @@ function datosDePrueba() {
     { fecha: new Date(ahora - 1.6 * h).toISOString(), usuario: 'jcabrera', pagina: 'supervisor', resultado: 'ok' },
     { fecha: new Date(ahora - 1.7 * h).toISOString(), usuario: 'jcabrera', pagina: 'supervisor', resultado: 'clave_incorrecta' },
     { fecha: new Date(ahora - 26 * h).toISOString(), usuario: 'mrojas', pagina: 'supervisor', resultado: 'inactivo' },
+    { fecha: new Date(ahora - 40 * 24 * h).toISOString(), usuario: 'jcabrera', pagina: 'vecino', resultado: 'ok' },
   ];
 }
 
 async function cargar() {
-  if (CFG.prueba) { datosDePrueba(); pintar(); return; }
-  const [u, i] = await Promise.all([
+  if (CFG.prueba) { datosDePrueba(); masAntiguo = ingresos[ingresos.length - 1].fecha; pintar(); return; }
+  const [u, i, v] = await Promise.all([
     Acceso.leer('perfiles?select=id,usuario,nombre,rol,activo,debe_cambiar&order=usuario', token),
     Acceso.leer('ingresos?select=fecha,usuario,pagina,resultado&order=fecha.desc&limit=' + MAX_INGRESOS, token),
+    Acceso.leer('ingresos?select=fecha&order=fecha.asc&limit=1', token),
   ]);
   if (!u.ok || !i.ok) throw new Error('No se pudieron leer los datos (' + (u.ok ? i.estado : u.estado) + ')');
   usuarios = u.datos; ingresos = i.datos;
+  masAntiguo = v.ok && v.datos.length ? v.datos[0].fecha : null;
   pintar();
 }
 
@@ -315,6 +329,36 @@ function pintar() {
   sel.innerHTML = '<option value="">Todos</option>' + nombres.map((n) => '<option>' + esc(n) + '</option>').join('');
   sel.value = nombres.includes(previo) ? previo : '';
   pintarIngresos();
+  const hayAntiguos = masAntiguo && new Date(masAntiguo) < corteAntiguos();
+  $('avisoAntiguos').style.display = hayAntiguos ? 'block' : 'none';
+  if (hayAntiguos) $('textoAntiguos').textContent = 'Hay registros de más de un mes (desde el ' + fmtFecha.format(new Date(masAntiguo)) + '). Puedes descargarlos a un archivo y borrarlos del sistema.';
+}
+
+function corteAntiguos() { return new Date(Date.now() - DIAS_REGISTRO * 24 * 3600 * 1000); }
+
+function descargarCsv(lista, nombre) {
+  const filas = [['Fecha', 'Hora', 'Usuario', 'Página', 'Resultado']].concat(lista.map((g) => {
+    const f = new Date(g.fecha);
+    return [fmtFecha.format(f), fmtHora.format(f), g.usuario, PAGINAS[g.pagina] || g.pagina, etiquetaResultado(g.resultado)[0]];
+  }));
+  const csv = String.fromCharCode(0xFEFF) + filas.map((f) => f.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = nombre;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Todos los registros anteriores al corte, de a 1000 (tope de Supabase por consulta).
+async function leerAntiguos(corte) {
+  if (CFG.prueba) return ingresos.filter((g) => new Date(g.fecha) < corte);
+  const todos = [];
+  for (;;) {
+    const r = await Acceso.leer('ingresos?select=fecha,usuario,pagina,resultado&fecha=lt.' + encodeURIComponent(corte.toISOString()) + '&order=fecha.asc&limit=1000&offset=' + todos.length, token);
+    if (!r.ok) throw new Error('No se pudieron leer los registros antiguos (' + r.estado + ')');
+    todos.push(...r.datos);
+    if (r.datos.length < 1000) return todos;
+  }
 }
 
 function ingresosFiltrados() {
@@ -325,7 +369,7 @@ function ingresosFiltrados() {
 function pintarIngresos() {
   const lista = ingresosFiltrados();
   $('tablaIngresos').innerHTML = lista.map((g) => {
-    const f = new Date(g.fecha), res = RESULTADOS[g.resultado] || [g.resultado, 'warn'];
+    const f = new Date(g.fecha), res = etiquetaResultado(g.resultado);
     return '<tr><td class="mono">' + fmtFecha.format(f) + '</td><td class="mono">' + fmtHora.format(f) + '</td><td class="mono">' + esc(g.usuario) + '</td>'
       + '<td>' + esc(PAGINAS[g.pagina] || g.pagina) + '</td><td><span class="pill ' + res[1] + '">' + res[0] + '</span></td></tr>';
   }).join('') || '<tr><td colspan="5" style="color:var(--muted);">Sin ingresos para este filtro.</td></tr>';
@@ -392,17 +436,31 @@ $('tablaUsuarios').addEventListener('click', async (ev) => {
 
 for (const id of ['fUsuario', 'fDesde', 'fResultado']) $(id).addEventListener('change', pintarIngresos);
 
-$('btnCsv').addEventListener('click', () => {
-  const filas = [['Fecha', 'Hora', 'Usuario', 'Página', 'Resultado']].concat(ingresosFiltrados().map((g) => {
-    const f = new Date(g.fecha);
-    return [fmtFecha.format(f), fmtHora.format(f), g.usuario, PAGINAS[g.pagina] || g.pagina, (RESULTADOS[g.resultado] || [g.resultado])[0]];
-  }));
-  const csv = '﻿' + filas.map((f) => f.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'ingresos_portal_' + fmtIso.format(new Date()) + '.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+$('btnCsv').addEventListener('click', () => descargarCsv(ingresosFiltrados(), 'ingresos_portal_' + fmtIso.format(new Date()) + '.csv'));
+
+// Primero se descarga el archivo; se borra solo si el administrador confirma
+// despues, y solo lo anterior al corte (lo mismo que quedo en el archivo).
+$('btnExportarBorrar').addEventListener('click', async () => {
+  const boton = $('btnExportarBorrar');
+  boton.disabled = true;
+  try {
+    const corte = corteAntiguos();
+    const lista = await leerAntiguos(corte);
+    if (!lista.length) { alert('No hay registros de más de un mes.'); return; }
+    const nombre = 'ingresos_portal_hasta_' + fmtIso.format(new Date(lista[lista.length - 1].fecha)) + '.csv';
+    descargarCsv(lista, nombre);
+    const seguro = confirm('Se descargó ' + nombre + ' con ' + lista.length + ' registros.\n\nRevisa que el archivo quedó guardado. ¿Borrar ahora esos ' + lista.length + ' registros del sistema? No se puede deshacer.');
+    if (!seguro) return;
+    if (CFG.prueba) { alert('Modo prueba: no se borró nada.'); return; }
+    const r = await Acceso.rpc('borrar_ingresos', { p_hasta: corte.toISOString() }, token);
+    if (!r.ok) throw new Error((r.datos && r.datos.message) || 'No se pudo borrar (' + r.estado + ')');
+    alert('Se borraron ' + r.datos + ' registros.');
+    await cargar();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    boton.disabled = false;
+  }
 });
 
 // Muestra el panel solo si la sesion es de un administrador activo.
