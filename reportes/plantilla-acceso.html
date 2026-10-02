@@ -83,9 +83,10 @@ async function abrirPagina(llave, nombre) {
   const cifrado = bytes(document.getElementById('datosCifrados').textContent.trim());
   const comprimido = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(CFG.iv) }, k, cifrado);
   let html = await new Response(new Blob([comprimido]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-  const barra = '<div style="position:fixed;right:14px;bottom:14px;z-index:9999;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir">'
-    + escapar(nombre) + ' &middot; <a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
-    + '<style>@media print{.no-imprimir{display:none!important}}</style>';
+  // Fija arriba a la derecha, sobre la cabecera blanca de la pagina.
+  const barra = '<div style="position:fixed;right:24px;top:20px;z-index:9999;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir barra-sesion">'
+    + '<span class="barra-sesion-nombre">' + escapar(nombre) + ' &middot; </span><a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
+    + '<style>@media print{.no-imprimir{display:none!important}} @media (max-width:640px){.barra-sesion{right:6px!important;top:3px!important;padding:1px 6px!important;font-size:10px!important}.barra-sesion-nombre{display:none}}</style>';
   const corte = html.lastIndexOf('</body>');
   html = corte >= 0 ? html.slice(0, corte) + barra + html.slice(corte) : html + barra;
   document.open();
