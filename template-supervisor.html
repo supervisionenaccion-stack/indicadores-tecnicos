@@ -1222,7 +1222,48 @@ function animarCifras(selector, duracion) {
   requestAnimationFrame(paso);
 }
 // Solo en la primera carga, no cada vez que se cambia el supervisor.
-animarCifras('#resumenRow .num, #resumenRow .chips span', 900);
+// ---------- Animaciones al desplazarse ----------
+// Cada bloque aparece cuando entra en pantalla, y alVer() corre una funcion
+// la primera vez que un elemento se ve (cifras que suben, lineas que se
+// dibujan). Si el navegador no lo soporta o el usuario pidio reducir el
+// movimiento, todo se muestra de inmediato: nada queda oculto.
+const SIN_MOVIMIENTO = !('IntersectionObserver' in window) || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function alVer(el, fn) {
+  if (!el) return;
+  if (SIN_MOVIMIENTO) { fn(el); return; }
+  const o = new IntersectionObserver((entradas) => {
+    if (entradas.some((e) => e.isIntersecting)) { o.disconnect(); fn(el); }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  o.observe(el);
+}
+function aparecerAlBajar() {
+  if (SIN_MOVIMIENTO) return;
+  const estilo = document.createElement('style');
+  estilo.textContent = '.rv{opacity:0;transform:translateY(22px);}'
+    // La transicion va solo en el estado final: asi el bloque no se desvanece al ocultarlo.
+    + '.rv.rv-ver{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);}'
+    + '.comb-dibujar{animation-play-state:paused;}.en-vista .comb-dibujar{animation-play-state:running;}'
+    + '@media print{.rv{opacity:1!important;transform:none!important;}}';
+  document.head.appendChild(estilo);
+  // En las filas de tarjetas entra cada tarjeta, una tras otra; el resto entra como bloque.
+  const FILAS = '.resumen-row, .ranking-row, .fila-doble, .grid2, .resumen';
+  document.querySelectorAll('main > *').forEach((bloque) => {
+    const piezas = bloque.matches(FILAS) && bloque.children.length ? Array.from(bloque.children) : [bloque];
+    piezas.forEach((el, i) => {
+      el.classList.add('rv');
+      el.style.transitionDelay = (piezas.length > 1 ? Math.min(i, 5) * 90 : 0) + 'ms';
+      alVer(el, () => {
+        el.classList.add('rv-ver');
+        // Al terminar se quita el retardo, para no frenar otros efectos del bloque.
+        setTimeout(() => { el.style.transitionDelay = ''; }, 1400);
+      });
+    });
+  });
+}
+alVer(document.getElementById('resumenRow'), () => animarCifras('#resumenRow .num, #resumenRow .chips span', 900));
+// Las lineas del grafico se dibujan cuando el panel entra en pantalla.
+alVer(document.getElementById('panelCombinado'), (el) => el.classList.add('en-vista'));
+aparecerAlBajar();
 // El grafico combinado depende del ancho del panel: se redibuja al cambiar el tamano de la ventana.
 let esperaResize = null;
 window.addEventListener('resize', () => { clearTimeout(esperaResize); esperaResize = setTimeout(renderCombinado, 150); });
