@@ -370,6 +370,7 @@ function pintar() {
       + '<td><div class="acciones">'
       + '<button class="sec" data-a="clave" data-id="' + esc(u.id) + '">Cambiar clave</button>'
       + '<button class="sec" data-a="nombre" data-id="' + esc(u.id) + '">Cambiar nombre</button>'
+      + '<button class="sec" data-a="rol" data-id="' + esc(u.id) + '">' + (u.rol === 'admin' ? 'Pasar a supervisor' : 'Hacer administrador') + '</button>'
       + '<button class="sec" data-a="estado" data-id="' + esc(u.id) + '">' + (u.activo ? 'Desactivar' : 'Activar') + '</button>'
       + '</div></td></tr>';
   }).join('');
@@ -515,6 +516,12 @@ $('tablaUsuarios').addEventListener('click', async (ev) => {
   } else if (b.dataset.a === 'nombre') {
     const nombre = prompt('Nombre de ' + u.usuario + ':', u.nombre);
     if (nombre !== null) await accion({ accion: 'editar', id: u.id, nombre }, 'Nombre actualizado.');
+  } else if (b.dataset.a === 'rol') {
+    const aAdmin = u.rol !== 'admin';
+    const pregunta = aAdmin
+      ? 'Hacer administrador a ' + u.usuario + '?\n\nPodrá crear y desactivar usuarios, cambiar claves y ver los registros de ingresos.'
+      : 'Pasar a ' + u.usuario + ' a supervisor?\n\nDejará de tener acceso a la administración.';
+    if (confirm(pregunta)) await accion({ accion: 'editar', id: u.id, rol: aAdmin ? 'admin' : 'supervisor' }, u.usuario + (aAdmin ? ' ahora es administrador.' : ' ahora es supervisor.'));
   } else if (confirm((u.activo ? 'Desactivar' : 'Activar') + ' a ' + u.usuario + '?')) {
     await accion({ accion: 'editar', id: u.id, activo: !u.activo }, u.usuario + (u.activo ? ' desactivado.' : ' activado.'));
   }
