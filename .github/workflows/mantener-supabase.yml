@@ -1,0 +1,35 @@
+# Robot que mantiene despierto el proyecto de Supabase (usuarios y registros de
+# ingreso del portal). El plan gratis pausa un proyecto tras 7 dias sin uso, y
+# pausado nadie puede ingresar. La actualizacion diaria del portal ya lo usa,
+# pero depende de que el equipo de la oficina este encendido; este robot corre
+# en GitHub, lunes y jueves, aunque ese equipo este apagado.
+#
+# Hace una consulta inofensiva: pregunta por un tecnico que no existe, lo que
+# pasa por la base de datos sin anotar nada. La llave es la publica (la misma
+# que ya va dentro de las paginas del sitio), no la secreta.
+name: Mantener Supabase despierto
+
+on:
+  schedule:
+    - cron: "17 12 * * 1,4"   # lunes y jueves, 12:17 UTC (manana en Chile)
+  workflow_dispatch:           # tambien se puede correr a mano desde GitHub
+
+permissions: {}
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consultar Supabase
+        env:
+          SUPABASE_URL: https://puqexeqjnhsxyibyehdw.supabase.co
+          SUPABASE_KEY: sb_publishable_0tGCVfVqnfeNQ_IYyHMwJg_ELlJBoUF
+        run: |
+          codigo=$(curl -sS -o respuesta.txt -w "%{http_code}" --max-time 60             -X POST "$SUPABASE_URL/rest/v1/rpc/registrar_tecnico"             -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json"             -d '{"p_id":"robot-latido"}')
+          echo "Supabase respondio $codigo"
+          if [ "$codigo" != "204" ] && [ "$codigo" != "200" ]; then
+            cat respuesta.txt
+            echo "::error::Supabase no respondio bien. Si el proyecto esta pausado, hay que reactivarlo desde supabase.com."
+            exit 1
+          fi
