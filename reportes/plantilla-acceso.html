@@ -30,18 +30,26 @@
   button:disabled{ opacity:.6; cursor:default; }
   .aviso{ display:none; margin-top:16px; padding:10px 12px; font-size:14px; color:var(--bad); background:var(--bad-bg); border-left:3px solid var(--bad); }
   .prueba{ margin:0 0 16px; padding:8px 10px; font-size:12.5px; color:#9a5b00; background:#fdf1d8; border-left:3px solid var(--amber); }
+  .abriendo{ display:none; flex:1; align-items:center; justify-content:center; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  html.con-sesion main, html.con-sesion footer{ display:none; }
+  html.con-sesion .abriendo{ display:flex; }
   footer{ background:#fff; border-top:1px solid var(--line); text-align:center; padding:10px; font-size:7.5px; color:var(--muted); letter-spacing:.06em; }
   @media (max-width:560px){ .brand-row img{ height:30px; } .brand-name{ font-size:14px; } .tarjeta{ padding:24px 20px; } }
 </style>
 </head>
 <body>
+<script>
+// Antes de dibujar nada: si este navegador ya tiene sesion, se oculta el formulario.
+try { if (localStorage.getItem('portal_sesion')) document.documentElement.className = 'con-sesion'; } catch (e) {}
+</script>
 <header>
   <div class="brand-row">
     <img src="__LOGO__" alt="Cobra">
     <span class="brand-divider"></span>
-    <span class="brand-name">Portal <strong>Supervisores</strong></span>
+    <span class="brand-name">Portal <strong>Supervisor</strong></span>
   </div>
 </header>
+<div class="abriendo">Abriendo…</div>
 <main>
   <form class="tarjeta" id="formIngreso" autocomplete="on">
     <p class="etiqueta">Acceso restringido</p>
@@ -135,12 +143,21 @@ form.addEventListener('submit', async (ev) => {
 });
 
 (async () => {
-  if (CFG.llavePrueba) { document.getElementById('avisoPrueba').style.display = 'block'; return; }
+  if (CFG.llavePrueba) { document.documentElement.className = ''; document.getElementById('avisoPrueba').style.display = 'block'; return; }
   try {
     ocupado(true);
-    const token = await Acceso.retomar();
-    if (token) await ingresarCon(token);
+    let token = await Acceso.retomar();
+    if (token) {
+      let abierta = false;
+      try { abierta = await ingresarCon(token); } catch (err) {
+        // El token guardado ya no sirve: se pide uno nuevo y se reintenta.
+        token = await Acceso.retomar(true);
+        if (token) abierta = await ingresarCon(token);
+      }
+      if (abierta) return;
+    }
   } catch (err) { /* sin sesion valida: queda el formulario */ }
+  document.documentElement.className = '';
   ocupado(false);
 })();
 </script>

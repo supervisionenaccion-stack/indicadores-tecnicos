@@ -28,9 +28,13 @@ const Acceso = (() => {
     salir();
     return null;
   }
-  function guardarSesion(rt, desde) {
-    try { localStorage.setItem(CLAVE_SESION, JSON.stringify({ rt, desde })); } catch (e) { /* modo privado */ }
+  // d = respuesta de Supabase Auth. El token de acceso se guarda con su
+  // vencimiento para reutilizarlo al pasar de una pagina a otra.
+  function guardarSesion(d, desde) {
+    const sesion = { rt: d.refresh_token, desde, at: d.access_token, vence: Date.now() + (d.expires_in || 3600) * 1000 };
+    try { localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion)); } catch (e) { /* modo privado */ }
   }
+  function haySesion() { return !!leerSesion(); }
   function salir() {
     try { localStorage.removeItem(CLAVE_SESION); } catch (e) { /* nada que borrar */ }
   }
@@ -44,17 +48,19 @@ const Acceso = (() => {
       if (r.estado === 400 || r.estado === 401 || r.estado === 422) return null;
       throw new Error('El servicio de acceso respondió ' + r.estado);
     }
-    guardarSesion(r.datos.refresh_token, Date.now());
+    guardarSesion(r.datos, Date.now());
     return r.datos.access_token;
   }
 
   // Retoma la sesion guardada en este navegador (si no ha vencido).
-  async function retomar() {
+  // Con renovar = true pide un token nuevo aunque el guardado no haya vencido.
+  async function retomar(renovar) {
     const s = leerSesion();
     if (!s) return null;
+    if (!renovar && s.at && Date.now() < s.vence - 60000) return s.at;
     const r = await pedir('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: s.rt });
     if (!r.ok) { salir(); return null; }
-    guardarSesion(r.datos.refresh_token, s.desde);
+    guardarSesion(r.datos, s.desde);
     return r.datos.access_token;
   }
 
@@ -99,5 +105,5 @@ const Acceso = (() => {
     });
   }
 
-  return { pedirClaveNueva, configurar, entrar, retomar, salir, rpc, leer, funcion, normalizarUsuario };
+  return { pedirClaveNueva, configurar, entrar, retomar, haySesion, salir, rpc, leer, funcion, normalizarUsuario };
 })();
