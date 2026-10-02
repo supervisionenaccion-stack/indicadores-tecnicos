@@ -111,6 +111,19 @@ function leerSinCifrar(archivo) {
   return html;
 }
 
+// Deja en Supabase la lista vigente de tecnicos (ID, nombre, supervisor,
+// agencia) para el registro de ingresos al portal del tecnico. Es un
+// complemento: quien la llama decide si un fallo detiene la generacion.
+async function sincronizarTecnicos(lista) {
+  const cfg = configSupabase();
+  const r = await fetch(cfg.url + "/rest/v1/rpc/sincronizar_tecnicos", {
+    method: "POST",
+    headers: { apikey: cfg.serviceKey, Authorization: "Bearer " + cfg.serviceKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_lista: lista }),
+  });
+  if (!r.ok) throw new Error(`Supabase no guardo la lista de tecnicos (${r.status}): ${(await r.text()).slice(0, 200)}`);
+}
+
 // Solo para paginas prueba_*.html (no se publican): la llave va dentro de la
 // pagina y se entra con cualquier usuario y clave, sin Supabase.
 function protegerPaginaPrueba(html, pagina, titulo) {
@@ -118,4 +131,4 @@ function protegerPaginaPrueba(html, pagina, titulo) {
   return armarPagina({ pagina, titulo, cifrado, llavePrueba: cifrado.llave });
 }
 
-module.exports = { protegerPagina, protegerPaginaPrueba, publicarProtegida, leerSinCifrar, estaCifrada, configSupabase, leerEnv, DOMINIO_USUARIOS, DIR_PRIVADO };
+module.exports = { sincronizarTecnicos, protegerPagina, protegerPaginaPrueba, publicarProtegida, leerSinCifrar, estaCifrada, configSupabase, leerEnv, DOMINIO_USUARIOS, DIR_PRIVADO };

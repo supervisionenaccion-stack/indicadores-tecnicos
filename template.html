@@ -668,6 +668,21 @@ function intentarLogin() {
   errorBox.style.display = 'none';
   sessionStorage.setItem('portalTecnicoKey', key);
   mostrarPerfil(t);
+  registrarIngreso(key);
+}
+
+// Anota el ingreso en el registro (lo ve el administrador). Si falla o no hay
+// conexion no pasa nada: el tecnico ve su portal igual.
+function registrarIngreso(key) {
+  const url = '__SUPABASE_URL__', llave = '__SUPABASE_KEY__';
+  if (url.indexOf('http') !== 0 || !llave) return;
+  try {
+    fetch(url + '/rest/v1/rpc/registrar_tecnico', {
+      method: 'POST', keepalive: true,
+      headers: { apikey: llave, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: key }),
+    }).catch(function () {});
+  } catch (e) { /* navegador sin fetch */ }
 }
 
 document.getElementById('loginBtn').addEventListener('click', intentarLogin);

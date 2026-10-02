@@ -8,7 +8,7 @@ const path = require("path");
 const sql = require("mssql");
 const ExcelJS = require("exceljs");
 const { obtenerVecino } = require("./reportes/generar_vecino.js");
-const { publicarProtegida } = require("./reportes/proteger.js");
+const { publicarProtegida, sincronizarTecnicos, leerEnv } = require("./reportes/proteger.js");
 
 // ---------- 0. Cargar variables desde .env.local (sin dependencias extra) ----------
 function loadEnvLocal() {
@@ -915,7 +915,18 @@ async function main() {
     cierreMes: esDiaDeCierre(),
     tecnicos: dataParaHtml,
   };
-  const html = template.replace("__DATA_JSON__", () => jsonParaScript(dataCompleta));
+  // El portal avisa a Supabase cada vez que un tecnico entra con su ID (registro
+  // de ingresos, se ve en admin.html). Solo lleva la direccion y la llave publica.
+  const envAcceso = leerEnv();
+  const html = template
+    .replace("__DATA_JSON__", () => jsonParaScript(dataCompleta))
+    .replace("__SUPABASE_URL__", () => (envAcceso.SUPABASE_URL || "").replace(/\/+$/, ""))
+    .replace("__SUPABASE_KEY__", () => envAcceso.SUPABASE_ANON_KEY || "");
+  try {
+    await sincronizarTecnicos(Object.entries(dataParaHtml).map(([id, t]) => ({ id, nombre: t.nombre, supervisor: t.supervisor || "", agencia: t.agencia || "" })));
+  } catch (err) {
+    console.warn(`AVISO: no se actualizo la lista de tecnicos del registro de ingresos. El portal se genera igual. Detalle: ${err.message}`);
+  }
 
   const outPath = path.join(__dirname, "index.html");
   fs.writeFileSync(outPath, html, "utf-8");

@@ -191,6 +191,111 @@ begin
 end;
 $$;
 
+-- ===================== Ingresos de tecnicos a su portal =====================
+-- El portal del tecnico (index.html) no usa cuentas: entra con su ID. Cada vez
+-- que escribe su ID, la pagina avisa aca. "tecnicos" es la lista vigente (la
+-- sube el generador en cada actualizacion) y sirve para aceptar solo ID reales
+-- y para mostrar nombres en admin.html.
+create table if not exists public.tecnicos (
+  id          text primary key,
+  nombre      text not null,
+  supervisor  text not null default '',
+  agencia     text not null default '',
+  actualizado timestamptz not null default now()
+);
+create table if not exists public.ingresos_tecnicos (
+  id         bigint generated always as identity primary key,
+  fecha      timestamptz not null default now(),
+  tecnico_id text not null
+);
+create index if not exists ingresos_tecnicos_fecha_idx on public.ingresos_tecnicos (fecha desc);
+create index if not exists ingresos_tecnicos_tecnico_idx on public.ingresos_tecnicos (tecnico_id, fecha desc);
+alter table public.tecnicos enable row level security;
+alter table public.ingresos_tecnicos enable row level security;
+
+drop policy if exists tecnicos_ver on public.tecnicos;
+create policy tecnicos_ver on public.tecnicos for select to authenticated using (public.es_admin());
+drop policy if exists ingresos_tecnicos_ver on public.ingresos_tecnicos;
+create policy ingresos_tecnicos_ver on public.ingresos_tecnicos for select to authenticated using (public.es_admin());
+
+-- La llama index.html sin sesion. Ignora ID que no existen, repeticiones del
+-- mismo tecnico en menos de 2 minutos y rafagas (tope por minuto).
+create or replace function public.registrar_tecnico(p_id text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.tecnicos where id = p_id) then return; end if;
+  if exists (select 1 from public.ingresos_tecnicos where tecnico_id = p_id and fecha > now() - interval '2 minutes') then return; end if;
+  if (select count(*) from public.ingresos_tecnicos where fecha > now() - interval '1 minute') >= 60 then return; end if;
+  insert into public.ingresos_tecnicos (tecnico_id) values (p_id);
+end;
+$$;
+
+-- La usa el generador (llave secreta): deja "tecnicos" igual a la lista del portal.
+create or replace function public.sincronizar_tecnicos(p_lista jsonb) returns integer
+language plpgsql security definer set search_path = public as $$
+declare
+  n integer;
+begin
+  if p_lista is null or jsonb_array_length(p_lista) = 0 then raise exception 'lista vacia'; end if;
+  insert into public.tecnicos (id, nombre, supervisor, agencia, actualizado)
+  select x->>'id', coalesce(x->>'nombre', ''), coalesce(x->>'supervisor', ''), coalesce(x->>'agencia', ''), now()
+  from jsonb_array_elements(p_lista) x
+  on conflict (id) do update set nombre = excluded.nombre, supervisor = excluded.supervisor, agencia = excluded.agencia, actualizado = now();
+  get diagnostics n = row_count;
+  delete from public.tecnicos where id not in (select x->>'id' from jsonb_array_elements(p_lista) x);
+  return n;
+end;
+$$;
+
+-- Resumen para admin.html: una fila por tecnico vigente, haya entrado o no.
+create or replace function public.resumen_tecnicos() returns table (
+  nombre text, supervisor text, agencia text, ultimo timestamptz, ingresos_30 bigint, dias_30 bigint, ingresos_total bigint
+)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'solo el administrador'; end if;
+  return query
+  select t.nombre, t.supervisor, t.agencia,
+         max(i.fecha),
+         count(i.id) filter (where i.fecha > now() - interval '30 days'),
+         count(distinct (i.fecha at time zone 'America/Santiago')::date) filter (where i.fecha > now() - interval '30 days'),
+         count(i.id)
+  from public.tecnicos t
+  left join public.ingresos_tecnicos i on i.tecnico_id = t.id
+  group by t.id, t.nombre, t.supervisor, t.agencia
+  order by t.nombre;
+end;
+$$;
+
+-- Detalle para exportar: cada ingreso con el nombre del tecnico.
+create or replace function public.detalle_tecnicos(p_desde timestamptz) returns table (
+  fecha timestamptz, nombre text, supervisor text, agencia text
+)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'solo el administrador'; end if;
+  return query
+  select i.fecha, coalesce(t.nombre, '(ya no está en el portal)'), coalesce(t.supervisor, ''), coalesce(t.agencia, '')
+  from public.ingresos_tecnicos i
+  left join public.tecnicos t on t.id = i.tecnico_id
+  where i.fecha >= p_desde
+  order by i.fecha desc
+  limit 20000;
+end;
+$$;
+
+revoke all on public.tecnicos, public.ingresos_tecnicos from anon, authenticated;
+grant select on public.tecnicos, public.ingresos_tecnicos to authenticated;
+grant all on public.tecnicos, public.ingresos_tecnicos to service_role;
+revoke all on function public.registrar_tecnico(text) from public;
+revoke all on function public.sincronizar_tecnicos(jsonb) from public, anon, authenticated;
+revoke all on function public.resumen_tecnicos() from public, anon;
+revoke all on function public.detalle_tecnicos(timestamptz) from public, anon;
+grant execute on function public.registrar_tecnico(text) to anon, authenticated;
+grant execute on function public.sincronizar_tecnicos(jsonb) to service_role;
+grant execute on function public.resumen_tecnicos() to authenticated;
+grant execute on function public.detalle_tecnicos(timestamptz) to authenticated;
+
 -- Permisos de tablas, explicitos para no depender de la opcion "Automatically
 -- expose new tables" del proyecto. Las politicas de arriba deciden que filas.
 revoke all on public.perfiles, public.ingresos, public.llaves from anon, authenticated;
