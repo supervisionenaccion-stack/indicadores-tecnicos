@@ -607,10 +607,10 @@ async function abrirPanel() {
   if (yo.rol !== 'admin') {
     // Supervisor: solo la pestana de ingresos de tecnicos, sin usuarios ni registro de supervisores.
     soloTecnicos = true;
-    document.title = 'Ingresos de técnicos — Portal Supervisores';
+    document.title = 'Uso de App — Portal Supervisores';
     $('vistas').style.display = 'none';
     $('avisoPrueba').style.display = 'none';
-    document.querySelector('.franja h1').innerHTML = 'Ingresos de <strong>técnicos</strong>';
+    document.querySelector('.franja h1').innerHTML = 'Uso de <strong>App</strong>';
     document.querySelector('.franja p').textContent = 'Cuándo entra cada técnico a su portal de indicadores.';
     mostrarVista();
   }
