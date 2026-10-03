@@ -104,7 +104,7 @@ async function abrirPagina(llave, nombre, rol) {
   // no tiene cabecera, queda flotando arriba a la derecha.
   const barra = '<div id="barraSesion" style="position:fixed;right:24px;top:20px;z-index:9999;flex:none;white-space:nowrap;padding:6px 12px;background:#fff;border:1px solid #d9dbe0;border-radius:2px;font:12px Helvetica,Arial,sans-serif;color:#62646e;" class="no-imprimir barra-sesion">'
     + (rol === 'admin' ? '<a href="admin.html" style="color:#003575;font-weight:600;">Administración</a> &middot; '
-      : rol ? '<a href="admin.html#tecnicos" style="color:#003575;font-weight:600;">Ingresos técnicos</a> &middot; ' : '')
+      : rol ? '<a href="admin.html#tecnicos" style="color:#003575;font-weight:600;">Uso de App</a> &middot; ' : '')
     + '<span class="barra-sesion-nombre">' + escapar(nombre) + ' &middot; </span><a href="#" style="color:#003575;font-weight:600;" onclick="try{localStorage.removeItem(\'portal_sesion\')}catch(e){};location.reload();return false;">Cerrar sesión</a></div>'
     + '<script>(function(){var b=document.getElementById("barraSesion"),f=document.querySelector("header .brand-row");'
     + 'if(b&&f){b.style.position="static";b.style.marginLeft=f.querySelector(".link-portal")?"18px":"auto";f.appendChild(b);}})();<\/script>'
