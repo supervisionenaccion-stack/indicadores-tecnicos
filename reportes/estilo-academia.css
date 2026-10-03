@@ -173,7 +173,7 @@ footer.foot{ background:var(--navy); color:#c9d7ee; padding:0; text-align:left; 
 footer.foot .wrap{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding-block:28px; }
 footer.foot span{ font-weight:300; letter-spacing:.1em; text-transform:uppercase; font-size:12px; }
 /* firma: mas chica que los 9px del sistema, a pedido */
-footer.foot .by{ font-size:7.5px; letter-spacing:.06em; opacity:.7; align-self:flex-end; text-align:right; margin:18px 0 -20px; }
+footer.foot .by{ font-size:7.5px; letter-spacing:.06em; opacity:.7; align-self:center; text-align:center; margin:18px 0 -20px; }
 footer.foot .by b{ text-transform:none; font-weight:700; color:#fff; }
 
 /* ===== portada sin foto (portal del tecnico y reportes): solo azul marino y fibras ===== */
