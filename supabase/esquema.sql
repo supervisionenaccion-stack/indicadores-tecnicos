@@ -247,13 +247,20 @@ begin
 end;
 $$;
 
+-- Quien puede ver los ingresos de los tecnicos: administradores y supervisores
+-- activos (los supervisores solo ven esto; usuarios y su propio registro no).
+create or replace function public.puede_ver_tecnicos() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.perfiles where id = auth.uid() and activo);
+$$;
+
 -- Resumen para admin.html: una fila por tecnico vigente, haya entrado o no.
 create or replace function public.resumen_tecnicos() returns table (
   nombre text, supervisor text, agencia text, ultimo timestamptz, ingresos_30 bigint, dias_30 bigint, ingresos_total bigint
 )
 language plpgsql stable security definer set search_path = public as $$
 begin
-  if not public.es_admin() then raise exception 'solo el administrador'; end if;
+  if not public.puede_ver_tecnicos() then raise exception 'sin acceso'; end if;
   return query
   select t.nombre, t.supervisor, t.agencia,
          max(i.fecha),
@@ -273,7 +280,7 @@ create or replace function public.detalle_tecnicos(p_desde timestamptz) returns 
 )
 language plpgsql stable security definer set search_path = public as $$
 begin
-  if not public.es_admin() then raise exception 'solo el administrador'; end if;
+  if not public.puede_ver_tecnicos() then raise exception 'sin acceso'; end if;
   return query
   select i.fecha, coalesce(t.nombre, '(ya no está en el portal)'), coalesce(t.supervisor, ''), coalesce(t.agencia, '')
   from public.ingresos_tecnicos i
@@ -294,6 +301,8 @@ revoke all on function public.detalle_tecnicos(timestamptz) from public, anon;
 grant execute on function public.registrar_tecnico(text) to anon, authenticated;
 grant execute on function public.sincronizar_tecnicos(jsonb) to service_role;
 grant execute on function public.resumen_tecnicos() to authenticated;
+revoke all on function public.puede_ver_tecnicos() from public, anon;
+grant execute on function public.puede_ver_tecnicos() to authenticated;
 grant execute on function public.detalle_tecnicos(timestamptz) to authenticated;
 
 -- Permisos de tablas, explicitos para no depender de la opcion "Automatically

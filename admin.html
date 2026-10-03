@@ -299,7 +299,7 @@ const Acceso = (() => {
 const CFG = { url: 'https://puqexeqjnhsxyibyehdw.supabase.co', key: 'sb_publishable_0tGCVfVqnfeNQ_IYyHMwJg_ELlJBoUF', dominio: 'portal.local', prueba: '0' === '1' };
 Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
 
-const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'auditorias': 'Auditorías', 'admin': 'Administración', '-': '—' };
+const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'auditorias': 'Auditorías', 'admin': 'Administración / ingresos de técnicos', '-': '—' };
 const RESULTADOS = { cambio_clave: ['Definió su clave', 'ok'], ok: ['Ingresó', 'ok'], clave_incorrecta: ['Clave incorrecta', 'bad'], inactivo: ['Usuario desactivado', 'warn'] };
 function etiquetaResultado(r) {
   const m = /^borro_(\d+)_registros$/.exec(r);
@@ -309,6 +309,8 @@ const MAX_INGRESOS = 2000;
 // Pasado este plazo aparece el boton para exportar y borrar los registros viejos.
 const DIAS_REGISTRO = 30;
 let masAntiguo = null;
+// Un supervisor entra a esta pagina solo para ver los ingresos de los tecnicos.
+let soloTecnicos = false;
 let tecnicos = null; // null = Supabase aun no tiene el registro de tecnicos
 let token = null, yo = null, usuarios = [], ingresos = [];
 
@@ -345,6 +347,12 @@ async function cargar() {
       { nombre: 'TECNICO DE EJEMPLO TRES', supervisor: 'SUPERVISOR B', agencia: 'V REGION', ultimo: null, ingresos_30: 0, dias_30: 0 },
     ];
     pintar(); return; }
+  if (soloTecnicos) {
+    const rs = await Acceso.rpc('resumen_tecnicos', {}, token);
+    tecnicos = rs.ok && Array.isArray(rs.datos) ? rs.datos : null;
+    pintar();
+    return;
+  }
   const [u, i, v] = await Promise.all([
     Acceso.leer('perfiles?select=id,usuario,nombre,rol,activo,debe_cambiar&order=usuario', token),
     Acceso.leer('ingresos?select=fecha,usuario,pagina,resultado&order=fecha.desc&limit=' + MAX_INGRESOS, token),
@@ -532,7 +540,7 @@ for (const id of ['fUsuario', 'fDesde', 'fResultado']) $(id).addEventListener('c
 
 function mostrarVista() {
   const pedida = location.hash.replace('#', '');
-  const vista = ['usuarios', 'supervisores', 'tecnicos'].includes(pedida) ? pedida : 'usuarios';
+  const vista = soloTecnicos ? 'tecnicos' : ['usuarios', 'supervisores', 'tecnicos'].includes(pedida) ? pedida : 'usuarios';
   for (const el of document.querySelectorAll('.vista, .vistas a')) el.classList.toggle('activa', el.dataset.vista === vista);
 }
 window.addEventListener('hashchange', mostrarVista);
@@ -591,12 +599,21 @@ async function abrirPanel() {
     await Acceso.pedirClaveNueva(token);
     return abrirPanel();
   }
-  if (!r.datos.ok || r.datos.rol !== 'admin') {
-    // Sesion valida pero sin rol de administrador: va al dashboard.
+  if (!r.datos.ok) {
     location.replace('supervisor.html');
     return true;
   }
   yo = r.datos;
+  if (yo.rol !== 'admin') {
+    // Supervisor: solo la pestana de ingresos de tecnicos, sin usuarios ni registro de supervisores.
+    soloTecnicos = true;
+    document.title = 'Ingresos de técnicos — Portal Supervisores';
+    $('vistas').style.display = 'none';
+    $('avisoPrueba').style.display = 'none';
+    document.querySelector('.franja h1').innerHTML = 'Ingresos de <strong>técnicos</strong>';
+    document.querySelector('.franja p').textContent = 'Cuándo entra cada técnico a su portal de indicadores.';
+    mostrarVista();
+  }
   $('sesion').innerHTML = '<a href="supervisor.html">Ir al dashboard</a> &middot; ' + esc(yo.nombre || yo.usuario) + ' &middot; <a href="#" id="salir">Cerrar sesión</a>';
   $('salir').addEventListener('click', (ev) => { ev.preventDefault(); Acceso.salir(); location.href = 'supervisor.html'; });
   $('formIngreso').style.display = 'none';
