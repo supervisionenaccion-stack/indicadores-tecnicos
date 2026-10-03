@@ -31,6 +31,8 @@
   .resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
   .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
   .card .lbl{ font-size:12px; color:var(--text-dim); }
+  /* Rotulo con alto fijo de dos lineas: asi todas las cifras quedan a la misma altura. */
+  .resumen .card .lbl{ min-height:2.6em; }
   .card .num{ font-size:26px; font-weight:800; color:var(--cobra-navy); margin-top:2px; }
   .card .tend{ font-size:12.5px; margin-top:6px; color:var(--text-dim); }
   .tend .sube{ color:#12764e; } .tend .baja{ color:#a3301f; }
@@ -278,7 +280,7 @@ function render() {
     const enCurso = sels.mes.value === isoLocal(new Date()).slice(0, 7);
     const hastaDia = String(new Date().getDate()).padStart(2, '0');
     const previas = DATA.auditorias.filter((x) => x.fecha.startsWith(ant) && (!enCurso || x.fecha.slice(8) <= hastaDia) && cumpleFiltros(x, true));
-    const contra = enCurso ? ' vs. mismos días del mes anterior' : ' vs. mes anterior';
+    const contra = enCurso ? ' vs. los mismos días del mes anterior' : ' vs. mes anterior';
     if (previas.length) {
       const dT = filtradas.length - previas.length, dN = prom(filtradas, 'nota') - prom(previas, 'nota');
       const flecha = (d, txt) => Math.abs(d) < 0.05 ? 'Igual que' + contra.replace(' vs.', '') : '<span class="' + (d > 0 ? 'sube' : 'baja') + '">' + (d > 0 ? '▲ ' : '▼ ') + txt + '</span>' + contra;
