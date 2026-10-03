@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditorías de Terreno · Claro/VTR</title>
+<meta name="theme-color" content="#003c71">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .brand-row{ display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .brand-row img{ height:36px; }
+  .brand-divider{ width:1px; height:28px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--celeste); font-weight:800; }
+  .link-portal{ color:var(--cobra-blue); font-weight:700; font-size:13px; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+  h1{ margin:0 0 6px; font-size:clamp(20px,4vw,26px); font-weight:800; color:var(--cobra-navy); }
+  h2{ margin:26px 0 10px; font-size:15px; color:var(--cobra-navy); }
+  .subtitle{ color:#3a4a5c; font-size:14px; line-height:1.5; max-width:780px; }
+  main{ padding:20px 6vw 40px; margin:0 auto; }
+  .filtros{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .filtros input{ padding:10px 12px; border:1px solid #b9c0cc; border-radius:2px; font-size:16px; min-width:220px; font-family:inherit; }
+  .btn-limpiar{ border:1px solid #b9c0cc; background:#fff; color:var(--cobra-navy); border-radius:2px; padding:10px 14px; font:600 12px/1.2 inherit; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+  select{ padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff; color:var(--text); }
+  .resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  .card .lbl{ font-size:12px; color:var(--text-dim); }
+  .card .num{ font-size:26px; font-weight:800; color:var(--cobra-navy); margin-top:2px; }
+  .card .tend{ font-size:12.5px; margin-top:6px; color:var(--text-dim); }
+  .tend .sube{ color:#12764e; } .tend .baja{ color:#a3301f; }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow-x:auto; }
+  .panel.pad{ padding:20px 22px; }
+  .grid2{ display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:24px; }
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:12px; color:var(--text-dim); font-weight:700; padding:11px 12px; border-bottom:1px solid var(--border); background:var(--panel-2); white-space:nowrap; }
+  td{ padding:10px 12px; border-bottom:1px solid var(--border); font-size:14px; vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .num-col{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .centro{ text-align:center; }
+  th.der{ text-align:right; }
+  .sub{ font-size:12px; color:var(--text-dim); }
+  .barra-wrap{ display:flex; align-items:center; gap:8px; min-width:160px; }
+  .barra{ flex:1; height:9px; background:var(--panel-2); border-radius:5px; }
+  .barra > i{ display:block; height:9px; border-radius:5px; }
+  .pill{ display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .ok{ background:var(--ok-bg); color:#12764e; } .warn{ background:var(--warn-bg); color:#8a5a12; } .bad{ background:var(--bad-bg); color:#a3301f; }
+  .f-ok{ background:var(--ok); } .f-warn{ background:var(--warn); } .f-bad{ background:var(--bad); }
+  .si{ color:#12764e; font-weight:700; font-size:12.5px; } .no{ color:#a3301f; font-weight:700; font-size:12.5px; } .vacio{ color:var(--text-dim); }
+  .link-filtro{ cursor:pointer; color:var(--cobra-navy); font-weight:600; }
+  .link-filtro:hover{ text-decoration:underline; }
+  .ranking-fila{ display:flex; justify-content:space-between; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+  .ranking-fila:last-child{ border-bottom:none; }
+  .ranking-fila .puesto{ font:200 26px/1 var(--font, inherit); color:var(--cobra-navy); min-width:34px; }
+  .ranking-fila .quien{ flex:1; min-width:0; }
+  .ranking-fila .nota-r{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:700; }
+  .falla{ display:inline-block; margin-top:4px; font-size:12px; color:#a3301f; }
+  .reincide{ display:inline-block; margin-left:6px; font-size:11px; font-weight:700; color:#8a5a12; background:var(--warn-bg); padding:2px 6px; letter-spacing:.04em; text-transform:uppercase; }
+  .pareto-fila{ display:grid; grid-template-columns:minmax(160px,300px) 1fr minmax(110px,150px); align-items:center; gap:12px; margin-bottom:9px; font-size:13.5px; }
+  .pareto-etiqueta{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pareto-barra-wrap{ background:var(--panel-2); height:14px; overflow:hidden; }
+  .pareto-barra{ height:100%; }
+  .pareto-valor{ text-align:right; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .pareto-valor .sub{ font-weight:400; }
+  .t-detalle{ min-width:1900px; }
+  .t-detalle td{ font-size:13px; white-space:nowrap; padding:10px 12px !important; }
+  .t-detalle td.texto-largo{ white-space:normal; min-width:240px; max-width:320px; font-size:12.5px; color:#4a5868; }
+  .paginacion{ display:flex; gap:10px; align-items:center; justify-content:flex-end; padding:12px 16px; }
+  .paginacion button{ border:1px solid #b9c0cc; background:#fff; color:var(--cobra-navy); padding:7px 12px; font:600 12px/1.2 inherit; cursor:pointer; }
+  .paginacion button:disabled{ opacity:.4; cursor:default; }
+  .btn-excel{ display:inline-flex; align-items:center; gap:7px; margin-left:auto; padding:9px 14px; border:none; border-radius:8px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:12.5px; font-family:inherit; cursor:pointer; }
+  .btn-excel:disabled{ opacity:.6; cursor:default; }
+  .btn-excel svg{ width:15px; height:15px; }
+  .nota{ font-size:12px; color:var(--text-dim); line-height:1.6; margin-top:14px; }
+  .cabeza-tabla{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .cabeza-tabla h2{ margin-right:auto; }
+  @media (max-width:700px){ .grid2{ grid-template-columns:1fr; } .pareto-fila{ grid-template-columns:1fr 90px; } .pareto-barra-wrap{ grid-column:1 / -1; grid-row:2; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica: el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="__LOGO_DATAURI__" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <a class="link-portal" id="linkVolver" href="supervisor.html">&larr; Volver al dashboard</a>
+  </div>
+</header>
+<section class="hero sin-foto" aria-label="Portada">
+  <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow">Claro / VTR &middot; Calidad en terreno</p>
+    <h1>Auditorías de <b>terreno</b></h1>
+    <p class="subtitle" id="subtitulo"></p>
+  </div></div>
+</section>
+<main>
+  <div class="filtros">
+    <select id="fMes" aria-label="Mes"></select>
+    <select id="fSupervisor" aria-label="Supervisor"></select>
+    <select id="fTecnico" aria-label="Técnico"></select>
+    <select id="fTipo" aria-label="Tipo de auditoría"></select>
+    <select id="fActividad" aria-label="Actividad"></select>
+    <input id="fTexto" type="search" placeholder="Buscar petición, dirección o nombre" aria-label="Buscar">
+    <button class="btn-limpiar" id="btnLimpiar" type="button">Limpiar</button>
+  </div>
+  <div class="resumen" id="resumen"></div>
+
+  <h2>Avance por <b>supervisor</b></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Supervisor</th><th id="thDiaHabil">Último día hábil</th><th>Mes en curso</th><th class="der">Promedio por día hábil</th><th class="der">Auditorías (filtro)</th><th class="der">Mesas de trabajo</th><th class="der">Nota de sus técnicos</th></tr></thead>
+      <tbody id="filasSupervisor"></tbody>
+    </table>
+  </div>
+
+  <div class="grid2">
+    <section class="panel pad"><h2>Los 3 <span>mejores</span> técnicos</h2><div id="rankingTop"></div></section>
+    <section class="panel pad"><h2>Los 3 técnicos con <span>nota más baja</span></h2><div id="rankingBottom"></div></section>
+  </div>
+
+  <h2>Fallas más frecuentes del <b>checklist</b></h2>
+  <div class="panel pad">
+    <p class="sub" style="margin:0 0 14px;">Porcentaje de las auditorías en que se detectó cada falla (entre las que respondieron ese punto).</p>
+    <div id="fallas"></div>
+  </div>
+
+  <h2>Nota por <b>técnico</b></h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Técnico</th><th>Supervisor</th><th class="der">Auditorías</th><th>Nota promedio</th><th>Falla más repetida</th></tr></thead>
+      <tbody id="filasTecnico"></tbody>
+    </table>
+  </div>
+
+  <div class="cabeza-tabla">
+    <h2>Detalle de <b>auditorías</b> <span class="sub" id="nDetalle"></span></h2>
+    <button class="btn-excel" id="btnExcel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span>Exportar a Excel</span></button>
+  </div>
+  <div class="panel">
+    <table class="t-detalle">
+      <thead><tr><th>Fecha</th><th>Petición</th><th>Técnico</th><th>Supervisor</th><th>Actividad</th><th>Dirección</th><th>Nota</th><th class="centro">Cumple función</th><th class="centro">Capacita cliente</th><th class="centro">Alcohol isopropílico</th><th class="centro">OneClick</th><th class="centro">Drop con soportes</th><th class="centro">Reutiliza otra cía.</th><th>Observaciones</th><th class="centro">Mesa de trabajo</th><th class="centro">Cierre con técnico</th><th>Obs. cierre</th></tr></thead>
+      <tbody id="filasDetalle"></tbody>
+    </table>
+    <div class="paginacion" id="paginacion"></div>
+  </div>
+
+  <p class="nota" id="nota"></p>
+</main>
+<footer class="foot"><div class="wrap">
+  <span class="by">Desarrollado por <b>J.V.Soft...</b> &middot; Construyendo ideas</span>
+</div></footer>
+<script>
+const DATA = /*__DATA__*/null;
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const POR_PAGINA = 15;
+// "malo" = respuesta que cuenta como falla. Casi siempre "No"; en reutilizar
+// instalaciones la falla es "Si". Igual que el dashboard anterior.
+const CHECKLIST = [
+  { k: 'pasamuros', label: 'No instala pasamuros', malo: 'NO' },
+  { k: 'roseta', label: 'Roseta óptica fuera de norma', malo: 'NO' },
+  { k: 'limpio', label: 'No deja el área de trabajo limpia', malo: 'NO' },
+  { k: 'capacitacion', label: 'No capacita al cliente', malo: 'NO' },
+  { k: 'funcion', label: 'No cumple correctamente su función', malo: 'NO' },
+  { k: 'alcohol', label: 'No usa alcohol isopropílico', malo: 'NO' },
+  { k: 'oneclick', label: 'No usa OneClick en conectores', malo: 'NO' },
+  { k: 'dropSoportes', label: 'No instala drop con soportes', malo: 'NO' },
+  { k: 'dropNorma', label: 'Drop fuera de norma', malo: 'NO' },
+  { k: 'reutiliza', label: 'Reutiliza instalación', malo: 'SI' },
+  { k: 'reutilizaOtra', label: 'Reutiliza instalación de otra compañía', malo: 'SI' },
+];
+
+const $ = (id) => document.getElementById(id);
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';'); }
+function titleCase(s) { return String(s || '').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); }
+function n(v, dec) { return Number(v).toLocaleString('es-CL', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function nombreMes(iso) { const [a, m] = iso.split('-'); const t = MESES[parseInt(m, 10) - 1] + ' de ' + a; return t.charAt(0).toUpperCase() + t.slice(1); }
+function fechaCorta(iso) { const [a, m, d] = iso.split('-'); return d + '-' + m + '-' + a; }
+function isoLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function prom(lista, campo) { const v = lista.map((a) => a[campo]).filter((x) => x > 0); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : 0; }
+function esFalla(valor, malo) { return !!valor && valor.trim().toUpperCase().startsWith(malo); }
+function claseNota(nota) { return nota >= 8.5 ? 'ok' : nota >= 6 ? 'warn' : 'bad'; }
+function barra(valor, max, clase) {
+  return '<div class="barra-wrap"><div class="barra"><i class="f-' + clase + '" style="width:' + Math.min(100, (valor / max) * 100).toFixed(1) + '%"></i></div>'
+    + '<span class="num-col" style="min-width:52px">' + n(valor, 1) + '</span></div>';
+}
+function siNo(valor, malo) {
+  const v = (valor || '').trim();
+  if (!v) return '<span class="vacio">—</span>';
+  return '<span class="' + (esFalla(v, malo) ? 'no' : 'si') + '">' + esc(v) + '</span>';
+}
+
+// ---------- Dias habiles (lunes a viernes, sin feriados) ----------
+const FERIADOS = new Set(DATA.feriados || []);
+function esHabil(d) { const dia = d.getDay(); return dia !== 0 && dia !== 6 && !FERIADOS.has(isoLocal(d)); }
+function ultimoDiaHabil() { const d = new Date(); do { d.setDate(d.getDate() - 1); } while (!esHabil(d)); return isoLocal(d); }
+function diasHabilesDelMes() {
+  // Del dia 1 a ayer: las auditorias de hoy todavia se estan haciendo.
+  const hoy = new Date(); let habiles = 0;
+  for (let dia = 1; dia < hoy.getDate(); dia++) if (esHabil(new Date(hoy.getFullYear(), hoy.getMonth(), dia))) habiles++;
+  return habiles;
+}
+
+// ---------- Filtros ----------
+const sels = { mes: $('fMes'), sup: $('fSupervisor'), tec: $('fTecnico'), tipo: $('fTipo'), act: $('fActividad') };
+function opciones(sel, valores, todos, etiqueta) {
+  const previo = sel.value;
+  sel.innerHTML = '<option value="">' + todos + '</option>' + valores.map((v) => '<option value="' + esc(v) + '">' + esc(etiqueta ? etiqueta(v) : v) + '</option>').join('');
+  if (valores.includes(previo)) sel.value = previo;
+}
+const unicos = (campo) => [...new Set(DATA.auditorias.map((a) => a[campo]).filter(Boolean))].sort();
+opciones(sels.mes, [...new Set(DATA.auditorias.map((a) => a.fecha.slice(0, 7)))].sort().reverse(), 'Todos los meses', nombreMes);
+opciones(sels.sup, unicos('supervisor'), 'Todos los supervisores', titleCase);
+opciones(sels.tipo, unicos('tipo'), 'Todos los tipos de auditoría');
+opciones(sels.act, unicos('actividad'), 'Todas las actividades');
+function opcionesTecnico() {
+  const sup = sels.sup.value;
+  opciones(sels.tec, [...new Set(DATA.auditorias.filter((a) => !sup || a.supervisor === sup).map((a) => a.tecnico))].sort(), 'Todos los técnicos', titleCase);
+}
+opcionesTecnico();
+
+function cumpleFiltros(a, sinMes) {
+  const texto = $('fTexto').value.trim().toLowerCase();
+  return (sinMes || !sels.mes.value || a.fecha.startsWith(sels.mes.value))
+    && (!sels.sup.value || a.supervisor === sels.sup.value)
+    && (!sels.tec.value || a.tecnico === sels.tec.value)
+    && (!sels.tipo.value || a.tipo === sels.tipo.value)
+    && (!sels.act.value || a.actividad === sels.act.value)
+    && (!texto || (a.tecnico + ' ' + a.supervisor + ' ' + a.direccion + ' ' + a.peticion).toLowerCase().includes(texto));
+}
+let filtradas = [];
+let pagina = 1;
+
+// Fallas del checklist de un grupo de auditorias, de la mas a la menos frecuente.
+function fallasDe(lista) {
+  return CHECKLIST.map((c) => {
+    const resp = lista.filter((a) => (a[c.k] || '').trim());
+    const fallas = resp.filter((a) => esFalla(a[c.k], c.malo)).length;
+    return { label: c.label, fallas, total: resp.length, pct: resp.length ? (fallas / resp.length) * 100 : 0 };
+  }).filter((f) => f.total > 0).sort((x, y) => y.fallas - x.fallas || y.pct - x.pct);
+}
+function porTecnico(lista) {
+  const m = new Map();
+  for (const a of lista) {
+    if (!m.has(a.tecnico)) m.set(a.tecnico, { tecnico: a.tecnico, supervisor: a.supervisor, aud: [] });
+    m.get(a.tecnico).aud.push(a);
+  }
+  return [...m.values()].map((t) => {
+    const f = fallasDe(t.aud).filter((x) => x.fallas > 0);
+    return { ...t, n: t.aud.length, nota: prom(t.aud, 'nota'), falla: f[0] || null, reincide: f.filter((x) => x.fallas >= 2).map((x) => x.label) };
+  });
+}
+
+// ---------- Render ----------
+function render() {
+  filtradas = DATA.auditorias.filter((a) => cumpleFiltros(a)).sort((x, y) => y.fecha.localeCompare(x.fecha));
+  const mesRef = sels.mes.value || (filtradas[0] ? filtradas[0].fecha.slice(0, 7) : null);
+
+  $('subtitulo').textContent = 'Resultado de las auditorías que hacen los supervisores en terreno. '
+    + (sels.mes.value ? nombreMes(sels.mes.value) + '. ' : 'Todos los meses. ')
+    + 'Datos del formulario al ' + DATA.actualizado + '.';
+
+  // Tendencia contra el mes anterior (con los mismos filtros, sin el de mes).
+  let tendTotal = '', tendNota = '';
+  if (sels.mes.value) {
+    const [a, m] = sels.mes.value.split('-').map(Number);
+    const ant = isoLocal(new Date(a, m - 2, 1)).slice(0, 7);
+    // Si es el mes en curso se compara con el mismo tramo del mes anterior (del 1 al dia de hoy).
+    const enCurso = sels.mes.value === isoLocal(new Date()).slice(0, 7);
+    const hastaDia = String(new Date().getDate()).padStart(2, '0');
+    const previas = DATA.auditorias.filter((x) => x.fecha.startsWith(ant) && (!enCurso || x.fecha.slice(8) <= hastaDia) && cumpleFiltros(x, true));
+    const contra = enCurso ? ' vs. mismos días del mes anterior' : ' vs. mes anterior';
+    if (previas.length) {
+      const dT = filtradas.length - previas.length, dN = prom(filtradas, 'nota') - prom(previas, 'nota');
+      const flecha = (d, txt) => Math.abs(d) < 0.05 ? 'Igual que' + contra.replace(' vs.', '') : '<span class="' + (d > 0 ? 'sube' : 'baja') + '">' + (d > 0 ? '▲ ' : '▼ ') + txt + '</span>' + contra;
+      tendTotal = flecha(dT, Math.abs(dT)); tendNota = flecha(dN, n(Math.abs(dN), 1));
+    }
+  }
+  const card = (lbl, num, tend) => '<div class="card"><div class="lbl">' + lbl + '</div><div class="num">' + num + '</div>' + (tend ? '<div class="tend">' + tend + '</div>' : '') + '</div>';
+  const si = (campo) => filtradas.filter((a) => (a[campo] || '').trim().toUpperCase().startsWith('SI')).length;
+  $('resumen').innerHTML =
+    card('Auditorías', filtradas.length, tendTotal)
+    + card('Nota promedio técnicos', n(prom(filtradas, 'nota'), 1) + ' / 10', tendNota)
+    + card('Puntuación normas', n(prom(filtradas, 'puntuacion'), 1))
+    + card('Estética del cableado', n(prom(filtradas, 'estetica'), 1))
+    + card('Mesas de trabajo', si('mesa'))
+    + card('Cierres con técnico', si('cierre'));
+
+  // Avance por supervisor: meta de DATA.metaDiaria auditorias por dia habil.
+  const ayer = ultimoDiaHabil();
+  const mesActual = isoLocal(new Date()).slice(0, 7);
+  const habiles = diasHabilesDelMes();
+  $('thDiaHabil').textContent = 'Último día hábil (' + fechaCorta(ayer).slice(0, 5) + ')';
+  const supervisores = DATA.supervisoresMeta.filter((s) => !sels.sup.value || s === sels.sup.value);
+  $('filasSupervisor').innerHTML = supervisores.map((s) => {
+    const deS = DATA.auditorias.filter((a) => a.supervisor === s);
+    const nAyer = deS.filter((a) => a.fecha === ayer).length;
+    const nMes = deS.filter((a) => a.fecha.startsWith(mesActual)).length;
+    const esperadas = DATA.metaDiaria * habiles;
+    const porDia = habiles ? nMes / habiles : 0;
+    const enFiltro = filtradas.filter((a) => a.supervisor === s);
+    const claseAyer = nAyer >= DATA.metaDiaria ? 'ok' : nAyer > 0 ? 'warn' : 'bad';
+    const pctMes = esperadas ? (nMes / esperadas) * 100 : 0;
+    return '<tr><td><span class="link-filtro" data-sup="' + esc(s) + '">' + esc(titleCase(s)) + '</span></td>'
+      + '<td><span class="pill ' + claseAyer + '">' + nAyer + ' de ' + DATA.metaDiaria + '</span></td>'
+      + '<td>' + '<div class="barra-wrap"><div class="barra"><i class="f-' + (pctMes >= 100 ? 'ok' : pctMes >= 70 ? 'warn' : 'bad') + '" style="width:' + Math.min(100, pctMes).toFixed(1) + '%"></i></div>'
+      + '<span class="num-col" style="min-width:110px">' + nMes + ' de ' + esperadas + ' (' + n(pctMes, 0) + ' %)</span></div></td>'
+      + '<td class="num-col">' + n(porDia, 1) + ' / día</td>'
+      + '<td class="num-col">' + enFiltro.length + '</td>'
+      + '<td class="num-col">' + enFiltro.filter((a) => (a.mesa || '').trim().toUpperCase().startsWith('SI')).length + '</td>'
+      + '<td class="num-col">' + (enFiltro.length ? n(prom(enFiltro, 'nota'), 1) : '—') + '</td></tr>';
+  }).join('') || '<tr><td colspan="7" class="sub">Sin supervisores con auditorías recientes.</td></tr>';
+
+  // Ranking de tecnicos por nota promedio.
+  const tecnicos = porTecnico(filtradas).sort((x, y) => y.nota - x.nota || y.n - x.n);
+  const filaRanking = (t, i, malo) => '<div class="ranking-fila"><div class="puesto">' + (i + 1) + '</div><div class="quien">'
+    + '<span class="link-filtro" data-tec="' + esc(t.tecnico) + '">' + esc(titleCase(t.tecnico)) + '</span>'
+    + '<div class="sub">' + esc(titleCase(t.supervisor)) + '</div>'
+    + (malo && t.falla ? '<span class="falla">Falla principal: ' + esc(t.falla.label) + '</span>' : '') + '</div>'
+    + '<div class="nota-r"><span class="pill ' + claseNota(t.nota) + '">' + n(t.nota, 1) + ' / 10</span><div class="sub">' + t.n + ' auditoría' + (t.n === 1 ? '' : 's') + '</div></div></div>';
+  const vacio = '<p class="sub">Sin datos suficientes.</p>';
+  $('rankingTop').innerHTML = tecnicos.slice(0, 3).map((t, i) => filaRanking(t, i, false)).join('') || vacio;
+  $('rankingBottom').innerHTML = tecnicos.length > 3 ? tecnicos.slice(Math.max(3, tecnicos.length - 3)).reverse().map((t, i) => filaRanking(t, i, true)).join('') : vacio;
+
+  // Fallas del checklist.
+  const fallas = fallasDe(filtradas);
+  $('fallas').innerHTML = fallas.map((f) => {
+    // Barra en azul (es una frecuencia); el porcentaje se pinta segun que tan seguido ocurre.
+    const color = f.pct >= 25 ? 'var(--bad)' : f.pct >= 10 ? 'var(--warn)' : 'inherit';
+    return '<div class="pareto-fila"><div class="pareto-etiqueta" title="' + esc(f.label) + '">' + esc(f.label) + '</div>'
+      + '<div class="pareto-barra-wrap"><div class="pareto-barra" style="width:' + Math.max(f.pct, f.fallas ? 1.5 : 0).toFixed(1) + '%;background:var(--navy, #003575)"></div></div>'
+      + '<div class="pareto-valor" style="color:' + color + '">' + n(f.pct, 0) + ' % <span class="sub">(' + f.fallas + ' de ' + f.total + ')</span></div></div>';
+  }).join('') || '<p class="sub">Sin respuestas de checklist en este filtro.</p>';
+
+  // Nota por tecnico (agrupado por supervisor).
+  const lista = porTecnico(filtradas).sort((x, y) => x.supervisor.localeCompare(y.supervisor) || x.nota - y.nota);
+  $('filasTecnico').innerHTML = lista.map((t) => '<tr><td><span class="link-filtro" data-tec="' + esc(t.tecnico) + '">' + esc(titleCase(t.tecnico)) + '</span>'
+    + (t.reincide.length ? '<span class="reincide" title="Repite: ' + esc(t.reincide.join(', ')) + '">Reincide</span>' : '') + '</td>'
+    + '<td>' + esc(titleCase(t.supervisor)) + '</td><td class="num-col">' + t.n + '</td>'
+    + '<td>' + barra(t.nota, 10, claseNota(t.nota)) + '</td>'
+    + '<td class="sub">' + (t.falla ? esc(t.falla.label) + ' (' + t.falla.fallas + ')' : '—') + '</td></tr>').join('')
+    || '<tr><td colspan="5" class="sub">Sin auditorías para este filtro.</td></tr>';
+
+  pintarDetalle();
+}
+
+function pintarDetalle() {
+  const total = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
+  pagina = Math.min(Math.max(1, pagina), total);
+  $('nDetalle').textContent = '(' + filtradas.length + ')';
+  $('filasDetalle').innerHTML = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA).map((a) => '<tr>'
+    + '<td class="num-col">' + fechaCorta(a.fecha) + '</td><td class="num-col">' + esc(a.peticion) + '</td>'
+    + '<td><span class="link-filtro" data-tec="' + esc(a.tecnico) + '">' + esc(titleCase(a.tecnico)) + '</span></td>'
+    + '<td>' + esc(titleCase(a.supervisor)) + '</td><td>' + esc(a.actividad) + '<div class="sub">' + esc(a.tipo) + '</div></td>'
+    + '<td class="texto-largo">' + esc(a.direccion) + '</td>'
+    + '<td>' + (a.nota ? '<span class="pill ' + claseNota(a.nota) + '">' + n(a.nota, 0) + ' / 10</span>' : '—') + '</td>'
+    + ['funcion', 'capacitacion', 'alcohol', 'oneclick', 'dropSoportes'].map((k) => '<td class="centro">' + siNo(a[k], 'NO') + '</td>').join('')
+    + '<td class="centro">' + siNo(a.reutilizaOtra, 'SI') + '</td>'
+    + '<td class="texto-largo">' + esc(a.obs || '—') + '</td>'
+    + '<td class="centro">' + esc(a.mesa || '—') + '</td><td class="centro">' + esc(a.cierre || '—') + '</td>'
+    + '<td class="texto-largo">' + esc(a.obsCierre || '—') + '</td></tr>').join('')
+    || '<tr><td colspan="17" class="sub" style="padding:24px;text-align:center;">No hay auditorías que coincidan con los filtros.</td></tr>';
+  $('paginacion').innerHTML = total > 1
+    ? '<button type="button" data-p="' + (pagina - 1) + '"' + (pagina === 1 ? ' disabled' : '') + '>‹ Anterior</button><span class="sub">Página ' + pagina + ' de ' + total + '</span>'
+      + '<button type="button" data-p="' + (pagina + 1) + '"' + (pagina === total ? ' disabled' : '') + '>Siguiente ›</button>'
+    : '';
+}
+
+// ---------- Eventos ----------
+function alCambiar() { pagina = 1; render(); }
+Object.values(sels).forEach((s) => s.addEventListener('change', () => { if (s === sels.sup) opcionesTecnico(); alCambiar(); }));
+$('fTexto').addEventListener('input', alCambiar);
+$('btnLimpiar').addEventListener('click', () => { Object.values(sels).forEach((s) => { s.value = ''; }); $('fTexto').value = ''; opcionesTecnico(); alCambiar(); });
+$('paginacion').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-p]'); if (b) { pagina = Number(b.dataset.p); pintarDetalle(); } });
+// Clic en un tecnico o supervisor: filtra todo por esa persona.
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('.link-filtro');
+  if (!el) return;
+  if (el.dataset.sup) { sels.sup.value = el.dataset.sup; sels.tec.value = ''; opcionesTecnico(); }
+  if (el.dataset.tec) { sels.tec.value = el.dataset.tec; }
+  alCambiar();
+  $('filasDetalle').closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ---------- Exportar a Excel (lo filtrado) ----------
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+function filasExcel() {
+  return [['Fecha', 'Petición', 'Técnico', 'Supervisor', 'Actividad', 'Tipo de auditoría', 'Dirección', 'Nota', 'Puntuación', 'Estética',
+    'Cumple función', 'Capacita cliente', 'Alcohol isopropílico', 'OneClick', 'Drop con soportes', 'Drop en norma', 'Pasamuros', 'Roseta en norma', 'Área limpia',
+    'Reutiliza instalación', 'Reutiliza otra cía.', 'Observaciones', 'Mesa de trabajo', 'Cierre con técnico', 'Obs. cierre']].concat(filtradas.map((a) => [
+    fechaCorta(a.fecha), a.peticion, a.tecnico, a.supervisor, a.actividad, a.tipo, a.direccion, a.nota || '', a.puntuacion || '', a.estetica || '',
+    a.funcion, a.capacitacion, a.alcohol, a.oneclick, a.dropSoportes, a.dropNorma, a.pasamuros, a.roseta, a.limpio,
+    a.reutiliza, a.reutilizaOtra, a.obs, a.mesa, a.cierre, a.obsCierre]));
+}
+$('btnExcel').addEventListener('click', async () => {
+  const boton = $('btnExcel'), rotulo = boton.querySelector('span'), filas = filasExcel();
+  const nombre = 'Auditorias_Terreno_' + (sels.mes.value || 'todas') + (sels.sup.value ? '_' + sels.sup.value.split(' ')[0] : '');
+  boton.disabled = true; rotulo.textContent = 'Generando…';
+  try {
+    await cargarSheetJS();
+    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length - 1, c: filas[0].length - 1 } }) };
+    XLSX.utils.book_append_sheet(wb, ws, 'Auditorías');
+    XLSX.writeFile(wb, nombre + '.xlsx');
+  } catch (err) {
+    // Sin internet: CSV separado por ";" que Excel abre directo.
+    const celda = (v) => { const t = String(v == null ? '' : v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + filas.map((f) => f.map(celda).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = nombre + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  boton.disabled = false; rotulo.textContent = 'Exportar a Excel';
+});
+
+$('nota').innerHTML = '<b>De dónde salen los datos:</b> respuestas del formulario de auditorías de terreno que llenan los supervisores. '
+  + '<b>Meta:</b> ' + DATA.metaDiaria + ' auditorías por supervisor cada día hábil (lunes a viernes, sin feriados); el último día hábil se mira porque el reporte se lee en la mañana. '
+  + '<b>Nota:</b> la que el supervisor le pone al técnico (0 a 10). Generado el ' + esc(DATA.generadoEl) + '.';
+
+// Parte en el mes en curso si tiene auditorías; si no, en el ultimo mes con datos.
+sels.mes.value = sels.mes.options[1] ? sels.mes.options[1].value : '';
+render();
+
+// ---------- Animacion de las cifras del resumen ----------
+function animarCifras(contenedor, duracion) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const patron = /\d+(?:[.,]\d+)?/g;
+  const cifras = [...contenedor.querySelectorAll('.num')].map((el) => ({ el, final: el.textContent }));
+  if (!cifras.length || !window.requestAnimationFrame) return;
+  const inicio = performance.now();
+  function paso(ahora) {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const avance = 1 - Math.pow(1 - t, 3); // parte rapido y frena al llegar
+    for (const c of cifras) {
+      c.el.textContent = t === 1 ? c.final : c.final.replace(patron, (num) => {
+        const coma = num.includes(',');
+        const decimales = (num.split(/[.,]/)[1] || '').length;
+        const valor = (parseFloat(num.replace(',', '.')) * avance).toFixed(decimales);
+        return coma ? valor.replace('.', ',') : valor;
+      });
+    }
+    if (t < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+// ---------- Animaciones al desplazarse ----------
+// Cada bloque aparece cuando entra en pantalla, y alVer() corre una funcion
+// la primera vez que un elemento se ve. Si el navegador no lo soporta o el
+// usuario pidio reducir el movimiento, todo se muestra de inmediato.
+const SIN_MOVIMIENTO = !('IntersectionObserver' in window) || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function alVer(el, fn) {
+  if (!el) return;
+  if (SIN_MOVIMIENTO) { fn(el); return; }
+  const o = new IntersectionObserver((entradas) => {
+    if (entradas.some((e) => e.isIntersecting)) { o.disconnect(); fn(el); }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  o.observe(el);
+}
+function aparecerAlBajar() {
+  if (SIN_MOVIMIENTO) return;
+  const estilo = document.createElement('style');
+  estilo.textContent = '.rv{opacity:0;transform:translateY(22px);}'
+    + '.rv.rv-ver{opacity:1;transform:none;transition:opacity .95s ease,transform .95s cubic-bezier(.2,.7,.2,1);}'
+    + ':is(.pareto-barra,.barra > i){transform-origin:left center;}'
+    + '.rv:not(.rv-ver) :is(.pareto-barra,.barra > i){transform:scaleX(0);}'
+    + '.rv-ver :is(.pareto-barra,.barra > i){transition:transform 1.7s cubic-bezier(.2,.7,.2,1) .3s;}'
+    + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => '.rv-ver .pareto-fila:nth-child(' + k + ') .pareto-barra{transition-delay:' + (0.25 + k * 0.12).toFixed(2) + 's;}').join('')
+    + '@media print{.rv{opacity:1!important;transform:none!important;}}';
+  document.head.appendChild(estilo);
+  const FILAS = '.resumen, .grid2';
+  document.querySelectorAll('main > *').forEach((bloque) => {
+    const piezas = bloque.matches(FILAS) && bloque.children.length ? Array.from(bloque.children) : [bloque];
+    piezas.forEach((el, i) => {
+      el.classList.add('rv');
+      el.style.transitionDelay = (piezas.length > 1 ? Math.min(i, 5) * 120 : 0) + 'ms';
+      alVer(el, () => {
+        el.classList.add('rv-ver');
+        setTimeout(() => { el.style.transitionDelay = ''; }, 1900);
+      });
+    });
+  });
+}
+alVer($('resumen'), () => animarCifras($('resumen'), 1400));
+aparecerAlBajar();
+</script>
+</body>
+</html>

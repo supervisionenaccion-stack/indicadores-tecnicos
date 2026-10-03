@@ -185,7 +185,7 @@ __CLIENTE_JS__
 const CFG = { url: '__SUPABASE_URL__', key: '__SUPABASE_KEY__', dominio: '__DOMINIO__', prueba: '__PRUEBA__' === '1' };
 Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
 
-const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'admin': 'Administración', '-': '—' };
+const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'auditorias': 'Auditorías', 'admin': 'Administración', '-': '—' };
 const RESULTADOS = { cambio_clave: ['Definió su clave', 'ok'], ok: ['Ingresó', 'ok'], clave_incorrecta: ['Clave incorrecta', 'bad'], inactivo: ['Usuario desactivado', 'warn'] };
 function etiquetaResultado(r) {
   const m = /^borro_(\d+)_registros$/.exec(r);
