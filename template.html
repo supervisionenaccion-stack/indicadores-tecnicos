@@ -130,6 +130,13 @@
   .sin-datos{ color:var(--text-dim); font-size:13.5px; font-style:italic; }
   .comunicados-embed{ border:1px solid var(--border); border-radius:10px; overflow:hidden; }
   .comunicados-embed iframe{ width:100%; height:420px; border:none; display:block; }
+  .rep-card{ border:1px solid var(--panel-2); border-left:4px solid var(--bad, #e2523e); border-radius:10px; padding:10px 12px; margin:8px 0; font-size:13px; line-height:1.45; }
+  .rep-top{ font-weight:700; color:var(--cobra-navy, #003c71); }
+  .rep-linea{ color:var(--text, #22303f); }
+  .rep-tag{ display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 7px; border-radius:6px; background:#e6eef8; color:#003c71; }
+  .rep-tag-r{ background:#fce4e0; color:#a3301f; }
+  .rep-sep{ margin:6px 0; padding:4px 0; border-top:1px dashed var(--panel-2); border-bottom:1px dashed var(--panel-2); color:var(--text-dim); font-size:12.5px; }
+  .rep-notas{ margin-top:4px; color:var(--text-dim); font-size:12.5px; font-style:italic; }
   .tabla-repetidos-wrap{ overflow-x:auto; }
   .tabla-repetidos{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:420px; }
   .tabla-repetidos th{ text-align:left; padding:6px 8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-dim); border-bottom:1px solid var(--panel-2); white-space:nowrap; }
@@ -327,18 +334,21 @@ function bloqueCalidad(datos) {
     ).join('');
   }
   if (datos.causas && datos.causas.length > 0) {
+    // Una tarjeta por orden repetida: el trabajo del tecnico (con la direccion,
+    // para que reconozca al cliente) y la visita que se repitio, con su nota de cierre.
+    const txt = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const eventosOrdenados = [...datos.causas].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
-    html += '<p style="margin:14px 0 6px; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em;">Tus órdenes repetidas</p>';
-    html += '<div class="tabla-repetidos-wrap"><table class="tabla-repetidos"><thead><tr>'
-      + '<th>Fecha</th><th>Días hasta el repetido</th><th>Causa</th><th>N° Orden</th>'
-      + '</tr></thead><tbody>'
-      + eventosOrdenados.map((e) =>
-          '<tr><td>' + (e.fecha ? formatFechaLarga(e.fecha) : '—') + '</td>'
-          + '<td>' + (e.dias != null ? e.dias : '—') + '</td>'
-          + '<td>' + e.causa + '</td>'
-          + '<td>' + (e.ordenTrabajo || '—') + '</td></tr>'
-        ).join('')
-      + '</tbody></table></div>';
+    html += '<p style="margin:14px 0 6px; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em;">Tus órdenes repetidas (' + eventosOrdenados.length + ')</p>';
+    html += eventosOrdenados.map((e) => '<div class="rep-card">'
+      + '<div class="rep-top"><span class="rep-tag">Tu trabajo</span> ' + txt(e.tipoActividad || 'Orden') + (e.subtipo ? ' · ' + txt(e.subtipo) : '') + '</div>'
+      + '<div class="rep-linea"><b>' + (e.fecha ? formatFechaLarga(e.fecha) : '—') + '</b> · Orden <b>' + txt(e.ordenTrabajo || '—') + '</b></div>'
+      + (e.direccion ? '<div class="rep-linea">📍 ' + txt(e.direccion) + '</div>' : '')
+      + '<div class="rep-sep">El cliente volvió a pedir visita' + (e.dias != null ? ' a los <b>' + e.dias + ' día' + (e.dias === 1 ? '' : 's') + '</b>' : '') + '</div>'
+      + '<div class="rep-top"><span class="rep-tag rep-tag-r">Repetido</span> ' + txt(e.tipoRep || 'Visita') + '</div>'
+      + '<div class="rep-linea"><b>' + (e.fechaRep ? formatFechaLarga(e.fechaRep) : '—') + '</b>' + (e.ordenRep ? ' · Orden <b>' + txt(e.ordenRep) + '</b>' : '') + '</div>'
+      + '<div class="rep-linea">Causa: <b>' + txt(e.causa) + '</b></div>'
+      + (e.notasRep ? '<div class="rep-notas">Nota de cierre: “' + txt(e.notasRep) + '”</div>' : '')
+      + '</div>').join('');
   }
   html += '</div>';
   return html;

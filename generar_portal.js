@@ -177,13 +177,26 @@ async function fetchSupervisores(pool) {
   return map;
 }
 
+// Texto libre de CALIDAD_VTR para mostrar: sin espacios de mas y sin RUT,
+// telefonos ni correos (las notas de cierre a veces los traen).
+function textoLibre(valor, max) {
+  return String(valor || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/g, "(RUT)")
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "(correo)")
+    .replace(/(\+?56\s?)?\b9[\s.-]?\d{4}[\s.-]?\d{4}\b/g, "(teléfono)")
+    .slice(0, max);
+}
+
 // Filas base del mes objetivo (simple filtro por fecha, sin join ni CTE).
 async function fetchCalidadBase(pool, startStr, endStr) {
   const result = await pool
     .request()
     .input("start", sql.Date, startStr)
     .input("end", sql.Date, endStr).query(`
-    SELECT [Orden de Trabajo], Rut_Tecnico, NOMBRE_TECNICO, Empresa, Fecha_Cierre, TipoActividadPrimerServicio
+    SELECT [Orden de Trabajo], Rut_Tecnico, NOMBRE_TECNICO, Empresa, Fecha_Cierre, TipoActividadPrimerServicio,
+           SubtipoPrimerServicio, Direccion, Ciudad
     FROM CALIDAD_VTR
     WHERE Fecha_Cierre >= @start AND Fecha_Cierre < @end
   `);
@@ -201,7 +214,9 @@ async function fetchCalidadRepetidos(pool) {
         EsRepetido30Dias,
         Fecha_Cierre AS FechaPrimerCierre,
         Fecha_Cierre_Repetido AS FechaRepetido,
-        CodigoCierreRepetido
+        CodigoCierreRepetido,
+        TipoActividadRepetido,
+        NotasCierreRepetido
     FROM CALIDAD_VTR
     WHERE [Orden Repetido] IS NOT NULL
   `);
@@ -355,6 +370,14 @@ function calcularCalidad(baseRows, repRows, supervisores) {
         tipoActividad: row.TipoActividadPrimerServicio || null,
         ordenTrabajo: row["Orden de Trabajo"] || null,
         fecha: row.Fecha_Cierre ? toSqlDate(new Date(row.Fecha_Cierre)) : null,
+        // Detalle para que el tecnico reconozca la orden (decidido el 05-10-2026,
+        // con direccion completa aunque el portal del tecnico es publico).
+        subtipo: textoLibre(row.SubtipoPrimerServicio, 60) || null,
+        direccion: textoLibre([row.Direccion, row.Ciudad].filter(Boolean).join(", "), 120) || null,
+        ordenRep: match["Orden Repetido"] || null,
+        fechaRep: match.FechaRepetido ? toSqlDate(new Date(match.FechaRepetido)) : null,
+        tipoRep: textoLibre(match.TipoActividadRepetido, 60) || null,
+        notasRep: textoLibre(match.NotasCierreRepetido, 400) || null,
       });
     }
 
