@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Técnicos · Cobra</title>
-<meta name="theme-color" content="#003c71">
+<meta name="theme-color" content="#003575">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -152,35 +152,148 @@
   footer .firma{ display:block; margin-top:18px; text-align:center; font-size:7.5px; letter-spacing:.06em; text-transform:uppercase; opacity:.7; }
   footer .firma b{ text-transform:none; }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica (el mismo del dashboard de supervisores): el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+<style>
+  /* ===== Portal del tecnico: ajustes propios sobre el sistema de diseno ===== */
+  main{ max-width:1100px; margin:0 auto; }
+  header.top .wrap, section.hero .wrap, footer.foot .wrap{ max-width:1100px; }
+  .oculto{ display:none !important; }
+  /* cabecera: botones a la derecha */
+  header.top .acciones-top{ margin-left:auto; display:flex; gap:10px; align-items:center; }
+  .btn-instalar{ display:inline-flex; align-items:center; gap:7px; background:var(--amber); color:#1d1a12; border:none; border-radius:2px; padding:9px 14px; font:600 12.5px/1.2 var(--font); letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+  .btn-instalar:hover{ background:#ffb61a; }
+  .btn-instalar svg{ width:15px; height:15px; }
+  #logoutBtn{ padding:9px 14px; font-size:12px; }
+  @media (max-width:560px){ header.top .brand-name{ display:none; } header.top .brand-divider{ display:none; } .btn-instalar span{ display:none; } }
+  /* portada mas baja en el celular: lo importante son los numeros */
+  section.hero .wrap{ min-height:0; padding-block:30px 32px; }
+  section.hero h1{ font-size:clamp(28px,3.4vw,42px); margin:10px 0; }
+  section.hero .subtitle{ font-size:16px; }
+  #heroSub b{ color:#fff; font-weight:600; }
+  /* pantallas angostas: la foto queda a la derecha (como en el computador) y el
+     texto a la izquierda, en una franja baja; nada se apila. */
+  @media (max-width:860px){
+    section.hero .photo{ width:62%; height:auto; bottom:0; background-position:40% 25%;
+      -webkit-mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.5) 30%, #000 60%); mask-image:linear-gradient(90deg, transparent 0%, rgba(0,0,0,.5) 30%, #000 60%); }
+    section.hero .shade{ background:linear-gradient(90deg, #003575 0%, #003575 38%, rgba(0,53,117,.75) 55%, rgba(0,53,117,.25) 80%, rgba(0,53,117,0) 100%); }
+    section.hero .fibers{ -webkit-mask-image:linear-gradient(90deg, #000 0%, #000 40%, transparent 70%); mask-image:linear-gradient(90deg, #000 0%, #000 40%, transparent 70%); }
+    section.hero .wrap{ min-height:0; padding-block:22px 22px; }
+    section.hero .wrap > div{ max-width:72%; }
+    section.hero h1{ font-size:24px; margin:6px 0; }
+    section.hero .subtitle{ font-size:13.5px; }
+  }
+  #loginBox{ max-width:440px; margin:0 auto; padding:30px 28px; }
+  .instalar-login{ margin-top:18px; font-size:13.5px; color:var(--muted); }
+  .instalar-login a{ color:var(--blue); font-weight:600; cursor:pointer; }
+
+  /* resumen rapido: una tarjeta por indicador */
+  .titulo-seccion:first-of-type{ margin-top:8px; }
+  .resumen-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+  .ind-card{ background:var(--panel); border-top:3px solid var(--navy); padding:22px 22px 18px; cursor:pointer; transition:transform .2s ease, box-shadow .2s ease; display:flex; flex-direction:column; gap:6px; text-align:left; border-left:none; border-right:none; border-bottom:none; font:inherit; color:inherit; }
+  .ind-card:hover{ transform:translateY(-2px); box-shadow:0 14px 30px -22px rgba(0,53,117,.6); }
+  .ind-card.ok{ border-top-color:var(--ok); } .ind-card.warn{ border-top-color:var(--amber); } .ind-card.bad{ border-top-color:var(--bad); }
+  .ind-card .lbl{ font:600 11px/1.3 var(--font); letter-spacing:.14em; text-transform:uppercase; color:var(--blue); }
+  .ind-card .num{ font:200 46px/1.05 var(--font); color:var(--navy); font-variant-numeric:tabular-nums; }
+  .ind-card .meta{ font-size:13px; color:var(--muted); }
+  .ind-card .pie{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .ind-card .estado-pill{ margin:0; }
+  .ind-card .puesto{ font:500 12.5px/1.3 var(--mono); color:var(--navy); }
+  .ind-card .ver{ font:600 11px/1.3 var(--font); letter-spacing:.1em; text-transform:uppercase; color:var(--blue); margin-top:4px; }
+
+  /* posicion en el equipo */
+  .rank-fila{ display:grid; grid-template-columns:minmax(150px,220px) 1fr; gap:10px 24px; align-items:center; padding:16px 0; border-bottom:1px solid var(--line); }
+  .rank-fila:last-child{ border-bottom:none; }
+  .rank-nombre{ font:600 15px/1.3 var(--font); color:var(--navy); }
+  .rank-nombre small{ display:block; font:400 13px/1.4 var(--font); color:var(--muted); margin-top:2px; }
+  .rank-pista{ position:relative; height:44px; }
+  .rank-pista .linea{ position:absolute; left:0; right:0; top:12px; height:4px; background:linear-gradient(90deg, var(--ok) 0%, #e6e8ec 50%, #e6e8ec 100%); }
+  .rank-pista .linea.inv{ background:linear-gradient(90deg, var(--ok) 0%, #e6e8ec 55%); }
+  .rank-pista .yo{ position:absolute; top:2px; width:24px; height:24px; margin-left:-12px; border-radius:50%; background:var(--navy); border:3px solid #fff; box-shadow:0 0 0 2px var(--navy); transition:left 1.4s cubic-bezier(.2,.7,.2,1); }
+  .rank-pista .extremo{ position:absolute; top:32px; font:600 10px/1 var(--font); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .rank-pista .extremo.izq{ left:0; } .rank-pista .extremo.der{ right:0; }
+  .rank-datos{ grid-column:2; display:flex; gap:20px; flex-wrap:wrap; font-size:13.5px; color:var(--muted); }
+  .rank-datos b{ font:500 14px/1.3 var(--mono); color:var(--navy); }
+  @media (max-width:640px){ .rank-fila{ grid-template-columns:1fr; } .rank-datos{ grid-column:1; } }
+
+  /* evolucion mes a mes */
+  .evo-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr)); gap:24px; }
+  .evo-grid .panel{ padding:22px 24px 18px; margin-bottom:0 !important; }
+  .evo-frase{ margin:0 0 12px; font-size:15px; font-weight:600; line-height:1.4; }
+  .evo-leyenda{ display:flex; gap:18px; font-size:12.5px; color:var(--muted); margin:2px 0 6px; flex-wrap:wrap; }
+  .evo-leyenda i{ display:inline-block; width:18px; height:3px; vertical-align:middle; margin-right:6px; background:var(--navy); }
+  .evo-leyenda i.eq{ background:none; border-top:2px dashed #8a93a3; height:0; }
+  .evo-nota{ margin:10px 0 0; font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .detalle-grid .report-card{ margin-bottom:24px; }
+  .brecha{ border-radius:0; border-left-color:var(--amber); background:#fdf6e6; }
+  .rep-card{ border-radius:0; }
+  /* celular: portada compacta y tarjetas del resumen de a dos */
+  @media (max-width:560px){
+    header.top .brand-row{ min-height:56px; padding-block:6px; }
+    header.top .brand-row img{ height:26px; }
+    section.hero .wrap{ padding-block:16px 16px; }
+    section.hero .wrap > div{ max-width:78%; }
+    section.hero h1{ font-size:20px; margin:4px 0; }
+    section.hero .eyebrow{ font-size:9.5px; letter-spacing:.08em; }
+    section.hero .subtitle{ font-size:12.5px; line-height:1.4; }
+    main{ padding-top:28px; }
+    .titulo-seccion{ font-size:22px; margin-top:30px; }
+    .resumen-row{ grid-template-columns:1fr 1fr; gap:12px; }
+    .ind-card{ padding:16px 14px 14px; }
+    .ind-card .lbl{ font-size:10px; letter-spacing:.1em; }
+    .ind-card .num{ font-size:34px; }
+    .ind-card .meta{ font-size:12px; }
+    .ind-card .pie{ flex-direction:column; align-items:flex-start; gap:6px; }
+    .report-card{ padding:22px 18px 18px; }
+    .evo-grid .panel{ padding:18px 14px 14px; }
+  }
+  /* Pasos para instalar en iPhone */
+  .pasos-ios{ margin:8px 0 0; padding-left:20px; font-size:15px; line-height:1.7; }
+</style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="brand-row">
+<header class="top">
+  <div class="wrap brand-row">
     <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
     <div class="brand-divider"></div>
-    <div class="eyebrow">Portal de Técnicos</div>
-  </div>
-  <h1>Mis Indicadores</h1>
-  <div class="subtitle">Acá puedes ver, de forma simple, cómo te va este mes y en qué puedes enfocarte para mejorar.</div>
-  <div class="banner-fiestas" id="bannerFiestas">
-    <div class="banner-fiestas-pill">
-      <svg class="mini-flag-cl" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="0" y="0" width="90" height="30" fill="#ffffff"/>
-        <rect x="0" y="30" width="90" height="30" fill="#D52B1E"/>
-        <rect x="0" y="0" width="30" height="30" fill="#0039A6"/>
-        <polygon points="15,6 17.0,12.25 23.56,12.22 18.23,16.05 20.29,22.28 15,18.4 9.71,22.28 11.77,16.05 6.44,12.22 13.0,12.25" fill="#ffffff"/>
-      </svg>
-      <span>¡Feliz Mes de la Patria!</span><span class="dim" id="fiestasSubtexto"></span>
+    <div class="brand-name">Portal <strong>Técnico</strong></div>
+    <div class="acciones-top">
+      <button class="btn-instalar oculto" id="btnInstalar" type="button" title="Instalar en el celular"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/></svg><span>Instalar app</span></button>
+      <button id="logoutBtn" class="oculto" type="button">Salir</button>
     </div>
   </div>
 </header>
 
+<section class="hero" aria-label="Portada">
+  <div class="photo"></div>
+  <div class="shade"></div>
+  <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow" id="heroEyebrow">Cobra &middot; Indicadores personales</p>
+    <h1 id="heroTitulo">Mis <b>indicadores</b></h1>
+    <p class="subtitle" id="heroSub">Cómo te va este mes y en qué puedes enfocarte para mejorar.</p>
+    <div class="banner-fiestas" id="bannerFiestas">
+      <div class="banner-fiestas-pill">
+        <svg class="mini-flag-cl" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="0" y="0" width="90" height="30" fill="#ffffff"/>
+          <rect x="0" y="30" width="90" height="30" fill="#D52B1E"/>
+          <rect x="0" y="0" width="30" height="30" fill="#0039A6"/>
+          <polygon points="15,6 17.0,12.25 23.56,12.22 18.23,16.05 20.29,22.28 15,18.4 9.71,22.28 11.77,16.05 6.44,12.22 13.0,12.25" fill="#ffffff"/>
+        </svg>
+        <span>¡Feliz Mes de la Patria!</span><span class="dim" id="fiestasSubtexto"></span>
+      </div>
+    </div>
+  </div></div>
+</section>
+
 <main>
   <div id="loginBox" class="panel">
     <div class="icono-login">👋</div>
-    <h2>Bienvenido</h2>
-    <p class="desc">Ingresa con tu ID para ver tu reporte personal. Nadie más puede ver tu información.</p>
+    <h2>Ingresa con tu <b>ID</b></h2>
+    <p class="desc">Para ver tu reporte personal. Nadie más puede ver tu información.</p>
     <div id="loginError"></div>
     <div class="campo">
       <label for="inputNombre">ID</label>
@@ -188,37 +301,55 @@
       <div class="ayuda">Son los últimos 6 caracteres de tu RUT, incluido el dígito verificador (si termina en K, usa 0).</div>
     </div>
     <button id="loginBtn">Ver mi reporte</button>
+    <p class="instalar-login oculto" id="instalarLogin">📱 ¿Lo usas seguido? <a id="linkInstalar">Instálalo en tu celular</a> y ábrelo como una app.</p>
   </div>
 
   <div id="appBox">
-    <div class="top-row">
-      <div>
-        <h1 id="saludo" style="font-size:22px;margin-bottom:2px;"></h1>
-        <div class="subtitle" id="datosTecnico" style="font-size:13px;"></div>
-      </div>
-      <button id="logoutBtn">Cerrar sesión</button>
-    </div>
-    <p class="intro-personal">Este es tu reporte personal. Te mostramos cómo vas este mes con tus órdenes de trabajo, y en qué puedes enfocarte para mejorar.</p>
-
     <div id="resumenGeneral"></div>
 
-    <div class="report-card panel" id="seccionCalidad"></div>
-    <div class="panel" id="panelEvolutivoPersonal" style="display:none; padding:20px 22px; margin-bottom:22px;">
-      <h2 style="margin:0 0 3px; font-size:15px; color:var(--cobra-navy);">Tu evolución de Calidad mes a mes</h2>
-      <p class="frase-tendencia" id="evolutivoPersonalExplicacion" style="margin:0 0 14px; font-size:15px; font-weight:800; line-height:1.4;"></p>
-      <div id="evolutivoPersonalChart"></div>
-      <p style="margin:12px 0 0; font-size:12px; color:var(--text-dim); line-height:1.5;">% de repetidos de cada mes completo (no acumulado entre meses). Cada punto lleva el mes en que se reporta: tus órdenes cerradas en enero aparecen como Feb, y así sucesivamente. El último punto es parcial hasta que su mes cumple 30 días de cerrado, porque esas órdenes todavía pueden repetirse.</p>
+    <h2 class="titulo-seccion">Tu <b>resumen</b></h2>
+    <p class="explica-seccion">Toca un indicador para ver su detalle.</p>
+    <div class="resumen-row" id="resumenCards"></div>
+
+    <div id="bloqueRanking">
+      <h2 class="titulo-seccion">Tu posición en el <b>equipo</b></h2>
+      <p class="explica-seccion" id="rankingExplica"></p>
+      <div class="panel" id="rankingPanel" style="padding:8px 26px;"></div>
     </div>
-    <div class="report-card panel" id="seccionDerivaciones"></div>
-    <div class="report-card panel" id="seccionRgu"></div>
 
-    <div class="report-card panel" id="seccionVecino" style="display:none;"></div>
+    <div id="bloqueEvolucion">
+      <h2 class="titulo-seccion">Tu evolución <b>mes a mes</b></h2>
+      <p class="explica-seccion">Tu línea frente al promedio del equipo (línea punteada).</p>
+      <div class="evo-grid">
+        <div class="panel" id="panelEvolutivoPersonal">
+          <h2>Calidad <span>· repetidos 30 días</span></h2>
+          <p class="evo-frase" id="evolutivoPersonalExplicacion"></p>
+          <div class="evo-leyenda"><span><i></i>Tú</span><span><i class="eq"></i>Promedio del equipo</span></div>
+          <div id="evolutivoPersonalChart"></div>
+          <p class="evo-nota">% de repetidos de cada mes completo. Cada punto lleva el mes en que se reporta: tus órdenes cerradas en enero aparecen como Feb. El último punto es parcial hasta que su mes cumple 30 días de cerrado. Mientras más bajo, mejor.</p>
+        </div>
+        <div class="panel" id="panelEvolutivoRgu">
+          <h2>Producción <span>· % de cumplimiento RGU</span></h2>
+          <p class="evo-frase" id="evolutivoRguExplicacion"></p>
+          <div class="evo-leyenda"><span><i></i>Tú</span><span><i class="eq"></i>Promedio del equipo</span></div>
+          <div id="evolutivoRguChart"></div>
+          <p class="evo-nota">% de cumplimiento de tu meta de RGU en cada mes. El mes en curso es parcial. Mientras más alto, mejor: 100 % es cumplir la meta.</p>
+        </div>
+      </div>
+    </div>
 
-    <div class="report-card panel" id="seccionComunicados">
-      <div class="cabecera"><span class="icono">📢</span><h2>Comunicados</h2></div>
-      <p class="explica">Novedades y avisos para técnicos. Hacé clic en cualquier archivo para verlo o descargarlo.</p>
-      <div class="comunicados-embed">
-        <iframe src="https://drive.google.com/embeddedfolderview?id=1ZNMHbP1eVfat_v_Gu6rJp5jziIxNpydk#grid" loading="lazy" title="Comunicados"></iframe>
+    <h2 class="titulo-seccion">El detalle de <b>cada indicador</b></h2>
+    <div class="detalle-grid">
+      <div class="report-card panel" id="seccionCalidad"></div>
+      <div class="report-card panel" id="seccionDerivaciones"></div>
+      <div class="report-card panel" id="seccionRgu"></div>
+      <div class="report-card panel" id="seccionVecino" style="display:none;"></div>
+      <div class="report-card panel" id="seccionComunicados">
+        <div class="cabecera"><span class="icono">📢</span><h2>Comunicados</h2></div>
+        <p class="explica">Novedades y avisos para técnicos. Toca cualquier archivo para verlo o descargarlo.</p>
+        <div class="comunicados-embed">
+          <iframe src="https://drive.google.com/embeddedfolderview?id=1ZNMHbP1eVfat_v_Gu6rJp5jziIxNpydk#grid" loading="lazy" title="Comunicados"></iframe>
+        </div>
       </div>
     </div>
   </div>
@@ -232,7 +363,10 @@
   </div>
 </div>
 
-<footer><span id="footerText"></span><span class="firma">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span></footer>
+<footer class="foot"><div class="wrap">
+  <span id="footerText"></span>
+  <span class="by">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span>
+</div></footer>
 
 <script>
 const DATA = __DATA_JSON__;
@@ -262,7 +396,7 @@ function estado(pct, goodWhenLow, umbralOk, umbralWarn) {
 function barra(pct, cls) {
   const ancho = Math.max(0, Math.min(100, pct));
   return '<div class="barra-wrap">'
-    + '<div class="barra-label ' + cls + '">' + pct.toFixed(1) + '%</div>'
+    + '<div class="barra-label ' + cls + '">' + numero(pct, 1) + '%</div>'
     + '<div class="barra-track"><div class="barra-fill ' + cls + '" style="width:' + ancho.toFixed(1) + '%"></div></div>'
     + '</div>';
 }
@@ -451,24 +585,37 @@ function formatMesCorto(iso) {
   return MESES[parseInt(m, 10) - 1] || iso;
 }
 
-function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos) {
+// Grafico de linea: la serie del tecnico (linea continua con su valor en cada
+// punto) y, si viene, el promedio del equipo (linea punteada gris).
+// opciones: { equipo, formatLabel, meta } -- meta dibuja una linea de referencia.
+function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos, opciones) {
+  opciones = opciones || {};
   const puntos = valores.map((v, i) => ({ x: i, v })).filter((p) => p.v != null);
   if (puntos.length < 2) {
     el.innerHTML = '';
     return false;
   }
+  const equipo = (opciones.equipo || []).map((v, i) => ({ x: i, v })).filter((p) => p.v != null && p.x < fechas.length);
 
-  const W = 700, H = 220, padL = 42, padR = 16, padT = 24, padB = 30;
+  // Se dibuja al ancho real del recuadro: en el celular el texto no se achica.
+  // En pantallas angostas solo se rotula el ultimo valor y uno de cada dos meses.
+  const W = Math.max(300, Math.min(700, el.clientWidth || 700));
+  const compacto = W < 520;
+  if (compacto) etiquetarTodos = false;
+  const H = compacto ? 210 : 230, padL = 38, padR = 12, padT = 26, padB = 30;
   const plotW = W - padL - padR, plotH = H - padT - padB;
 
-  const maxV = Math.max(...puntos.map((p) => p.v), 1);
-  const yMax = Math.ceil((maxV * 1.15) / 2) * 2 || 2;
+  const todos = puntos.concat(equipo).map((p) => p.v).concat(opciones.meta != null ? [opciones.meta] : []);
+  const maxV = Math.max(...todos, 1);
+  const paso = maxV > 40 ? 20 : 2;
+  const yMax = Math.ceil((maxV * 1.15) / paso) * paso || paso;
   const n = fechas.length;
 
   const xAt = (i) => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
   const yAt = (v) => padT + plotH - (v / yMax) * plotH;
+  const linea = (pts) => pts.map((p, i) => (i === 0 ? 'M' : 'L') + xAt(p.x).toFixed(1) + ',' + yAt(p.v).toFixed(1)).join(' ');
 
-  const pathD = puntos.map((p, i) => (i === 0 ? 'M' : 'L') + xAt(p.x).toFixed(1) + ',' + yAt(p.v).toFixed(1)).join(' ');
+  const pathD = linea(puntos);
   const areaD = pathD
     + ' L' + xAt(puntos[puntos.length - 1].x).toFixed(1) + ',' + (padT + plotH)
     + ' L' + xAt(puntos[0].x).toFixed(1) + ',' + (padT + plotH) + ' Z';
@@ -479,12 +626,18 @@ function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos) {
     return '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="#e0e5ea" stroke-width="1"/>'
       + '<text x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="10" fill="#6b7a8c" text-anchor="end">' + v.toFixed(0) + '%</text>';
   }).join('');
+  const lineaMeta = opciones.meta != null
+    ? '<line x1="' + padL + '" y1="' + yAt(opciones.meta).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yAt(opciones.meta).toFixed(1) + '" stroke="#f0a500" stroke-width="1.5"/>'
+      + '<text x="' + (W - padR) + '" y="' + (yAt(opciones.meta) - 5).toFixed(1) + '" font-size="10" font-weight="700" fill="#9a5b00" text-anchor="end">Meta ' + opciones.meta + '%</text>'
+    : '';
 
-  const idxLabels = n <= 12 ? [...Array(n).keys()] : [0, Math.floor((n - 1) / 2), n - 1];
+  const idxLabels = compacto
+    ? [...Array(n).keys()].filter((i) => (n - 1 - i) % 2 === 0)
+    : n <= 12 ? [...Array(n).keys()] : [0, Math.floor((n - 1) / 2), n - 1];
   // Un rotulo largo en el ultimo punto (ej. "Oct (parcial)") se alinea a la
   // derecha para que no se corte en el borde del grafico.
   const xLabels = [...new Set(idxLabels)].map((i) => {
-    const texto = formatLabel(fechas[i]);
+    const texto = compacto ? formatLabel(fechas[i]).replace(/ \(.*\)$/, '*') : formatLabel(fechas[i]);
     const alFinal = i === n - 1 && texto.length > 4;
     return '<text x="' + (alFinal ? W - 2 : xAt(i)).toFixed(1) + '" y="' + (H - 8) + '" font-size="10" fill="#6b7a8c" text-anchor="' + (alFinal ? 'end' : 'middle') + '">' + texto + '</text>';
   }).join('');
@@ -492,13 +645,15 @@ function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos) {
   const puntosAEtiquetar = etiquetarTodos ? puntos : [puntos[puntos.length - 1]];
   const marcadores = puntosAEtiquetar.map((p) =>
     '<circle cx="' + xAt(p.x).toFixed(1) + '" cy="' + yAt(p.v).toFixed(1) + '" r="4" fill="var(--cobra-navy)"/>'
-    + '<text x="' + xAt(p.x).toFixed(1) + '" y="' + (yAt(p.v) - 10).toFixed(1) + '" font-size="11" font-weight="700" fill="var(--cobra-navy)" text-anchor="middle">' + p.v.toFixed(1) + '%</text>'
+    + '<text x="' + xAt(p.x).toFixed(1) + '" y="' + (yAt(p.v) - 10).toFixed(1) + '" font-size="11" font-weight="700" fill="var(--cobra-navy)" text-anchor="middle">' + numero(p.v, p.v >= 100 ? 0 : 1) + '%</text>'
   ).join('');
 
-  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block;">'
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block; font-size:11px;" role="img">'
     + gridLines
+    + lineaMeta
     + '<path d="' + areaD + '" fill="var(--celeste-soft)" opacity="0.7"/>'
-    + '<path d="' + pathD + '" fill="none" stroke="var(--cobra-blue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+    + (equipo.length > 1 ? '<path d="' + linea(equipo) + '" fill="none" stroke="#8a93a3" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>' : '')
+    + '<path class="trazo" d="' + pathD + '" fill="none" stroke="var(--cobra-navy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
     + marcadores
     + xLabels
     + '</svg>';
@@ -506,36 +661,34 @@ function dibujarLineChart(el, fechas, valores, formatLabel, etiquetarTodos) {
 }
 
 // Titular corto (una linea) que resume la tendencia, para entenderla de un
-// vistazo. En Calidad, bajar es mejorar (menos repetidos).
-//
-// Compara el ultimo mes contra el promedio de los 2-3 meses inmediatamente
-// anteriores, no contra el primer mes de toda la serie: comparar contra el
-// inicio puede decir "mejorando" solo porque un mes muy lejano (ej. enero)
-// era peor, aunque los ultimos meses esten subiendo otra vez -- que es lo
-// que importa para saber si hay que poner ojo ahora.
-function explicarTendencia(valores) {
+// vistazo. Compara el ultimo mes contra el promedio de los 2-3 meses
+// inmediatamente anteriores, no contra el primer mes de toda la serie: lo que
+// importa es si hay que poner ojo ahora. mayorEsMejor: true en Produccion
+// (subir es mejorar); false en Calidad (bajar es mejorar).
+function explicarTendencia(valores, mayorEsMejor) {
   const puntos = valores.filter((v) => v != null);
   if (puntos.length < 2) return '';
   const ultimo = puntos[puntos.length - 1];
-  const min = Math.min(...puntos);
-  const max = Math.max(...puntos);
-
   const previos = puntos.slice(Math.max(0, puntos.length - 4), puntos.length - 1);
   const promedioReciente = previos.reduce((a, b) => a + b, 0) / previos.length;
   const diff = ultimo - promedioReciente;
+  const umbral = mayorEsMejor ? 3 : 0.5;
 
   let icono, texto, color;
-  if (Math.abs(diff) < 0.5) {
+  if (Math.abs(diff) < umbral) {
     icono = '➡️'; texto = 'Se mantiene estable'; color = 'var(--warn)';
-  } else if (diff < 0) {
+  } else if ((diff > 0) === !!mayorEsMejor) {
     icono = '✅'; texto = 'Mejorando'; color = 'var(--ok)';
   } else {
-    icono = '🔴'; texto = 'Atención: la curva va al alza'; color = 'var(--bad)';
+    icono = '🔴'; texto = mayorEsMejor ? 'Atención: va a la baja' : 'Atención: la curva va al alza'; color = 'var(--bad)';
   }
+  return '<span style="color:' + color + ';">' + icono + ' ' + texto + '</span>'
+    + '<span style="display:block; font-weight:400; font-size:13px; color:var(--text-dim);">Promedio de los meses previos ' + numero(promedioReciente, 1) + '% → último mes ' + numero(ultimo, 1) + '%</span>';
+}
 
-  return '<span style="color:' + color + ';">' + icono + ' ' + texto + ': '
-    + 'promedio meses previos ' + promedioReciente.toFixed(1) + '% → último mes ' + ultimo.toFixed(1) + '%</span>'
-    + '<span style="font-weight:400; font-size:12.5px; color:var(--text-dim);"> (rango: ' + min.toFixed(1) + '%–' + max.toFixed(1) + '%)</span>';
+function mesSiguiente(iso) {
+  const [y, m] = iso.split('-').map(Number);
+  return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0');
 }
 
 function renderEvolutivoPersonal(t) {
@@ -543,30 +696,47 @@ function renderEvolutivoPersonal(t) {
   const ev = t.evolutivoMensualPropio;
   if (!ev || !ev.valores || ev.valores.filter((v) => v != null).length < 2) {
     panel.style.display = 'none';
-    return;
+    return false;
   }
-  panel.style.display = 'block';
-  // Igual que el grafico de Calidad del dashboard de supervisores: cada punto
-  // se rotula con el mes en que se reporta (el siguiente al de sus cierres),
-  // en todos los puntos por igual, y el ultimo se marca como parcial mientras
-  // su mes no cumpla 30 dias de cerrado -- ese valor aun puede subir, asi que
-  // queda fuera de la frase de tendencia.
+  panel.style.display = '';
+  // Cada punto se rotula con el mes en que se reporta (el siguiente al de sus
+  // cierres), y el ultimo se marca como parcial mientras su mes no cumpla 30
+  // dias de cerrado -- ese valor aun puede subir, asi que queda fuera de la
+  // frase de tendencia.
   const meses = ev.mesesReales || ev.meses;
   const ultimo = ev.valores.length - 1;
   const parcial = !!ev.ultimoMesParcial && ev.valores[ultimo] != null;
-  const mesReporte = (iso) => {
-    const [y, m] = iso.split('-').map(Number);
-    return m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0');
-  };
-  const etiqueta = (iso) => formatMesCorto(mesReporte(iso)) + (parcial && iso === meses[ultimo] ? ' (parcial)' : '');
-  dibujarLineChart(document.getElementById('evolutivoPersonalChart'), meses, ev.valores, etiqueta, true);
+  const etiqueta = (iso) => formatMesCorto(mesSiguiente(iso)) + (parcial && iso === meses[ultimo] ? ' (parcial)' : '');
+  dibujarLineChart(document.getElementById('evolutivoPersonalChart'), meses, ev.valores, etiqueta, true, { equipo: ev.equipo });
 
-  let explicacion = explicarTendencia(parcial ? ev.valores.slice(0, -1) : ev.valores);
+  let explicacion = explicarTendencia(parcial ? ev.valores.slice(0, -1) : ev.valores, false);
   if (parcial) {
     explicacion += '<span style="display:block; font-weight:400; font-size:12.5px; color:var(--text-dim);">'
-      + formatMesCorto(mesReporte(meses[ultimo])) + ' (' + ev.valores[ultimo].toFixed(1) + '%) es parcial y no se compara: tus repetidos de ese mes aún pueden aumentar.</span>';
+      + formatMesCorto(mesSiguiente(meses[ultimo])) + ' (' + numero(ev.valores[ultimo], 1) + '%) es parcial y no se compara: tus repetidos de ese mes aún pueden aumentar.</span>';
   }
   document.getElementById('evolutivoPersonalExplicacion').innerHTML = explicacion;
+  return true;
+}
+
+function renderEvolutivoRgu(t) {
+  const panel = document.getElementById('panelEvolutivoRgu');
+  const ev = t.evolutivoRgu;
+  if (!ev || !ev.valores || ev.valores.filter((v) => v != null).length < 2) {
+    panel.style.display = 'none';
+    return false;
+  }
+  panel.style.display = '';
+  const ultimo = ev.valores.length - 1;
+  const parcial = !!ev.ultimoMesParcial && ev.valores[ultimo] != null;
+  const etiqueta = (iso) => formatMesCorto(iso) + (parcial && iso === ev.meses[ultimo] ? ' (en curso)' : '');
+  dibujarLineChart(document.getElementById('evolutivoRguChart'), ev.meses, ev.valores, etiqueta, true, { equipo: ev.equipo, meta: 100 });
+  let explicacion = explicarTendencia(parcial ? ev.valores.slice(0, -1) : ev.valores, true);
+  if (parcial) {
+    explicacion += '<span style="display:block; font-weight:400; font-size:12.5px; color:var(--text-dim);">'
+      + formatMesCorto(ev.meses[ultimo]) + ' (' + numero(ev.valores[ultimo], 1) + '%) va en curso y no se compara.</span>';
+  }
+  document.getElementById('evolutivoRguExplicacion').innerHTML = explicacion;
+  return true;
 }
 
 // Consulta de estado vecino: solo los datos del propio tecnico (vienen dentro
@@ -668,37 +838,198 @@ function cerrarInfo() {
 window.mostrarInfo = mostrarInfo;
 window.cerrarInfo = cerrarInfo;
 
+// ---------- Resumen rapido: una tarjeta por indicador ----------
+function numero(v, dec) {
+  return v.toLocaleString('es-CL', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function textoPuesto(r) {
+  return r ? 'Puesto ' + r.puesto + ' de ' + r.de : '';
+}
+function tarjeta(clave, titulo, valor, meta, est, ranking, destino) {
+  return '<button type="button" class="ind-card ' + est.clase + '" data-ir="' + destino + '">'
+    + '<span class="lbl">' + titulo + '</span>'
+    + '<span class="num">' + valor + '</span>'
+    + '<span class="meta">' + meta + '</span>'
+    + '<span class="pie"><span class="estado-pill ' + est.clase + '">' + est.texto + '</span><span class="puesto">' + textoPuesto(ranking) + '</span></span>'
+    + '<span class="ver">Ver detalle →</span>'
+    + '</button>';
+}
+function renderResumen(t) {
+  const r = t.ranking || {};
+  const cards = [];
+  if (t.calidad) {
+    cards.push(tarjeta('calidad', 'Calidad · repetidos', numero(t.calidad.pctRepetidos, 1) + '%',
+      'Meta: no superar ' + numero(t.calidad.metaCalidad, 2) + '%',
+      estado(t.calidad.pctRepetidos, true, t.calidad.metaCalidad, t.calidad.metaCalidad), r.calidad, 'seccionCalidad'));
+  }
+  if (t.derivaciones) {
+    cards.push(tarjeta('derivaciones', 'Derivaciones', numero(t.derivaciones.pctDerivaciones, 1) + '%',
+      'Meta: no superar ' + META_DERIVACIONES + '%',
+      estado(t.derivaciones.pctDerivaciones, true, META_DERIVACIONES, META_DERIVACIONES * 1.5), r.derivaciones, 'seccionDerivaciones'));
+  }
+  if (t.rgu) {
+    cards.push(tarjeta('rgu', 'Producción RGU', numero(t.rgu.pctCumplimiento, 1) + '%',
+      numero(t.rgu.rguCompletadaGsa, 2) + ' de ' + numero(t.rgu.metaPeriodo, 2) + ' RGU de tu meta',
+      estado(t.rgu.pctCumplimiento, false, 100, 80), r.rgu, 'seccionRgu'));
+  }
+  if (t.vecino && t.vecino.meses) {
+    const m = t.vecino.meses.find((x) => x.mes === t.vecino.mesInicial);
+    if (m && m.total) {
+      const p = (m.conConsulta / m.total) * 100;
+      cards.push(tarjeta('vecino', 'Consulta estado vecino', numero(p, 1) + '%', m.conConsulta + ' de ' + m.total + ' órdenes · meta ' + t.vecino.meta + '%',
+        estado(p, false, t.vecino.meta, 90), null, 'seccionVecino'));
+    }
+  }
+  const cont = document.getElementById('resumenCards');
+  cont.innerHTML = cards.join('') || '<p class="sin-datos">Todavía no hay indicadores para ti en este período.</p>';
+  cont.querySelectorAll('.ind-card').forEach((b) => b.addEventListener('click', () => {
+    const destino = document.getElementById(b.dataset.ir);
+    if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+}
+
+// ---------- Posicion en el equipo (sin nombres de los demas) ----------
+// La pista va de "mejor" (izquierda) a "por mejorar" (derecha); el punto es el
+// tecnico. Empates comparten puesto.
+function renderRanking(t) {
+  const r = t.ranking || {};
+  const filas = [];
+  const fila = (nombre, sub, rk, propio, menorEsMejor) => {
+    if (!rk) return;
+    const pos = rk.de > 1 ? ((rk.puesto - 1) / (rk.de - 1)) * 100 : 0;
+    const superas = rk.de > 1 ? Math.round(((rk.de - rk.puesto) / (rk.de - 1)) * 100) : 100;
+    const comparacion = menorEsMejor ? (propio <= rk.promedio ? 'mejor' : 'peor') : (propio >= rk.promedio ? 'mejor' : 'peor');
+    filas.push('<div class="rank-fila">'
+      + '<div class="rank-nombre">' + nombre + '<small>' + sub + '</small></div>'
+      + '<div class="rank-pista" data-pos="' + pos.toFixed(1) + '"><div class="linea"></div><div class="yo" style="left:0%" title="Tú"></div>'
+      + '<span class="extremo izq">Mejor</span><span class="extremo der">Por mejorar</span></div>'
+      + '<div class="rank-datos"><span>Puesto <b>' + rk.puesto + '</b> de <b>' + rk.de + '</b></span>'
+      + (superas > 0 ? '<span>Superas al <b>' + superas + '%</b> del equipo</span>' : '')
+      + '<span>Tú <b>' + numero(propio, 1) + '%</b> · promedio <b>' + numero(rk.promedio, 1) + '%</b> (' + comparacion + ' que el promedio)</span></div>'
+      + '</div>');
+  };
+  if (t.calidad) fila('Calidad', 'Repetidos 30 días · más bajo es mejor', r.calidad, t.calidad.pctRepetidos, true);
+  if (t.derivaciones) fila('Derivaciones', 'Alta/Migración · más bajo es mejor', r.derivaciones, t.derivaciones.pctDerivaciones, true);
+  if (t.rgu) fila('Producción RGU', '% de cumplimiento · más alto es mejor', r.rgu, t.rgu.pctCumplimiento, false);
+  document.getElementById('bloqueRanking').style.display = filas.length ? '' : 'none';
+  const total = Math.max(0, ...Object.values(r).map((x) => x.de));
+  document.getElementById('rankingExplica').textContent = 'Dónde estás entre los ' + total + ' técnicos del equipo en cada indicador. Solo tú ves tu posición; no se muestran los nombres de los demás.';
+  const panel = document.getElementById('rankingPanel');
+  panel.innerHTML = filas.join('');
+  // El punto se desliza hasta su lugar cuando el bloque se ve en pantalla.
+  const mover = () => panel.querySelectorAll('.rank-pista').forEach((p) => { p.querySelector('.yo').style.left = p.dataset.pos + '%'; });
+  if ('IntersectionObserver' in window) {
+    const o = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { o.disconnect(); setTimeout(mover, 150); } }, { threshold: 0.2 });
+    o.observe(panel);
+    setTimeout(mover, 2500); // por si el navegador no avisa que el bloque esta a la vista
+  } else {
+    mover();
+  }
+}
+
+const HERO_INICIAL = {
+  eyebrow: document.getElementById('heroEyebrow').innerHTML,
+  titulo: document.getElementById('heroTitulo').innerHTML,
+  sub: document.getElementById('heroSub').innerHTML,
+};
+
 function mostrarPerfil(t) {
   document.getElementById('loginBox').style.display = 'none';
   document.getElementById('appBox').style.display = 'block';
-  document.getElementById('saludo').textContent = '👋 Hola, ' + titleCase(t.nombre);
-  let meta = [];
-  if (t.supervisor) meta.push('Supervisor: ' + titleCase(t.supervisor));
-  if (t.agencia) meta.push('Agencia: ' + titleCase(t.agencia));
-  document.getElementById('datosTecnico').textContent = meta.join(' · ');
+  document.getElementById('logoutBtn').classList.remove('oculto');
+
+  const nombre = titleCase(t.nombre);
+  const primer = nombre.split(' ')[0] || nombre;
+  const resto = nombre.slice(primer.length).trim();
+  const txt = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  document.getElementById('heroEyebrow').innerHTML = 'Tu reporte personal &middot; ' + txt(DATA.periodoMatriz);
+  document.getElementById('heroTitulo').innerHTML = 'Hola, <b>' + txt(primer) + '</b>' + (resto ? ' ' + txt(resto) : '');
+  const meta = [];
+  if (t.supervisor) meta.push('Supervisor: <b>' + txt(titleCase(t.supervisor)) + '</b>');
+  if (t.agencia) meta.push('Agencia: <b>' + txt(titleCase(t.agencia)) + '</b>');
+  document.getElementById('heroSub').innerHTML = meta.join(' &middot; ');
 
   const estados = [];
   if (t.calidad) estados.push(estado(t.calidad.pctRepetidos, true, t.calidad.metaCalidad, t.calidad.metaCalidad).clase);
   if (t.derivaciones) estados.push(estado(t.derivaciones.pctDerivaciones, true, META_DERIVACIONES, META_DERIVACIONES * 1.5).clase);
   if (t.rgu) estados.push(estado(t.rgu.pctCumplimiento, false, 100, 80).clase);
-  let claseGeneral = 'ok', mensajeGeneral = '🎉 <b>Vas bien este mes.</b> <span>Tus indicadores están en buen nivel. Sigue así.</span>';
+  let claseGeneral = 'ok', mensajeGeneral = '<b>Vas bien este mes.</b> <span>Tus indicadores están en buen nivel. Sigue así.</span>';
   if (estados.includes('bad')) {
     claseGeneral = 'bad';
-    mensajeGeneral = '🔴 <b>Tienes un indicador en foco prioritario.</b> <span>Mira el detalle abajo para saber en qué enfocarte.</span>';
+    mensajeGeneral = '<b>Tienes un indicador en foco prioritario.</b> <span>Mira el detalle abajo para saber en qué enfocarte.</span>';
   } else if (estados.includes('warn')) {
     claseGeneral = 'warn';
-    mensajeGeneral = '⚠️ <b>Tienes un indicador que requiere atención.</b> <span>Revisa el detalle abajo.</span>';
+    mensajeGeneral = '<b>Tienes un indicador que requiere atención.</b> <span>Revisa el detalle abajo.</span>';
   }
-  const emojiGeneral = claseGeneral === 'ok' ? '🎉' : (claseGeneral === 'warn' ? '⚠️' : '🔴');
   document.getElementById('resumenGeneral').innerHTML =
-    '<div class="resumen-general ' + claseGeneral + '"><div class="emoji">' + emojiGeneral + '</div><div class="texto">' + mensajeGeneral + '</div></div>';
+    '<div class="resumen-general ' + claseGeneral + '"><div class="texto">' + mensajeGeneral + '</div></div>';
 
+  renderResumen(t);
+  renderRanking(t);
+  tecnicoActual = t;
+  const hayCalidad = renderEvolutivoPersonal(t);
+  const hayRgu = renderEvolutivoRgu(t);
+  document.getElementById('bloqueEvolucion').style.display = hayCalidad || hayRgu ? '' : 'none';
   document.getElementById('seccionCalidad').innerHTML = bloqueCalidad(t.calidad);
-  renderEvolutivoPersonal(t);
   document.getElementById('seccionDerivaciones').innerHTML = bloqueDerivaciones(t.derivaciones);
   document.getElementById('seccionRgu').innerHTML = bloqueRgu(t.rgu);
   renderVecino(t);
+  window.scrollTo(0, 0);
 }
+
+// Al girar el celular o cambiar el ancho de la ventana, los graficos se
+// vuelven a dibujar al ancho nuevo.
+let tecnicoActual = null, esperaAncho = null, anchoPrevio = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (!tecnicoActual || window.innerWidth === anchoPrevio) return;
+  anchoPrevio = window.innerWidth;
+  clearTimeout(esperaAncho);
+  esperaAncho = setTimeout(() => { renderEvolutivoPersonal(tecnicoActual); renderEvolutivoRgu(tecnicoActual); }, 200);
+});
+
+function volverAlIngreso() {
+  tecnicoActual = null;
+  document.getElementById('appBox').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('logoutBtn').classList.add('oculto');
+  document.getElementById('heroEyebrow').innerHTML = HERO_INICIAL.eyebrow;
+  document.getElementById('heroTitulo').innerHTML = HERO_INICIAL.titulo;
+  document.getElementById('heroSub').innerHTML = HERO_INICIAL.sub;
+  document.getElementById('inputNombre').value = '';
+}
+
+// ---------- Instalar en el celular ----------
+// Android/Chrome: el navegador avisa que se puede instalar (beforeinstallprompt)
+// y el boton abre su ventana de instalacion. iPhone/Safari no tiene ese aviso:
+// el boton muestra los pasos (Compartir > Agregar a inicio). Si ya se abrio
+// como app instalada, el boton no aparece.
+(function () {
+  const yaInstalada = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  if (yaInstalada) return;
+  const esIos = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const boton = document.getElementById('btnInstalar');
+  const aviso = document.getElementById('instalarLogin');
+  let pedido = null;
+  const mostrar = () => { boton.classList.remove('oculto'); aviso.classList.remove('oculto'); };
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); pedido = e; mostrar(); });
+  window.addEventListener('appinstalled', () => { boton.classList.add('oculto'); aviso.classList.add('oculto'); pedido = null; });
+  if (esIos) mostrar();
+  async function instalar() {
+    if (pedido) {
+      pedido.prompt();
+      try { await pedido.userChoice; } catch (e) { /* cerro la ventana */ }
+      pedido = null;
+      return;
+    }
+    document.getElementById('modalInfoTitulo').textContent = 'Instalar en tu celular';
+    document.getElementById('modalInfoTexto').innerHTML = esIos
+      ? 'En Safari:<ol class="pasos-ios"><li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Agregar a inicio</b>.</li><li>Toca <b>Agregar</b>.</li></ol>El portal quedará en tu pantalla de inicio como una app.'
+      : 'Abre el menú del navegador (los tres puntos) y elige <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.';
+    document.getElementById('modalInfo').classList.add('abierto');
+  }
+  boton.addEventListener('click', instalar);
+  document.getElementById('linkInstalar').addEventListener('click', instalar);
+})();
 
 // Los datos de cada tecnico se piden a Supabase con su ID (funcion
 // datos_tecnico, que ademas anota el ingreso y frena a quien prueba muchos ID).
@@ -766,9 +1097,7 @@ document.getElementById('inputNombre').addEventListener('keydown', (e) => { if (
 document.getElementById('logoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('portalTecnicoKey');
   sessionStorage.removeItem(CLAVE_DATOS);
-  document.getElementById('appBox').style.display = 'none';
-  document.getElementById('loginBox').style.display = 'block';
-  document.getElementById('inputNombre').value = '';
+  volverAlIngreso();
 });
 
 // Al recargar la pestaña se vuelve a mostrar el mismo tecnico, sin pedirlo de nuevo.

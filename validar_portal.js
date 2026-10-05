@@ -53,6 +53,7 @@ for (const archivo of ["index.html", "supervisor.html"]) {
     if (html.includes("__DATA_JSON__") || html.includes("__DATA_SUPERVISOR_JSON__")) errores.push(`${archivo}: quedo la marca de plantilla sin reemplazar`);
     if (!html.trimEnd().endsWith("</html>")) errores.push(`${archivo}: el HTML esta cortado`);
     if (/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/.test(html)) errores.push(`${archivo}: contiene un RUT completo`);
+    if (/"\d{7,8}[\dkK]"\s*:/.test(html)) errores.push(`${archivo}: trae datos identificados por RUT`);
 
     const data = extraerData(html, archivo);
     const n = contarTecnicos(data);
@@ -89,6 +90,8 @@ try {
   if (Object.keys(data.tecnicos || {}).length || /"nombre"\s*:/.test(publico)) errores.push("index.html: trae datos de tecnicos; no se puede publicar");
   if (/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/.test(publico)) errores.push("index.html: contiene un RUT completo");
   if (/sb_secret_|service_role/.test(publico)) errores.push("index.html: contiene la llave secreta de Supabase");
+  if (publico.includes("__ESTILO_ACADEMIA__")) errores.push("index.html: quedo la marca del estilo sin reemplazar");
+  if (/"\d{7,8}[\dkK]"\s*:/.test(publico)) errores.push("index.html: trae datos identificados por RUT");
   if (!/https:\/\/[a-z0-9]+\.supabase\.co/.test(publico)) errores.push("index.html: no tiene la direccion de Supabase (los tecnicos no podrian entrar)");
   if (resumen["index.html"] && (data.totalTecnicos !== resumen["index.html"].n || data.generadoEl !== resumen["index.html"].data.generadoEl)) {
     errores.push("index.html no corresponde a la misma generacion que privado/index.html");

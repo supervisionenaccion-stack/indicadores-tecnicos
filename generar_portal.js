@@ -568,6 +568,30 @@ function calcularRgu(baseRows, supervisores) {
   return resultado;
 }
 
+// Posicion de cada tecnico entre todos los tecnicos, por indicador, y el
+// promedio del equipo (sin nombres de los demas): t.ranking.calidad = { puesto, de, promedio }.
+// Empates comparten puesto. Calidad y Derivaciones: mas bajo es mejor.
+function agregarRanking(tecnicos) {
+  const INDICADORES = {
+    calidad: { valor: (t) => (t.calidad && t.calidad.totalOrdenes ? t.calidad.pctRepetidos : null), menorEsMejor: true },
+    derivaciones: { valor: (t) => (t.derivaciones && t.derivaciones.qOrdenes ? t.derivaciones.pctDerivaciones : null), menorEsMejor: true },
+    rgu: { valor: (t) => (t.rgu ? t.rgu.pctCumplimiento : null), menorEsMejor: false },
+  };
+  const lista = Object.values(tecnicos);
+  for (const t of lista) t.ranking = {};
+  for (const [clave, ind] of Object.entries(INDICADORES)) {
+    const valores = lista.map(ind.valor).filter((v) => v != null);
+    if (!valores.length) continue;
+    const promedio = Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) * 10) / 10;
+    for (const t of lista) {
+      const v = ind.valor(t);
+      if (v == null) continue;
+      const mejores = valores.filter((x) => (ind.menorEsMejor ? x < v : x > v)).length;
+      t.ranking[clave] = { puesto: mejores + 1, de: valores.length, promedio };
+    }
+  }
+}
+
 // Serie mensual (no acumulada entre meses) de % de cumplimiento RGU, desde
 // enero del anio en curso hasta el ultimo mes con datos. Reutiliza
 // calcularRgu() por separado sobre las filas de cada mes (asi "dias trabajados"
@@ -598,7 +622,9 @@ function construirEvolutivoMensualRgu(baseRows, supervisores) {
     };
     const todos = nuevoGrupo();
     const porSupervisor = new Map(); // nombre -> grupo
+    const porTecnico = new Map(); // rut normalizado -> % de cumplimiento del mes
     for (const t of tecnicosDelMes) {
+      porTecnico.set(normalizeRut(t.rut), Math.round(t.pctCumplimiento * 10) / 10);
       sumar(todos, t);
       if (t.supervisor) {
         supervisoresUnicos.add(t.supervisor);
@@ -606,7 +632,7 @@ function construirEvolutivoMensualRgu(baseRows, supervisores) {
         sumar(porSupervisor.get(t.supervisor), t);
       }
     }
-    return { todos, porSupervisor };
+    return { todos, porSupervisor, porTecnico };
   });
 
   const promedio = (g) => (g && g.n ? Math.round((g.suma / g.n) * 10) / 10 : null);
@@ -621,9 +647,15 @@ function construirEvolutivoMensualRgu(baseRows, supervisores) {
     detallePorSupervisor[nombre] = porMesAgregado.map((m) => detalle(m.porSupervisor.get(nombre)));
   }
 
+  // Serie propia de cada tecnico (portal del tecnico): null en los meses sin RGU.
+  const rutsUnicos = new Set(porMesAgregado.flatMap((m) => [...m.porTecnico.keys()]));
+  const porTecnico = {};
+  for (const rut of rutsUnicos) porTecnico[rut] = porMesAgregado.map((m) => (m.porTecnico.has(rut) ? m.porTecnico.get(rut) : null));
+
   return {
     meses,
     todos: porMesAgregado.map((m) => promedio(m.todos)),
+    porTecnico,
     porSupervisor,
     detalle: { todos: porMesAgregado.map((m) => detalle(m.todos)), porSupervisor: detallePorSupervisor },
   };
@@ -935,11 +967,22 @@ async function main() {
             mesesReales: evolutivoMensual.mesesReales,
             ultimoMesParcial: evolutivoMensual.ultimoMesParcial,
             valores: serieMensualPropia,
+            equipo: evolutivoMensual.todos,
+          }
+        : null,
+      // % de cumplimiento RGU mes a mes del tecnico y el promedio del equipo.
+      evolutivoRgu: evolutivoMensualRgu.porTecnico[normalizeRut(t.rut)]
+        ? {
+            meses: evolutivoMensualRgu.meses,
+            ultimoMesParcial: evolutivoMensualRgu.ultimoMesParcial,
+            valores: evolutivoMensualRgu.porTecnico[normalizeRut(t.rut)],
+            equipo: evolutivoMensualRgu.todos,
           }
         : null,
       vecino: vecino && vecino.mesInicial ? { meta: vecino.meta, mesInicial: vecino.mesInicial, meses: vecinoPropio } : null,
     };
   }
+  agregarRanking(dataParaHtml);
 
   // ---------- 6. Generar index.html a partir de template.html ----------
   const templatePath = path.join(__dirname, "template.html");
@@ -955,7 +998,10 @@ async function main() {
   // El portal avisa a Supabase cada vez que un tecnico entra con su ID (registro
   // de ingresos, se ve en admin.html). Solo lleva la direccion y la llave publica.
   const envAcceso = leerEnv();
+  // Mismo sistema de diseno que el dashboard de supervisores.
+  const estiloIndex = fs.readFileSync(path.join(__dirname, "reportes", "estilo-academia.css"), "utf-8");
   const armarIndex = (data) => template
+    .replace("/*__ESTILO_ACADEMIA__*/", () => estiloIndex)
     .replace("__DATA_JSON__", () => jsonParaScript(data))
     .replace("__SUPABASE_URL__", () => (envAcceso.SUPABASE_URL || "").replace(/\/+$/, ""))
     .replace("__SUPABASE_KEY__", () => envAcceso.SUPABASE_ANON_KEY || "");
@@ -997,8 +1043,9 @@ async function main() {
       rgu: t.rgu,
       vecino: t.vecinoResumen || null,
     })),
-    evolutivoMensual,
-    evolutivoMensualRgu,
+    // Sin las series por tecnico: van identificadas por RUT y el dashboard no las usa.
+    evolutivoMensual: { ...evolutivoMensual, porTecnico: undefined },
+    evolutivoMensualRgu: { ...evolutivoMensualRgu, porTecnico: undefined },
   };
   // El formato visual (sistema de diseno de la Academia Tecnica) vive en un solo
   // archivo, compartido con reiteradas.html y vecino.html; se incrusta en la pagina.
