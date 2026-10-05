@@ -1,6 +1,6 @@
 {
-  "name": "Portal Técnicos Claro/VTR",
-  "short_name": "Portal Claro/VTR",
+  "name": "Portal Técnicos Cobra",
+  "short_name": "Portal Técnicos",
   "description": "Consulta tu desempeño de Calidad, Derivaciones y Producción RGU",
   "start_url": "./index.html",
   "scope": "./",
