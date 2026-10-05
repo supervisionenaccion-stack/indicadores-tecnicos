@@ -111,6 +111,19 @@ function leerSinCifrar(archivo) {
   return html;
 }
 
+// Sube a Supabase los datos de cada tecnico ({ ID: datos }) para que el portal
+// del tecnico los pida con el ID en vez de traerlos todos dentro de la pagina.
+async function cargarDatosTecnicos(mapa) {
+  const cfg = configSupabase();
+  const r = await fetch(cfg.url + "/rest/v1/rpc/cargar_datos_tecnicos", {
+    method: "POST",
+    headers: { apikey: cfg.serviceKey, Authorization: "Bearer " + cfg.serviceKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_datos: mapa }),
+  });
+  if (!r.ok) throw new Error(`Supabase no guardo los datos de los tecnicos (${r.status}): ${(await r.text()).slice(0, 200)}`);
+  return r.json();
+}
+
 // Deja en Supabase la lista vigente de tecnicos (ID, nombre, supervisor,
 // agencia) para el registro de ingresos al portal del tecnico. Es un
 // complemento: quien la llama decide si un fallo detiene la generacion.
@@ -131,4 +144,4 @@ function protegerPaginaPrueba(html, pagina, titulo) {
   return armarPagina({ pagina, titulo, cifrado, llavePrueba: cifrado.llave });
 }
 
-module.exports = { sincronizarTecnicos, protegerPagina, protegerPaginaPrueba, publicarProtegida, leerSinCifrar, estaCifrada, configSupabase, leerEnv, DOMINIO_USUARIOS, DIR_PRIVADO };
+module.exports = { cargarDatosTecnicos, sincronizarTecnicos, protegerPagina, protegerPaginaPrueba, publicarProtegida, leerSinCifrar, estaCifrada, configSupabase, leerEnv, DOMINIO_USUARIOS, DIR_PRIVADO };

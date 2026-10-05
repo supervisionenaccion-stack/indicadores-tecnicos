@@ -666,30 +666,62 @@ function mostrarPerfil(t) {
   renderVecino(t);
 }
 
-function intentarLogin() {
-  const key = document.getElementById('inputNombre').value.trim();
-  const errorBox = document.getElementById('loginError');
-  const t = DATA.tecnicos[key];
-  if (!t || !key) {
-    errorBox.textContent = 'ID no encontrado.';
-    errorBox.style.display = 'block';
-    return;
+// Los datos de cada tecnico se piden a Supabase con su ID (funcion
+// datos_tecnico, que ademas anota el ingreso y frena a quien prueba muchos ID).
+// Asi la pagina publicada no trae los datos de todos. Si la pagina si los trae
+// (version anterior), se usan directo.
+const SUPA_URL = '__SUPABASE_URL__', SUPA_KEY = '__SUPABASE_KEY__';
+const CLAVE_DATOS = 'portalTecnicoDatos';
+
+async function obtenerTecnico(key) {
+  if (DATA.tecnicos && DATA.tecnicos[key]) {
+    registrarIngreso(key);
+    return { ok: true, datos: DATA.tecnicos[key] };
   }
-  errorBox.style.display = 'none';
-  sessionStorage.setItem('portalTecnicoKey', key);
-  mostrarPerfil(t);
-  registrarIngreso(key);
+  if (SUPA_URL.indexOf('http') !== 0 || !SUPA_KEY) return { ok: false, motivo: 'no_existe' };
+  const r = await fetch(SUPA_URL + '/rest/v1/rpc/datos_tecnico', {
+    method: 'POST',
+    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_id: key }),
+  });
+  if (!r.ok) throw new Error('respuesta ' + r.status);
+  return r.json();
 }
 
-// Anota el ingreso en el registro (lo ve el administrador). Si falla o no hay
-// conexion no pasa nada: el tecnico ve su portal igual.
-function registrarIngreso(key) {
-  const url = '__SUPABASE_URL__', llave = '__SUPABASE_KEY__';
-  if (url.indexOf('http') !== 0 || !llave) return;
+async function intentarLogin() {
+  const key = document.getElementById('inputNombre').value.trim();
+  const errorBox = document.getElementById('loginError');
+  const boton = document.getElementById('loginBtn');
+  const avisar = (texto) => { errorBox.textContent = texto; errorBox.style.display = texto ? 'block' : 'none'; };
+  if (!key) { avisar('ID no encontrado.'); return; }
+  avisar('');
+  boton.disabled = true;
   try {
-    fetch(url + '/rest/v1/rpc/registrar_tecnico', {
+    const r = await obtenerTecnico(key);
+    if (!r || !r.ok) {
+      avisar(r && r.motivo === 'espera' ? 'Demasiados intentos. Espera un minuto y vuelve a intentar.' : 'ID no encontrado.');
+      return;
+    }
+    DATA.tecnicos = DATA.tecnicos || {};
+    DATA.tecnicos[key] = r.datos;
+    sessionStorage.setItem('portalTecnicoKey', key);
+    try { sessionStorage.setItem(CLAVE_DATOS, JSON.stringify(r.datos)); } catch (e) { /* sin almacenamiento */ }
+    mostrarPerfil(r.datos);
+  } catch (err) {
+    avisar('No se pudo conectar. Revisa tu señal e intenta de nuevo.');
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+// Anota el ingreso en el registro (lo ve el administrador). Solo se usa cuando
+// la pagina trae los datos; datos_tecnico ya lo anota por su cuenta.
+function registrarIngreso(key) {
+  if (SUPA_URL.indexOf('http') !== 0 || !SUPA_KEY) return;
+  try {
+    fetch(SUPA_URL + '/rest/v1/rpc/registrar_tecnico', {
       method: 'POST', keepalive: true,
-      headers: { apikey: llave, 'Content-Type': 'application/json' },
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_id: key }),
     }).catch(function () {});
   } catch (e) { /* navegador sin fetch */ }
@@ -699,14 +731,22 @@ document.getElementById('loginBtn').addEventListener('click', intentarLogin);
 document.getElementById('inputNombre').addEventListener('keydown', (e) => { if (e.key === 'Enter') intentarLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('portalTecnicoKey');
+  sessionStorage.removeItem(CLAVE_DATOS);
   document.getElementById('appBox').style.display = 'none';
   document.getElementById('loginBox').style.display = 'block';
   document.getElementById('inputNombre').value = '';
 });
 
+// Al recargar la pestaña se vuelve a mostrar el mismo tecnico, sin pedirlo de nuevo.
 const keyGuardada = sessionStorage.getItem('portalTecnicoKey');
-if (keyGuardada && DATA.tecnicos[keyGuardada]) {
-  mostrarPerfil(DATA.tecnicos[keyGuardada]);
+if (keyGuardada) {
+  let guardado = DATA.tecnicos && DATA.tecnicos[keyGuardada];
+  if (!guardado) { try { guardado = JSON.parse(sessionStorage.getItem(CLAVE_DATOS)); } catch (e) { guardado = null; } }
+  if (guardado) {
+    DATA.tecnicos = DATA.tecnicos || {};
+    DATA.tecnicos[keyGuardada] = guardado;
+    mostrarPerfil(guardado);
+  }
 }
 </script>
 

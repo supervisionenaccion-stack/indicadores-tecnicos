@@ -305,6 +305,68 @@ revoke all on function public.puede_ver_tecnicos() from public, anon;
 grant execute on function public.puede_ver_tecnicos() to authenticated;
 grant execute on function public.detalle_tecnicos(timestamptz) to authenticated;
 
+-- ===================== Datos del portal del tecnico =====================
+-- El portal del tecnico (index.html) ya no trae los datos de todos: el tecnico
+-- escribe su ID y la pagina pide solo los suyos a datos_tecnico(). Nadie puede
+-- leer la tabla directo, y si hay muchos ID equivocados seguidos (alguien
+-- probando), la funcion pide esperar un minuto.
+create table if not exists public.datos_tecnicos (
+  id          text primary key,
+  datos       jsonb not null,
+  actualizado timestamptz not null default now()
+);
+create table if not exists public.intentos_tecnico (
+  id    bigint generated always as identity primary key,
+  fecha timestamptz not null default now(),
+  ok    boolean not null
+);
+create index if not exists intentos_tecnico_fecha_idx on public.intentos_tecnico (fecha desc);
+alter table public.datos_tecnicos enable row level security;    -- sin politicas: nadie la lee desde afuera
+alter table public.intentos_tecnico enable row level security;
+
+create or replace function public.datos_tecnico(p_id text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_id text := left(trim(coalesce(p_id, '')), 20);
+  v jsonb;
+begin
+  if (select count(*) from public.intentos_tecnico where not ok and fecha > now() - interval '1 minute') >= 30 then
+    return jsonb_build_object('ok', false, 'motivo', 'espera');
+  end if;
+  select datos into v from public.datos_tecnicos where id = v_id;
+  insert into public.intentos_tecnico (ok) values (v is not null);
+  delete from public.intentos_tecnico where fecha < now() - interval '1 day';
+  if v is null then
+    return jsonb_build_object('ok', false, 'motivo', 'no_existe');
+  end if;
+  perform public.registrar_tecnico(v_id);
+  return jsonb_build_object('ok', true, 'datos', v);
+end;
+$$;
+
+-- La usa el generador (llave secreta): reemplaza los datos de todos los tecnicos.
+create or replace function public.cargar_datos_tecnicos(p_datos jsonb) returns integer
+language plpgsql security definer set search_path = public as $$
+declare
+  n integer;
+begin
+  if p_datos is null or p_datos = '{}'::jsonb then raise exception 'sin datos'; end if;
+  delete from public.datos_tecnicos where id not in (select jsonb_object_keys(p_datos));
+  insert into public.datos_tecnicos (id, datos, actualizado)
+  select key, value, now() from jsonb_each(p_datos)
+  on conflict (id) do update set datos = excluded.datos, actualizado = now();
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
+revoke all on public.datos_tecnicos, public.intentos_tecnico from anon, authenticated;
+grant all on public.datos_tecnicos, public.intentos_tecnico to service_role;
+revoke all on function public.datos_tecnico(text) from public;
+revoke all on function public.cargar_datos_tecnicos(jsonb) from public, anon, authenticated;
+grant execute on function public.datos_tecnico(text) to anon, authenticated;
+grant execute on function public.cargar_datos_tecnicos(jsonb) to service_role;
+
 -- Permisos de tablas, explicitos para no depender de la opcion "Automatically
 -- expose new tables" del proyecto. Las politicas de arriba deciden que filas.
 revoke all on public.perfiles, public.ingresos, public.llaves from anon, authenticated;
