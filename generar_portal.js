@@ -88,7 +88,12 @@ function previousMonthRange(now = fechaReferencia()) {
   const m = now.getUTCMonth();
   const start = new Date(Date.UTC(y, m - 1, 1));
   const end = new Date(Date.UTC(y, m, 1));
-  return { start: toSqlDate(start), end: toSqlDate(end), label: monthLabel(start) };
+  // etiqueta = mes en que se reporta (el siguiente al de los cierres), como el Excel de
+  // produccion, con el mes de los cierres entre parentesis: "Octubre 2026 (cierres de septiembre)".
+  const mes = (d) => d.toLocaleDateString("es-CL", { month: "long", timeZone: "UTC" });
+  const reporte = mes(end).charAt(0).toUpperCase() + mes(end).slice(1) + " " + end.getUTCFullYear();
+  const etiqueta = reporte + " (cierres de " + mes(start) + (start.getUTCFullYear() !== end.getUTCFullYear() ? " " + start.getUTCFullYear() : "") + ")";
+  return { start: toSqlDate(start), end: toSqlDate(end), label: monthLabel(start), etiqueta };
 }
 
 // Elige el ultimo dia con volumen "normal" de datos dentro del mes en curso,
@@ -196,7 +201,7 @@ async function fetchCalidadBase(pool, startStr, endStr) {
     .input("start", sql.Date, startStr)
     .input("end", sql.Date, endStr).query(`
     SELECT [Orden de Trabajo], Rut_Tecnico, NOMBRE_TECNICO, Empresa, Fecha_Cierre, TipoActividadPrimerServicio,
-           SubtipoPrimerServicio, Direccion, Ciudad
+           SubtipoPrimerServicio
     FROM CALIDAD_VTR
     WHERE Fecha_Cierre >= @start AND Fecha_Cierre < @end
   `);
@@ -215,8 +220,7 @@ async function fetchCalidadRepetidos(pool) {
         Fecha_Cierre AS FechaPrimerCierre,
         Fecha_Cierre_Repetido AS FechaRepetido,
         CodigoCierreRepetido,
-        TipoActividadRepetido,
-        NotasCierreRepetido
+        TipoActividadRepetido
     FROM CALIDAD_VTR
     WHERE [Orden Repetido] IS NOT NULL
   `);
@@ -370,14 +374,13 @@ function calcularCalidad(baseRows, repRows, supervisores) {
         tipoActividad: row.TipoActividadPrimerServicio || null,
         ordenTrabajo: row["Orden de Trabajo"] || null,
         fecha: row.Fecha_Cierre ? toSqlDate(new Date(row.Fecha_Cierre)) : null,
-        // Detalle para que el tecnico reconozca la orden (decidido el 05-10-2026,
-        // con direccion completa aunque el portal del tecnico es publico).
+        // Detalle para que el tecnico reconozca la orden (05-10-2026). El portal
+        // del tecnico es publico: por pedido del usuario NO lleva direccion del
+        // cliente ni notas de cierre del repetido.
         subtipo: textoLibre(row.SubtipoPrimerServicio, 60) || null,
-        direccion: textoLibre([row.Direccion, row.Ciudad].filter(Boolean).join(", "), 120) || null,
         ordenRep: match["Orden Repetido"] || null,
         fechaRep: match.FechaRepetido ? toSqlDate(new Date(match.FechaRepetido)) : null,
         tipoRep: textoLibre(match.TipoActividadRepetido, 60) || null,
-        notasRep: textoLibre(match.NotasCierreRepetido, 400) || null,
       });
     }
 
@@ -934,6 +937,7 @@ async function main() {
   const dataCompleta = {
     generadoEl: new Date().toLocaleString("es-CL"),
     periodoCalidad: rangoCalidad.label,
+    etiquetaCalidad: rangoCalidad.etiqueta || rangoCalidad.label,
     periodoMatriz: rangoMatriz.label,
     cierreMes: esDiaDeCierre(),
     tecnicos: dataParaHtml,
@@ -963,6 +967,7 @@ async function main() {
   const dataSupervisor = {
     generadoEl: dataCompleta.generadoEl,
     periodoCalidad: rangoCalidad.label,
+    etiquetaCalidad: rangoCalidad.etiqueta || rangoCalidad.label,
     periodoMatriz: rangoMatriz.label,
     cierreMes: esDiaDeCierre(),
     tecnicos: [...byRut.values()].map((t) => ({

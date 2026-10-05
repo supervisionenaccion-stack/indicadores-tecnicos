@@ -237,7 +237,7 @@ function formatFechaLarga(iso) {
 }
 
 document.getElementById('footerText').innerHTML =
-  'Calidad: ' + DATA.periodoCalidad + ' (mes completo) · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+  'Calidad: ' + (DATA.etiquetaCalidad || DATA.periodoCalidad) + ' · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
 
 // Meta oficial de Derivaciones (Alta/Migracion): no superar 35%.
 const META_DERIVACIONES = 35;
@@ -334,20 +334,18 @@ function bloqueCalidad(datos) {
     ).join('');
   }
   if (datos.causas && datos.causas.length > 0) {
-    // Una tarjeta por orden repetida: el trabajo del tecnico (con la direccion,
-    // para que reconozca al cliente) y la visita que se repitio, con su nota de cierre.
+    // Una tarjeta por orden repetida: el trabajo del tecnico y la visita que se
+    // repitio. Sin direccion ni notas del cliente: esta pagina es publica.
     const txt = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const eventosOrdenados = [...datos.causas].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
     html += '<p style="margin:14px 0 6px; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em;">Tus órdenes repetidas (' + eventosOrdenados.length + ')</p>';
     html += eventosOrdenados.map((e) => '<div class="rep-card">'
       + '<div class="rep-top"><span class="rep-tag">Tu trabajo</span> ' + txt(e.tipoActividad || 'Orden') + (e.subtipo ? ' · ' + txt(e.subtipo) : '') + '</div>'
       + '<div class="rep-linea"><b>' + (e.fecha ? formatFechaLarga(e.fecha) : '—') + '</b> · Orden <b>' + txt(e.ordenTrabajo || '—') + '</b></div>'
-      + (e.direccion ? '<div class="rep-linea">📍 ' + txt(e.direccion) + '</div>' : '')
       + '<div class="rep-sep">El cliente volvió a pedir visita' + (e.dias != null ? ' a los <b>' + e.dias + ' día' + (e.dias === 1 ? '' : 's') + '</b>' : '') + '</div>'
       + '<div class="rep-top"><span class="rep-tag rep-tag-r">Repetido</span> ' + txt(e.tipoRep || 'Visita') + '</div>'
       + '<div class="rep-linea"><b>' + (e.fechaRep ? formatFechaLarga(e.fechaRep) : '—') + '</b>' + (e.ordenRep ? ' · Orden <b>' + txt(e.ordenRep) + '</b>' : '') + '</div>'
       + '<div class="rep-linea">Causa: <b>' + txt(e.causa) + '</b></div>'
-      + (e.notasRep ? '<div class="rep-notas">Nota de cierre: “' + txt(e.notasRep) + '”</div>' : '')
       + '</div>').join('');
   }
   html += '</div>';

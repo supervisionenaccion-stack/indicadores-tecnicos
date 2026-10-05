@@ -374,7 +374,7 @@
 const DATA = __DATA_SUPERVISOR_JSON__;
 
 document.getElementById('footerText').innerHTML =
-  'Calidad: ' + DATA.periodoCalidad + ' (mes completo) · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+  'Calidad: ' + (DATA.etiquetaCalidad || DATA.periodoCalidad) + ' · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
 document.getElementById('causasComparacionPeriodo').textContent = DATA.periodoCalidad;
 
 const META_DERIVACIONES = 35;
@@ -1115,7 +1115,7 @@ async function exportarTecnicos() {
     // Segunda hoja: a que periodo corresponde cada indicador.
     const notas = XLSX.utils.aoa_to_sheet([
       ['Indicador', 'Período'],
-      ['Calidad (repetidos)', DATA.periodoCalidad + ' (mes completo)'],
+      ['Calidad (repetidos)', DATA.etiquetaCalidad || DATA.periodoCalidad],
       ['Derivaciones, Producción RGU y Estado vecino', DATA.periodoMatriz],
       ['Generado', DATA.generadoEl],
       ['Equipo', supervisor || 'Todos los supervisores'],
