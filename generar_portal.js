@@ -9,6 +9,7 @@ const sql = require("mssql");
 const ExcelJS = require("exceljs");
 const { obtenerVecino } = require("./reportes/generar_vecino.js");
 const { publicarProtegida, sincronizarTecnicos, leerEnv, DIR_PRIVADO } = require("./reportes/proteger.js");
+const { calendarioMes, calcularBrecha } = require("./reportes/brecha.js");
 
 // ---------- 0. Cargar variables desde .env.local (sin dependencias extra) ----------
 function loadEnvLocal() {
@@ -841,9 +842,18 @@ async function main() {
       pctDerivaciones: row.qOrdenes ? (row.qDerivaciones / row.qOrdenes) * 100 : 0,
     };
   }
+  // Brecha a la meta (cuanto falta y cuanto necesita por dia). Es un
+  // complemento: si el calendario falla, el portal se genera sin ella.
+  let calBrecha = null;
+  try {
+    calBrecha = calendarioMes(rangoMatriz.label);
+  } catch (err) {
+    console.warn(`AVISO: no se calculo la brecha a la meta de RGU. Detalle: ${err.message}`);
+  }
   for (const row of rgu) {
     const t = getOrCreate(row.rut, row.tecnico, row.supervisor, row.agencia);
     t.rgu = {
+      brecha: calBrecha ? calcularBrecha(row, calBrecha) : null,
       rguTotal: row.rguTotal,
       rguCompletadaGsa: row.rguCompletadaGsa,
       diasTrabajados: row.diasTrabajados,

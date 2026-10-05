@@ -98,7 +98,7 @@ try {
 }
 
 // Las paginas de supervisores solo se publican cifradas (ingreso con usuario y clave).
-for (const archivo of ["supervisor.html", "reiteradas.html", "vecino.html", "auditorias.html"]) {
+for (const archivo of ["supervisor.html", "reiteradas.html", "vecino.html", "auditorias.html", "brecha.html"]) {
   const ruta = path.join(__dirname, archivo);
   if (!fs.existsSync(ruta)) continue;
   const html = fs.readFileSync(ruta, "utf-8");

@@ -241,6 +241,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="1"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/></svg>
         Auditorías de terreno
       </a>
+      <a class="btn-reiteradas" id="btnBrecha" href="brecha.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+        Brecha a la meta RGU
+      </a>
       </div>
     </div>
   </div>
@@ -1183,6 +1187,7 @@ function actualizarLinkReiteradas() {
   const supervisor = document.getElementById('filtroSupervisor').value;
   document.getElementById('btnReiteradas').href = 'reiteradas.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnVecino').href = 'vecino.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnBrecha').href = 'brecha.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
 }
 
 document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });

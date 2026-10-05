@@ -88,6 +88,8 @@ if (Acceso.ultimoUsuario()) {
   document.getElementById('usuario').value = Acceso.ultimoUsuario();
   document.getElementById('clave').focus();
 }
+// "Mantener la sesion iniciada" queda marcado si la persona lo eligio la vez anterior.
+document.getElementById('mantener').checked = Acceso.quiereMantener();
 
 function avisar(texto) { aviso.textContent = texto; aviso.style.display = texto ? 'block' : 'none'; }
 function ocupado(si) { boton.disabled = si; boton.textContent = si ? 'Ingresando…' : 'Ingresar'; }
@@ -125,7 +127,8 @@ async function ingresarCon(token) {
     return ingresarCon(token);
   }
   if (!r.datos.ok) {
-    Acceso.salir();
+    // Una pagina desactualizada no es motivo para cerrar la sesion.
+    if (r.datos.motivo !== 'sin_llave') Acceso.salir();
     avisar(r.datos.motivo === 'inactivo' ? 'Tu usuario está desactivado. Habla con el administrador.'
       : r.datos.motivo === 'sin_llave' ? 'Esta página está desactualizada. Recárgala en unos minutos.'
       : 'Tu usuario no tiene acceso a esta página.');

@@ -119,6 +119,12 @@
 
   .frase-clave{ font-size:14.5px; line-height:1.6; margin:0 0 14px; }
   .frase-clave b{ color:var(--cobra-navy); }
+  .brecha{ background:var(--celeste-soft); border-left:4px solid var(--celeste); border-radius:8px; padding:12px 14px; margin:0 0 14px; font-size:14px; line-height:1.55; }
+  .brecha .titulo{ font-weight:800; color:var(--cobra-navy); margin-bottom:4px; }
+  .brecha b{ color:var(--cobra-navy); }
+  .brecha .cifras{ display:flex; gap:22px; flex-wrap:wrap; margin-top:8px; }
+  .brecha .cifras div{ font-size:12px; color:var(--text-dim, #6b7a8c); }
+  .brecha .cifras strong{ display:block; font-size:22px; color:var(--cobra-navy); font-variant-numeric:tabular-nums; }
 
   .detalle-toggle{ font-size:12.5px; color:var(--celeste); font-weight:700; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px; margin-top:6px; }
   .detalle-body{ display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--panel-2); }
@@ -229,7 +235,7 @@
 <footer><span id="footerText"></span><span class="firma">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span></footer>
 
 <script>
-const DATA = {"generadoEl":"05-10-2026, 3:35:36 p. m.","periodoCalidad":"septiembre de 2026","etiquetaCalidad":"Octubre 2026 (cierres de septiembre)","periodoMatriz":"1 al 3 de octubre de 2026","cierreMes":false,"tecnicos":{},"totalTecnicos":29};
+const DATA = {"generadoEl":"05-10-2026, 3:48:48 p. m.","periodoCalidad":"septiembre de 2026","etiquetaCalidad":"Octubre 2026 (cierres de septiembre)","periodoMatriz":"1 al 3 de octubre de 2026","cierreMes":false,"tecnicos":{},"totalTecnicos":29};
 
 function titleCase(s) { return (s || '').split(' ').map(w => w ? w[0] + w.slice(1).toLowerCase() : w).join(' '); }
 function formatFechaLarga(iso) {
@@ -377,6 +383,32 @@ function bloqueDerivaciones(datos) {
   return html;
 }
 
+// Cuanto le falta para estar al dia con su meta y cuanto necesita por dia para
+// cerrar el mes en 100 % (supone que trabaja todos los dias habiles que quedan).
+// Al cierre del mes no hay dias por delante y no se muestra.
+function bloqueBrecha(b) {
+  if (!b || !b.restantes) return '';
+  const num = (v) => v.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const dias = b.restantes + ' día' + (b.restantes === 1 ? '' : 's') + ' hábil' + (b.restantes === 1 ? '' : 'es');
+  let html = '<div class="brecha">';
+  if (b.faltan > 0) {
+    html += '<div class="titulo">🎯 Para llegar a tu meta</div>'
+      + 'Hoy te faltan <b>' + num(b.faltan) + ' RGU</b> para estar al día. Para cerrar el mes en 100 % necesitas <b>' + num(b.necesitaPorDia) + ' RGU por día</b> en los ' + dias + ' que quedan.';
+  } else if (b.necesitaPorDia > 0) {
+    html += '<div class="titulo">🎯 Vas sobre tu meta</div>'
+      + 'Para cerrar el mes en 100 % te basta con <b>' + num(b.necesitaPorDia) + ' RGU por día</b> en los ' + dias + ' que quedan.';
+  } else {
+    html += '<div class="titulo">🎯 Meta del mes asegurada</div>'
+      + 'Ya completaste lo necesario para cerrar el mes en 100 %. Todo lo que sumes en los ' + dias + ' que quedan es extra.';
+  }
+  html += '<div class="cifras">'
+    + (b.faltan > 0 ? '<div><strong>' + num(b.faltan) + '</strong>RGU te faltan hoy</div>' : '')
+    + (b.necesitaPorDia > 0 ? '<div><strong>' + num(b.necesitaPorDia) + '</strong>RGU por día</div>' : '')
+    + '<div><strong>' + b.restantes + '</strong>' + (b.restantes === 1 ? 'día hábil queda' : 'días hábiles quedan') + '</div>'
+    + '</div></div>';
+  return html;
+}
+
 function bloqueRgu(datos) {
   const icono = '📶', titulo = 'Producción RGU';
   const explicacion = 'Mide tu producción de RGU completada GSA frente a tu meta (' + (datos ? datos.metaDiaria : '') + ' por día trabajado). Mientras más alto, mejor. ' + (DATA.cierreMes ? 'Cierre del mes: ' : 'Avance del mes: ') + DATA.periodoMatriz + '.';
@@ -393,6 +425,7 @@ function bloqueRgu(datos) {
   html += '<div class="estado-pill ' + est.clase + '">' + est.emoji + ' ' + est.texto + '</div>';
   html += barra(datos.pctCumplimiento, est.clase);
   html += '<p class="frase-clave">Completaste <b>' + datos.rguCompletadaGsa.toFixed(2) + '</b> RGU GSA en <b>' + datos.diasTrabajados + '</b> día' + (datos.diasTrabajados === 1 ? '' : 's') + ' trabajado' + (datos.diasTrabajados === 1 ? '' : 's') + ', frente a una meta de <b>' + datos.metaPeriodo.toFixed(2) + '</b> (' + datos.metaDiaria + ' por día) — <b>' + datos.pctCumplimiento.toFixed(1) + '%</b> de cumplimiento.</p>';
+  html += bloqueBrecha(datos.brecha);
   html += '<div class="detalle-toggle" onclick="toggleDetalle(\'' + idDetalle + '\')">Ver el detalle en números <span id="' + idDetalle + 'Flecha">▾</span></div>';
   html += '<div class="detalle-body" id="' + idDetalle + '">';
   html += '<div class="fila-dato"><span class="k">RGU Completada GSA</span><span class="v">' + datos.rguCompletadaGsa.toFixed(2) + '</span></div>';

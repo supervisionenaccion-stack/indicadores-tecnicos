@@ -187,6 +187,7 @@
 const Acceso = (() => {
   const CLAVE_SESION = 'portal_sesion';
   const CLAVE_USUARIO = 'portal_usuario';   // ultimo usuario que entro en este navegador (nunca la clave)
+  const CLAVE_MANTENER = 'portal_mantener'; // '1' si marco "Mantener la sesion iniciada"
   const DURACION_MS = 12 * 60 * 60 * 1000;  // pasado este tiempo se pide la clave de nuevo
   const DURACION_LARGA_MS = 30 * 24 * 60 * 60 * 1000; // si marco "Mantener la sesion iniciada"
   let cfg = { url: '', key: '', dominio: 'portal.local' };
@@ -233,6 +234,8 @@ const Acceso = (() => {
       if (r.estado === 400 || r.estado === 401 || r.estado === 422) return null;
       throw new Error('El servicio de acceso respondió ' + r.estado);
     }
+    if (mantener === undefined) mantener = quiereMantener();
+    recordarMantener(mantener);
     guardarSesion(r.datos, Date.now(), mantener ? DURACION_LARGA_MS : DURACION_MS);
     try { localStorage.setItem(CLAVE_USUARIO, normalizarUsuario(usuario)); } catch (e) { /* modo privado */ }
     return r.datos.access_token;
@@ -245,10 +248,22 @@ const Acceso = (() => {
     if (!s) return null;
     if (!renovar && s.at && Date.now() < s.vence - 60000) return s.at;
     const r = await pedir('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: s.rt });
-    if (!r.ok) { salir(); return null; }
+    if (!r.ok) {
+      // Otra pestana pudo renovar al mismo tiempo: si ya dejo un token nuevo, se usa ese.
+      const otra = leerSesion();
+      if (otra && otra.rt !== s.rt && otra.at && Date.now() < otra.vence - 60000) return otra.at;
+      // Solo se cierra la sesion si Supabase la rechaza; una caida de red o del
+      // servicio no debe obligar a escribir la clave otra vez.
+      if (r.estado === 400 || r.estado === 401 || r.estado === 403) { salir(); return null; }
+      throw new Error('El servicio de acceso respondió ' + r.estado);
+    }
     guardarSesion(r.datos, s.desde, s.dura);
     return r.datos.access_token;
   }
+
+  // Si la persona eligio "Mantener la sesion iniciada", se recuerda para la proxima vez.
+  function quiereMantener() { try { return localStorage.getItem(CLAVE_MANTENER) === '1'; } catch (e) { return false; } }
+  function recordarMantener(si) { try { localStorage.setItem(CLAVE_MANTENER, si ? '1' : '0'); } catch (e) { /* modo privado */ } }
 
   function rpc(nombre, args, token) { return pedir('POST', '/rest/v1/rpc/' + nombre, args, token); }
   function leer(ruta, token) { return pedir('GET', '/rest/v1/' + ruta, undefined, token); }
@@ -291,7 +306,7 @@ const Acceso = (() => {
     });
   }
 
-  return { pedirClaveNueva, configurar, entrar, retomar, haySesion, ultimoUsuario, salir, rpc, leer, funcion, normalizarUsuario };
+  return { quiereMantener, pedirClaveNueva, configurar, entrar, retomar, haySesion, ultimoUsuario, salir, rpc, leer, funcion, normalizarUsuario };
 })();
 
 </script>

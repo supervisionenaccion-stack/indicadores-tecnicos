@@ -14,8 +14,13 @@ portal-tecnicos/
 ├── supervisor.html                     ← vista de supervisores, generada
 ├── reiteradas.html                     ← reporte de actividades reiteradas del mes (boton en supervisor.html), generado
 ├── vecino.html                         ← reporte de consulta de estado vecino (boton en supervisor.html), generado
+├── brecha.html                         ← brecha a la meta de RGU por técnico (boton en supervisor.html), generado
 ├── fondo-portada.jpg                   ← foto de la portada del dashboard de supervisores
 ├── reportes/
+│   ├── brecha.js                       ← calculo de la brecha a la meta RGU (portal del tecnico y brecha.html)
+│   ├── generar_brecha.js               ← genera brecha.html desde los datos de supervisor.html (sin BD)
+│   ├── plantilla-brecha.html           ← plantilla de brecha.html
+│   ├── subir_datos_tecnicos.js         ← sube a Supabase los datos de cada tecnico (index.html va sin ellos)
 │   ├── generar_reiteradas.js           ← consulta la BD y genera reiteradas.html
 │   ├── generar_vecino.js               ← consulta la BD y genera vecino.html
 │   ├── plantilla-vecino.html           ← plantilla de vecino.html

@@ -9,7 +9,9 @@
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2c. reportes\generar_vecino.js -> vecino.html (boton en supervisor.html);
 #       si falla, se deja la version anterior y el resto se publica igual
-#   3. commit + push de index.html, supervisor.html, reiteradas.html y vecino.html (reintenta)
+#   2d. reportes\generar_brecha.js -> brecha.html (boton en supervisor.html);
+#       si falla, se deja la version anterior y el resto se publica igual
+#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html y brecha.html (reintenta)
 #   4. espera a que el sitio publico muestre la version nueva
 #   5. notificacion de Windows con el resultado (exito o error)
 # Cada corrida deja su detalle en logs\actualizacion_AAAA-MM-DD.log
@@ -105,9 +107,19 @@ if ($r.Codigo -ne 0) {
   $avisoReiteradas += " (consulta vecino NO actualizado, ver log)"
 }
 
+# 2d. Brecha a la meta de RGU (boton en supervisor.html). Complemento: si
+# falla, NO bloquea la publicacion del portal.
+Log "2d/4 Generando brecha a la meta de RGU..."
+$r = Correr $Node @("reportes\generar_brecha.js")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: brecha.html no se actualizo hoy; queda publicada la version anterior."
+  Correr $Git @("checkout", "--", "brecha.html") | Out-Null
+  $avisoReiteradas += " (brecha RGU NO actualizada, ver log)"
+}
+
 # 3. Publicar
 Log "3/4 Publicando en GitHub..."
-Correr $Git @("add", "index.html", "supervisor.html", "reiteradas.html", "vecino.html") | Out-Null
+Correr $Git @("add", "index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html") | Out-Null
 $r = Correr $Git @("diff", "--cached", "--quiet")
 if ($r.Codigo -eq 0) {
   Log "No hay cambios nuevos respecto de lo ya publicado."

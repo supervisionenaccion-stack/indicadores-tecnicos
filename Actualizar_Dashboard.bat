@@ -50,6 +50,14 @@ if errorlevel 1 (
 )
 
 echo.
+echo ==^> Generando brecha a la meta de RGU...
+node reportes\generar_brecha.js
+if errorlevel 1 (
+    echo AVISO: brecha.html no se actualizo; se publica el resto igual.
+    git checkout -- brecha.html >nul 2>&1
+)
+
+echo.
 echo ==^> Publicando en GitHub (supervisionenaccion-stack)...
 rem gh auth switch es solo por prolijidad (para que "gh" en general apunte a
 rem la cuenta correcta si se usa a mano); el push en si NO depende de esto,
@@ -59,7 +67,7 @@ rem script si el switch falla -- antes eso hacia que el .bat abortara aunque
 rem el push hubiera funcionado igual.
 gh auth switch --hostname github.com --user supervisionenaccion-stack >nul 2>&1
 
-git add index.html supervisor.html reiteradas.html vecino.html
+git add index.html supervisor.html reiteradas.html vecino.html brecha.html
 git commit -m "Actualizar portal %date% %time%"
 if errorlevel 1 (
     echo No hay cambios nuevos para publicar.
