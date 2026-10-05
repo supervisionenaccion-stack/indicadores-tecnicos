@@ -3,6 +3,8 @@
 # Mismo flujo que Actualizar_Dashboard.bat, pero sin pausas y con controles:
 #   1. generar_portal.js  -> consulta la BD y genera los HTML (todo local)
 #   2. validar_portal.js  -> si algo no cuadra, NO se publica nada
+#   2a. reportes\subir_datos_tecnicos.js -> datos de cada tecnico a Supabase
+#       (index.html va sin ellos); si falla, NO se publica nada
 #   2b. reportes\generar_reiteradas.js -> reiteradas.html (boton en supervisor.html);
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2c. reportes\generar_vecino.js -> vecino.html (boton en supervisor.html);
@@ -71,6 +73,16 @@ if ($r.Codigo -ne 0) {
 }
 $resumen = ($r.Salida -split "`n" | Where-Object { $_ -like "VALIDACION OK*" }) -replace "^VALIDACION OK: ", ""
 $hashLocal = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $PSScriptRoot "index.html")).Hash
+
+# 2a. Datos de cada tecnico a Supabase: el index.html publico va sin ellos y el
+# portal los pide con el ID. Si no se suben, no se publica nada (los tecnicos
+# siguen viendo los datos de la ultima carga buena).
+Log "2a/4 Subiendo los datos de los tecnicos a Supabase..."
+$r = Correr $Node @("reportes\subir_datos_tecnicos.js")
+if ($r.Codigo -ne 0) {
+  Correr $Git @("checkout", "--", "index.html", "supervisor.html") | Out-Null
+  Fallar "la subida de datos a Supabase" "reportes\subir_datos_tecnicos.js termino con error"
+}
 
 # 2b. Reporte de reiteradas del mes (se valida solo antes de escribir). Es un
 # complemento: si falla, NO bloquea la publicacion del portal.

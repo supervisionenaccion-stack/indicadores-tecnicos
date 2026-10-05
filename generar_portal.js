@@ -8,7 +8,7 @@ const path = require("path");
 const sql = require("mssql");
 const ExcelJS = require("exceljs");
 const { obtenerVecino } = require("./reportes/generar_vecino.js");
-const { publicarProtegida, sincronizarTecnicos, leerEnv } = require("./reportes/proteger.js");
+const { publicarProtegida, sincronizarTecnicos, leerEnv, DIR_PRIVADO } = require("./reportes/proteger.js");
 
 // ---------- 0. Cargar variables desde .env.local (sin dependencias extra) ----------
 function loadEnvLocal() {
@@ -945,10 +945,17 @@ async function main() {
   // El portal avisa a Supabase cada vez que un tecnico entra con su ID (registro
   // de ingresos, se ve en admin.html). Solo lleva la direccion y la llave publica.
   const envAcceso = leerEnv();
-  const html = template
-    .replace("__DATA_JSON__", () => jsonParaScript(dataCompleta))
+  const armarIndex = (data) => template
+    .replace("__DATA_JSON__", () => jsonParaScript(data))
     .replace("__SUPABASE_URL__", () => (envAcceso.SUPABASE_URL || "").replace(/\/+$/, ""))
     .replace("__SUPABASE_KEY__", () => envAcceso.SUPABASE_ANON_KEY || "");
+  // index.html es publico: NO lleva los datos de los tecnicos. Cada tecnico los
+  // pide a Supabase con su ID (rpc datos_tecnico). La copia completa queda en
+  // privado/index.html, de donde la validan y la suben a Supabase
+  // (reportes/subir_datos_tecnicos.js, despues de validar).
+  const html = armarIndex({ ...dataCompleta, tecnicos: {}, totalTecnicos: Object.keys(dataParaHtml).length });
+  fs.mkdirSync(DIR_PRIVADO, { recursive: true });
+  fs.writeFileSync(path.join(DIR_PRIVADO, "index.html"), armarIndex(dataCompleta), "utf-8");
   try {
     await sincronizarTecnicos(Object.entries(dataParaHtml).map(([id, t]) => ({ id, nombre: t.nombre, supervisor: t.supervisor || "", agencia: t.agencia || "" })));
   } catch (err) {

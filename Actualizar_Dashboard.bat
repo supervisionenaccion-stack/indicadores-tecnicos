@@ -12,6 +12,28 @@ if errorlevel 1 (
 )
 
 echo.
+echo ==^> Validando...
+node validar_portal.js
+if errorlevel 1 (
+    git checkout -- index.html supervisor.html >nul 2>&1
+    echo.
+    echo ERROR: la validacion fallo. No se publicara nada.
+    pause
+    exit /b 1
+)
+
+echo.
+echo ==^> Subiendo los datos de los tecnicos a Supabase...
+node reportes\subir_datos_tecnicos.js
+if errorlevel 1 (
+    git checkout -- index.html supervisor.html >nul 2>&1
+    echo.
+    echo ERROR: no se subieron los datos a Supabase. No se publicara nada.
+    pause
+    exit /b 1
+)
+
+echo.
 echo ==^> Generando reporte de reiteradas del mes...
 node reportes\generar_reiteradas.js
 if errorlevel 1 (

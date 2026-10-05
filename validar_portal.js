@@ -19,7 +19,9 @@ function extraerData(html, archivo) {
   return JSON.parse(m[1]);
 }
 function contarTecnicos(data) {
-  return Array.isArray(data.tecnicos) ? data.tecnicos.length : Object.keys(data.tecnicos || {}).length;
+  const n = Array.isArray(data.tecnicos) ? data.tecnicos.length : Object.keys(data.tecnicos || {}).length;
+  // El index.html publico va sin datos de tecnicos y solo dice cuantos son.
+  return n || data.totalTecnicos || 0;
 }
 function publicadoEnGit(archivo) {
   try {
@@ -45,8 +47,9 @@ const mesAnterior = `${MESES[anterior.getMonth()]} de ${anterior.getFullYear()}`
 const resumen = {};
 for (const archivo of ["index.html", "supervisor.html"]) {
   try {
-    // supervisor.html se publica cifrado: se valida la copia sin cifrar de privado/.
-    const html = archivo === "index.html" ? fs.readFileSync(path.join(__dirname, archivo), "utf-8") : leerSinCifrar(archivo);
+    // supervisor.html se publica cifrado e index.html sin los datos de los
+    // tecnicos: en ambos se valida la copia completa de privado/.
+    const html = leerSinCifrar(archivo);
     if (html.includes("__DATA_JSON__") || html.includes("__DATA_SUPERVISOR_JSON__")) errores.push(`${archivo}: quedo la marca de plantilla sin reemplazar`);
     if (!html.trimEnd().endsWith("</html>")) errores.push(`${archivo}: el HTML esta cortado`);
     if (/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/.test(html)) errores.push(`${archivo}: contiene un RUT completo`);
@@ -76,6 +79,22 @@ for (const archivo of ["index.html", "supervisor.html"]) {
 
 if (resumen["index.html"] && resumen["supervisor.html"] && resumen["index.html"].n !== resumen["supervisor.html"].n) {
   errores.push(`index.html tiene ${resumen["index.html"].n} tecnicos y supervisor.html ${resumen["supervisor.html"].n}`);
+}
+
+// El index.html publico no puede traer los datos de los tecnicos (los pide a
+// Supabase con el ID) y debe corresponder a la misma generacion que privado/.
+try {
+  const publico = fs.readFileSync(path.join(__dirname, "index.html"), "utf-8");
+  const data = extraerData(publico, "index.html (publico)");
+  if (Object.keys(data.tecnicos || {}).length || /"nombre"\s*:/.test(publico)) errores.push("index.html: trae datos de tecnicos; no se puede publicar");
+  if (/\b\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]\b/.test(publico)) errores.push("index.html: contiene un RUT completo");
+  if (/sb_secret_|service_role/.test(publico)) errores.push("index.html: contiene la llave secreta de Supabase");
+  if (!/https:\/\/[a-z0-9]+\.supabase\.co/.test(publico)) errores.push("index.html: no tiene la direccion de Supabase (los tecnicos no podrian entrar)");
+  if (resumen["index.html"] && (data.totalTecnicos !== resumen["index.html"].n || data.generadoEl !== resumen["index.html"].data.generadoEl)) {
+    errores.push("index.html no corresponde a la misma generacion que privado/index.html");
+  }
+} catch (err) {
+  errores.push(`index.html (publico): ${err.message}`);
 }
 
 // Las paginas de supervisores solo se publican cifradas (ingreso con usuario y clave).

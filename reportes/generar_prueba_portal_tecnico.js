@@ -7,12 +7,12 @@
 
 const fs = require("fs");
 const path = require("path");
-const { cargarDatosTecnicos, configSupabase } = require("./proteger.js");
+const { cargarDatosTecnicos, configSupabase, leerSinCifrar } = require("./proteger.js");
 
 const RAIZ = path.join(__dirname, "..");
 
 async function main() {
-  const index = fs.readFileSync(path.join(RAIZ, "index.html"), "utf-8");
+  const index = leerSinCifrar("index.html"); // copia completa de privado/
   const m = index.match(/const DATA = (\{.*?\});\r?\n/s);
   if (!m) throw new Error("index.html no trae el bloque de datos");
   const data = JSON.parse(m[1]);
