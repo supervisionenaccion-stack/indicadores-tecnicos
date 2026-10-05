@@ -42,7 +42,7 @@ git commit -m "Actualizar portal %date% %time%"
 if errorlevel 1 (
     echo No hay cambios nuevos para publicar.
     echo.
-    echo Listo, no habia nada nuevo. Sitio: https://supervisionenaccion-stack.github.io/portal-tecnicos-claro-vtr/
+    echo Listo, no habia nada nuevo. Sitio: https://supervisionenaccion-stack.github.io/indicadores-tecnicos/
     echo.
     pause
     exit /b 0
@@ -69,6 +69,6 @@ if errorlevel 1 (
 )
 
 echo.
-echo Listo y publicado. Sitio: https://supervisionenaccion-stack.github.io/portal-tecnicos-claro-vtr/
+echo Listo y publicado. Sitio: https://supervisionenaccion-stack.github.io/indicadores-tecnicos/
 echo.
 pause

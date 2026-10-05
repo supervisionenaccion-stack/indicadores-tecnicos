@@ -15,7 +15,7 @@
 $ErrorActionPreference = "Continue"
 Set-Location -LiteralPath $PSScriptRoot
 
-$SitioUrl = "https://supervisionenaccion-stack.github.io/portal-tecnicos-claro-vtr/"
+$SitioUrl = "https://supervisionenaccion-stack.github.io/indicadores-tecnicos/"
 $Node = "C:\Program Files\nodejs\node.exe"
 $Git = "C:\Program Files\Git\cmd\git.exe"
 

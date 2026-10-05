@@ -1,10 +1,10 @@
-# Portal de Técnicos — Claro/VTR
+# Portal de Técnicos
 
 Cada técnico entra solo con su **ID** (últimos 6 caracteres de su RUT,
 K → 0) y ve sus propios indicadores: Calidad (repetidos 30 días),
 Derivaciones (Alta/Migración) y Producción RGU. Es un sitio estático, sin
 servidor: los HTML se generan en este equipo y se publican en GitHub Pages:
-https://supervisionenaccion-stack.github.io/portal-tecnicos-claro-vtr/
+https://supervisionenaccion-stack.github.io/indicadores-tecnicos/
 
 ## Estructura
 
@@ -230,7 +230,7 @@ como clave, no el RUT completo.
 
 ## Metas de negocio (ajustar en `generar_portal.js`/`template.html` si cambian)
 
-Tomadas de la tabla "Producción VTR-Claro" que el usuario compartió
+Tomadas de la tabla de producción que el usuario compartió
 (22-ago-2026):
 
 - **Meta Calidad por ciudad** (`META_CALIDAD_POR_CIUDAD` en
