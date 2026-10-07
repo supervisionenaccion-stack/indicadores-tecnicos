@@ -37,6 +37,10 @@
   .panel{ background:#fff; border-top:3px solid var(--navy); padding:18px 20px; overflow-x:auto; }
   table{ width:100%; border-collapse:collapse; font-size:14px; }
   thead th{ background:var(--navy); color:#fff; font:600 11px/1.3 var(--font); letter-spacing:.1em; text-transform:uppercase; text-align:left; padding:11px 14px; white-space:nowrap; }
+  thead th.ordenable{ cursor:pointer; user-select:none; }
+  thead th.ordenable:hover{ color:var(--amber); }
+  thead th .flecha{ display:inline-block; width:12px; margin-left:4px; opacity:.45; }
+  thead th.orden-activo .flecha{ opacity:1; color:var(--amber); }
   tbody td{ padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:middle; }
   td.mono{ font-family:var(--mono); font-size:13px; }
   .pill{ display:inline-block; padding:2px 9px; font:600 11px/1.6 var(--font); letter-spacing:.06em; text-transform:uppercase; border-radius:2px; }
@@ -127,7 +131,7 @@
     <h2>Usuarios</h2>
     <div class="panel">
       <table>
-        <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Clave</th><th>Último ingreso</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Clave</th><th>Último ingreso</th><th class="sin-orden">Acciones</th></tr></thead>
         <tbody id="tablaUsuarios"></tbody>
       </table>
     </div>
@@ -381,6 +385,52 @@ async function cargar() {
   pintar();
 }
 
+// ---------- Ordenar las tablas al tocar el titulo de una columna ----------
+// Primer toque: de menor a mayor (A-Z, fecha mas antigua primero); segundo
+// toque: al reves. Las celdas vacias ("—", "Nunca") quedan siempre al final.
+// Si la celda trae data-orden (fechas en ISO, cantidades) se ordena por ese valor.
+const ORDEN = {};
+function valorOrden(td) {
+  const v = td ? (td.dataset.orden !== undefined ? td.dataset.orden : td.textContent.trim()) : '';
+  return v === '—' ? '' : v;
+}
+function comparar(a, b) {
+  if (a === '' || b === '') return a === b ? 0 : a === '' ? 1 : -1;
+  const na = Number(a), nb = Number(b);
+  if (!isNaN(na) && !isNaN(nb)) return na - nb;
+  return a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+}
+function aplicarOrden(idCuerpo) {
+  const o = ORDEN[idCuerpo], cuerpo = $(idCuerpo);
+  cuerpo.closest('table').querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.toggle('orden-activo', !!o && o.col === i);
+    const f = th.querySelector('.flecha');
+    if (f) f.textContent = o && o.col === i ? (o.asc ? '▲' : '▼') : '↕';
+  });
+  if (!o) return;
+  const filas = [...cuerpo.rows].filter((r) => r.cells.length > 1);
+  filas.sort((x, y) => {
+    const a = valorOrden(x.cells[o.col]), b = valorOrden(y.cells[o.col]);
+    if (a === '' || b === '') return comparar(a, b);
+    return o.asc ? comparar(a, b) : comparar(b, a);
+  });
+  filas.forEach((r) => cuerpo.appendChild(r));
+}
+function hacerOrdenable(idCuerpo) {
+  $(idCuerpo).closest('table').querySelectorAll('thead th').forEach((th, i) => {
+    if (th.classList.contains('sin-orden')) return;
+    th.classList.add('ordenable');
+    th.title = 'Ordenar por esta columna';
+    th.insertAdjacentHTML('beforeend', '<span class="flecha" aria-hidden="true">↕</span>');
+    th.addEventListener('click', () => {
+      const o = ORDEN[idCuerpo];
+      ORDEN[idCuerpo] = o && o.col === i ? { col: i, asc: !o.asc } : { col: i, asc: true };
+      aplicarOrden(idCuerpo);
+    });
+  });
+}
+['tablaUsuarios', 'tablaTecnicos', 'tablaIngresos'].forEach(hacerOrdenable);
+
 function pintar() {
   const ultimo = {};
   for (const g of ingresos) if (g.resultado === 'ok' && !ultimo[g.usuario]) ultimo[g.usuario] = g.fecha;
@@ -390,7 +440,7 @@ function pintar() {
       + '<td>' + (u.rol === 'admin' ? 'Administrador' : 'Supervisor') + '</td>'
       + '<td><span class="pill ' + (u.activo ? 'ok">Activo' : 'bad">Desactivado') + '</span></td>'
       + '<td><span class="pill ' + (u.debe_cambiar ? 'warn">Provisoria' : 'ok">Propia') + '</span></td>'
-      + '<td class="mono">' + f + '</td>'
+      + '<td class="mono" data-orden="' + (ultimo[u.usuario] || '') + '">' + f + '</td>'
       + '<td><div class="acciones">'
       + '<button class="sec" data-a="clave" data-id="' + esc(u.id) + '">Cambiar clave</button>'
       + '<button class="sec" data-a="nombre" data-id="' + esc(u.id) + '">Cambiar nombre</button>'
@@ -398,6 +448,7 @@ function pintar() {
       + '<button class="sec" data-a="estado" data-id="' + esc(u.id) + '">' + (u.activo ? 'Desactivar' : 'Activar') + '</button>'
       + '</div></td></tr>';
   }).join('');
+  aplicarOrden('tablaUsuarios');
 
   const sel = $('fUsuario'), previo = sel.value;
   const nombres = [...new Set(ingresos.map((g) => g.usuario))].sort();
@@ -429,9 +480,10 @@ function pintarTecnicos() {
   $('tablaTecnicos').innerHTML = lista.map((t) => {
     const f = t.ultimo ? fmtFecha.format(new Date(t.ultimo)) + ' ' + fmtHora.format(new Date(t.ultimo)) : '<span class="pill bad">Nunca</span>';
     const n = Number(t.ingresos_30);
-    return '<tr><td>' + esc(t.nombre) + '</td><td>' + esc(t.supervisor) + '</td><td>' + esc(t.agencia) + '</td><td class="mono">' + f + '</td>'
-      + '<td class="mono">' + (n === 0 ? '<span class="pill warn">0</span>' : n) + '</td><td class="mono">' + Number(t.dias_30) + '</td></tr>';
+    return '<tr><td>' + esc(t.nombre) + '</td><td>' + esc(t.supervisor) + '</td><td>' + esc(t.agencia) + '</td><td class="mono" data-orden="' + (t.ultimo || '') + '">' + f + '</td>'
+      + '<td class="mono" data-orden="' + n + '">' + (n === 0 ? '<span class="pill warn">0</span>' : n) + '</td><td class="mono">' + Number(t.dias_30) + '</td></tr>';
   }).join('') || '<tr><td colspan="6" style="color:var(--muted);">Sin técnicos para este filtro.</td></tr>';
+  aplicarOrden('tablaTecnicos');
   const sin = tecnicos.filter((t) => Number(t.ingresos_30) === 0).length;
   $('pieTecnicos').textContent = tecnicos.length + ' técnicos; ' + sin + ' sin ingresos en los últimos 30 días. Hora de Chile.';
 }
@@ -481,9 +533,10 @@ function pintarIngresos() {
   const lista = ingresosFiltrados();
   $('tablaIngresos').innerHTML = lista.map((g) => {
     const f = new Date(g.fecha), res = etiquetaResultado(g.resultado);
-    return '<tr><td class="mono">' + fmtFecha.format(f) + '</td><td class="mono">' + fmtHora.format(f) + '</td><td class="mono">' + esc(g.usuario) + '</td>'
+    return '<tr><td class="mono" data-orden="' + g.fecha + '">' + fmtFecha.format(f) + '</td><td class="mono">' + fmtHora.format(f) + '</td><td class="mono">' + esc(g.usuario) + '</td>'
       + '<td>' + esc(PAGINAS[g.pagina] || g.pagina) + '</td><td><span class="pill ' + res[1] + '">' + res[0] + '</span></td></tr>';
   }).join('') || '<tr><td colspan="5" style="color:var(--muted);">Sin ingresos para este filtro.</td></tr>';
+  aplicarOrden('tablaIngresos');
   $('pieIngresos').textContent = lista.length + ' registros' + (ingresos.length >= MAX_INGRESOS ? ' (se muestran los ' + MAX_INGRESOS + ' más recientes)' : '') + '. Hora de Chile.';
 }
 
