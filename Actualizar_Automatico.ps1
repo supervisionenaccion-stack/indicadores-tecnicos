@@ -141,20 +141,34 @@ if (-not $subido) { Fallar "la subida a GitHub" "el commit quedo local pero no s
 # 4. Confirmar que el sitio publico ya muestra la version nueva
 Log "4/4 Esperando que el sitio publico se actualice..."
 $enLinea = $false
-foreach ($i in 1..20) {
-  Start-Sleep -Seconds 30
-  try {
-    # Se compara el archivo publicado byte a byte (hash) con el generado aqui.
-    $resp = Invoke-WebRequest -UseBasicParsing -Uri ($SitioUrl + "index.html?nc=" + [guid]::NewGuid()) -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 30
-    $sha = [System.Security.Cryptography.SHA256]::Create()
-    $hashEnLinea = ([BitConverter]::ToString($sha.ComputeHash($resp.RawContentStream.ToArray()))).Replace("-", "")
-    if ($hashEnLinea -eq $hashLocal) { $enLinea = $true; break }
-  } catch {
-    Log ("Consulta al sitio fallo: " + $_.Exception.Message)
+# Si GitHub cancela la publicacion (le pasa cuando su servicio Actions anda
+# mal), se pide de nuevo: hasta 4 rondas de 10 minutos.
+$Gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
+foreach ($ronda in 1..4) {
+  if ($ronda -gt 1) {
+    if ($Gh) {
+      Log ("Sin publicar todavia: se pide a GitHub publicar de nuevo (intento " + $ronda + ").")
+      Correr $Gh @("api", "-X", "POST", "repos/supervisionenaccion-stack/indicadores-tecnicos/pages/builds") | Out-Null
+    } else {
+      Log "Sin publicar todavia y sin gh instalado para pedirlo de nuevo; se sigue esperando."
+    }
   }
+  foreach ($i in 1..20) {
+    Start-Sleep -Seconds 30
+    try {
+      # Se compara el archivo publicado byte a byte (hash) con el generado aqui.
+      $resp = Invoke-WebRequest -UseBasicParsing -Uri ($SitioUrl + "index.html?nc=" + [guid]::NewGuid()) -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 30
+      $sha = [System.Security.Cryptography.SHA256]::Create()
+      $hashEnLinea = ([BitConverter]::ToString($sha.ComputeHash($resp.RawContentStream.ToArray()))).Replace("-", "")
+      if ($hashEnLinea -eq $hashLocal) { $enLinea = $true; break }
+    } catch {
+      Log ("Consulta al sitio fallo: " + $_.Exception.Message)
+    }
+  }
+  if ($enLinea) { break }
 }
 if (-not $enLinea) {
-  Fallar "la confirmacion en linea" "se subio a GitHub pero el sitio no mostro la version nueva en 10 minutos (GitHub Pages puede estar demorado)"
+  Fallar "la confirmacion en linea" "se subio a GitHub y se pidio publicar 4 veces, pero el sitio no mostro la version nueva en 40 minutos (revisar githubstatus.com). Los tecnicos igual ven sus datos de hoy: vienen de Supabase"
 }
 
 Log ("OK: publicado y visible en linea. " + $resumen + $avisoReiteradas)

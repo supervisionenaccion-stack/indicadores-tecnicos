@@ -478,9 +478,17 @@ function metaRguDiariaPorAgencia(agencia) {
 
 function calcularDerivaciones(baseRows, supervisores) {
   const porTecnico = new Map();
+  // Igual que Calidad y RGU: solo tecnicos que estan en SUPERVISORES_VTR. Uno
+  // que aparece en la matriz pero no en esa tabla no tiene nombre ni supervisor
+  // (y antes botaba la generacion); se avisa para agregarlo a la tabla.
+  const fuera = new Map();
   for (const row of baseRows) {
     const rut = normalizeRut(row.Rut_Tecnico);
     const sup = supervisores.get(rut);
+    if (!sup) {
+      fuera.set(rut, (fuera.get(rut) || 0) + 1);
+      continue;
+    }
     if (!porTecnico.has(rut)) {
       porTecnico.set(rut, {
         rut: row.Rut_Tecnico,
@@ -494,6 +502,10 @@ function calcularDerivaciones(baseRows, supervisores) {
     const t = porTecnico.get(rut);
     if (row.Estado === "Completado" || row.Estado === "No Realizada") t.qOrdenes += 1;
     if (row.Estado === "No Realizada") t.qDerivaciones += 1;
+  }
+  if (fuera.size) {
+    const detalle = [...fuera.entries()].map(([rut, n]) => `RUT o bucket terminado en ${rut.slice(-4)} (${n} fila${n === 1 ? "" : "s"})`).join(", ");
+    console.warn(`AVISO: ${fuera.size} tecnico(s) con Alta/Migracion en la matriz no estan en SUPERVISORES_VTR y quedan fuera del portal: ${detalle}. Puede ser un bucket de TOA (orden sin tecnico asignado) o un tecnico que falta agregar a la tabla.`);
   }
   return [...porTecnico.values()];
 }
@@ -692,7 +704,7 @@ function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
 function usuarioFromNombre(nombreCompleto) {
-  const tokens = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+  const tokens = String(nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return "Tecnico";
   const nombre = tokens[0];
   let apellido;
