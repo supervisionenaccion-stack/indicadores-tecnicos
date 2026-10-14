@@ -49,6 +49,19 @@ function cifrar(html) {
   return { kid: crypto.randomBytes(8).toString("hex"), llave: llave.toString("base64"), iv: iv.toString("base64"), datos: datos.toString("base64") };
 }
 
+// Logo del cliente (Claro-VTR), solo el logotipo, a la derecha de la cabecera (igual que el
+// de Tigo en su Portal Supervisor). El de Cobra no se toca.
+const logoClienteDataUri = () => "data:image/png;base64," + fs.readFileSync(path.join(__dirname, "logo-claro-vtr.png")).toString("base64");
+function clienteVtr({ visible, separador }) {
+  return '<div id="clienteVtr" class="cliente-vtr no-imprimir" role="img" aria-label="Claro VTR" style="display:' + (visible ? "flex" : "none")
+    + ';align-items:center;flex:none;margin-left:auto;' + (separador ? "padding-right:14px;border-right:1px solid #d9dbe0;" : "") + '">'
+    + '<img src="' + logoClienteDataUri() + '" alt="">'
+    // Con #id le gana a las reglas "header ... img" de cada pagina; en celular, mas chico.
+    + "<style>#clienteVtr img{height:24px!important;width:auto!important;display:block!important;padding:0!important;margin:0!important;background:none!important;border:0!important;}"
+    + "@media (max-width:640px){#clienteVtr{padding-right:10px!important}#clienteVtr img{height:17px!important}}"
+    + "@media print{#clienteVtr{display:none!important}}</style></div>";
+}
+
 function armarPagina({ pagina, titulo, cifrado, url, anonKey, llavePrueba }) {
   const plantilla = fs.readFileSync(path.join(__dirname, "plantilla-acceso.html"), "utf-8");
   const reemplazos = {
@@ -56,6 +69,8 @@ function armarPagina({ pagina, titulo, cifrado, url, anonKey, llavePrueba }) {
     __LOGO__: "data:image/png;base64," + fs.readFileSync(path.join(RAIZ, "logo-cobra.png")).toString("base64"),
     __CLIENTE_JS__: fs.readFileSync(path.join(__dirname, "acceso-cliente.js"), "utf-8"),
     __PAGINA__: pagina,
+    __CLIENTE_CABECERA__: clienteVtr({ visible: true, separador: false }),
+    __CLIENTE_BARRA__: clienteVtr({ visible: false, separador: true }),
     __KID__: cifrado.kid,
     __IV__: cifrado.iv,
     __DATOS__: cifrado.datos,

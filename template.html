@@ -167,6 +167,9 @@
   .btn-instalar:hover{ background:#ffb61a; }
   .btn-instalar svg{ width:15px; height:15px; }
   #logoutBtn{ padding:9px 14px; font-size:12px; }
+  /* Logo del cliente (igual que Tigo): solo el logotipo, a la derecha */
+  header.top .brand-row img#logoCliente{ height:24px; width:auto; padding-right:14px; border-right:1px solid var(--border); }
+  @media (max-width:640px){ header.top .brand-row img#logoCliente{ height:17px; padding-right:10px; } }
   @media (max-width:560px){ header.top .brand-name{ display:none; } header.top .brand-divider{ display:none; } .btn-instalar span{ display:none; } }
   /* portada mas baja en el celular: lo importante son los numeros */
   section.hero .wrap{ min-height:0; padding-block:30px 32px; }
@@ -263,6 +266,7 @@
     <div class="brand-divider"></div>
     <div class="brand-name">Portal <strong>Técnico</strong></div>
     <div class="acciones-top">
+      <img src="logo-claro-vtr.png" alt="Claro VTR" id="logoCliente">
       <button class="btn-instalar oculto" id="btnInstalar" type="button" title="Instalar en el celular"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7"/><path d="M9 11l3 3 3-3"/></svg><span>Instalar app</span></button>
       <button id="logoutBtn" class="oculto" type="button">Salir</button>
     </div>
@@ -312,12 +316,6 @@
     <h2 class="titulo-seccion">Tu <b>resumen</b></h2>
     <p class="explica-seccion">Toca un indicador para ver su detalle.</p>
     <div class="resumen-row" id="resumenCards"></div>
-
-    <div id="bloqueRanking">
-      <h2 class="titulo-seccion">Tu posición en el <b>equipo</b></h2>
-      <p class="explica-seccion" id="rankingExplica"></p>
-      <div class="panel" id="rankingPanel" style="padding:8px 26px;"></div>
-    </div>
 
     <div id="bloqueEvolucion">
       <h2 class="titulo-seccion">Tu evolución <b>mes a mes</b></h2>
@@ -890,45 +888,6 @@ function renderResumen(t) {
   }));
 }
 
-// ---------- Posicion en el equipo (sin nombres de los demas) ----------
-// La pista va de "mejor" (izquierda) a "por mejorar" (derecha); el punto es el
-// tecnico. Empates comparten puesto.
-function renderRanking(t) {
-  const r = t.ranking || {};
-  const filas = [];
-  const fila = (nombre, sub, rk, propio, menorEsMejor) => {
-    if (!rk) return;
-    const pos = rk.de > 1 ? ((rk.puesto - 1) / (rk.de - 1)) * 100 : 0;
-    const superas = rk.de > 1 ? Math.round(((rk.de - rk.puesto) / (rk.de - 1)) * 100) : 100;
-    const comparacion = menorEsMejor ? (propio <= rk.promedio ? 'mejor' : 'peor') : (propio >= rk.promedio ? 'mejor' : 'peor');
-    filas.push('<div class="rank-fila">'
-      + '<div class="rank-nombre">' + nombre + '<small>' + sub + '</small></div>'
-      + '<div class="rank-pista" data-pos="' + pos.toFixed(1) + '"><div class="linea"></div><div class="yo" style="left:0%" title="Tú"></div>'
-      + '<span class="extremo izq">Mejor</span><span class="extremo der">Por mejorar</span></div>'
-      + '<div class="rank-datos"><span>Puesto <b>' + rk.puesto + '</b> de <b>' + rk.de + '</b></span>'
-      + (superas > 0 ? '<span>Superas al <b>' + superas + '%</b> del equipo</span>' : '')
-      + '<span>Tú <b>' + numero(propio, 1) + '%</b> · promedio <b>' + numero(rk.promedio, 1) + '%</b> (' + comparacion + ' que el promedio)</span></div>'
-      + '</div>');
-  };
-  if (t.calidad) fila('Calidad', 'Repetidos 30 días · más bajo es mejor', r.calidad, t.calidad.pctRepetidos, true);
-  if (t.derivaciones) fila('Derivaciones', 'Alta/Migración · más bajo es mejor', r.derivaciones, t.derivaciones.pctDerivaciones, true);
-  if (t.rgu) fila('Producción RGU', '% de cumplimiento · más alto es mejor', r.rgu, t.rgu.pctCumplimiento, false);
-  document.getElementById('bloqueRanking').style.display = filas.length ? '' : 'none';
-  const total = Math.max(0, ...Object.values(r).map((x) => x.de));
-  document.getElementById('rankingExplica').textContent = 'Dónde estás entre los ' + total + ' técnicos del equipo en cada indicador. Solo tú ves tu posición; no se muestran los nombres de los demás.';
-  const panel = document.getElementById('rankingPanel');
-  panel.innerHTML = filas.join('');
-  // El punto se desliza hasta su lugar cuando el bloque se ve en pantalla.
-  const mover = () => panel.querySelectorAll('.rank-pista').forEach((p) => { p.querySelector('.yo').style.left = p.dataset.pos + '%'; });
-  if ('IntersectionObserver' in window) {
-    const o = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { o.disconnect(); setTimeout(mover, 150); } }, { threshold: 0.2 });
-    o.observe(panel);
-    setTimeout(mover, 2500); // por si el navegador no avisa que el bloque esta a la vista
-  } else {
-    mover();
-  }
-}
-
 const HERO_INICIAL = {
   eyebrow: document.getElementById('heroEyebrow').innerHTML,
   titulo: document.getElementById('heroTitulo').innerHTML,
@@ -967,7 +926,6 @@ function mostrarPerfil(t) {
     '<div class="resumen-general ' + claseGeneral + '"><div class="texto">' + mensajeGeneral + '</div></div>';
 
   renderResumen(t);
-  renderRanking(t);
   tecnicoActual = t;
   const hayCalidad = renderEvolutivoPersonal(t);
   const hayRgu = renderEvolutivoRgu(t);

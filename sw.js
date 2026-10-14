@@ -1,5 +1,5 @@
-const CACHE_NAME = "portal-tecnicos-v3";
-const STATIC_ASSETS = ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "logo-cobra.png", "manifest.json"];
+const CACHE_NAME = "portal-tecnicos-v4";
+const STATIC_ASSETS = ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "logo-cobra.png", "logo-claro-vtr.png", "manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
