@@ -685,6 +685,46 @@ function loadRutsBaja() {
   return new Set(lista.map((t) => normalizeRut(t.rut)));
 }
 
+// ---------- 2d. Tecnicos desvinculados segun el Maestro de RR.HH. ----------
+// En el Excel "Maestro ClaroVtr" la columna Estado dice "Z" cuando el tecnico
+// ya no trabaja. No se sacan del dashboard (siguen apareciendo en alguna
+// metrica del periodo); solo se marcan como BAJA. Se usa MAESTRO_PATH de
+// .env.local o, si no esta, el "Maestro ClaroVtr*.xlsx" mas reciente del
+// escritorio. Si no se encuentra o no se puede leer, se sigue sin marcar.
+async function loadRutsBajaMaestro() {
+  let ruta = process.env.MAESTRO_PATH || leerEnv().MAESTRO_PATH;
+  if (!ruta) {
+    const escritorio = path.join(require("os").homedir(), "OneDrive", "Desktop");
+    const candidatos = fs.existsSync(escritorio)
+      ? fs.readdirSync(escritorio).filter((f) => /^Maestro ClaroVtr.*\.xlsx$/i.test(f) && !f.startsWith("~$"))
+      : [];
+    candidatos.sort((a, b) => fs.statSync(path.join(escritorio, b)).mtimeMs - fs.statSync(path.join(escritorio, a)).mtimeMs);
+    if (candidatos.length) ruta = path.join(escritorio, candidatos[0]);
+  }
+  if (!ruta || !fs.existsSync(ruta)) {
+    console.warn("AVISO: no se encontro el Maestro ClaroVtr; no se marcan tecnicos de baja.");
+    return new Set();
+  }
+  try {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(ruta);
+    const ws = wb.worksheets[0];
+    const texto = (v) => String(v && typeof v === "object" ? (v.result ?? v.text ?? "") : v ?? "").trim().toUpperCase();
+    const cab = ws.getRow(1).values.map(texto);
+    const colRut = cab.indexOf("RUT"), colEstado = cab.indexOf("ESTADO");
+    if (colRut < 0 || colEstado < 0) throw new Error("faltan las columnas RUT o Estado");
+    const ruts = new Set();
+    ws.eachRow((row, i) => {
+      if (i > 1 && texto(row.getCell(colEstado).value) === "Z") ruts.add(normalizeRut(texto(row.getCell(colRut).value)));
+    });
+    console.log(`==> Maestro: ${path.basename(ruta)}, ${ruts.size} RUT con Estado Z (baja).`);
+    return ruts;
+  } catch (err) {
+    console.warn(`AVISO: no se pudo leer el Maestro (${ruta}): ${err.message}. No se marcan tecnicos de baja.`);
+    return new Set();
+  }
+}
+
 // ---------- 3. idCAT a partir del RUT (no se publica el RUT completo) ----------
 function normalizeRut(rut) {
   return String(rut).trim().toUpperCase().replace(/\./g, "").replace(/-/g, "");
@@ -916,6 +956,9 @@ async function main() {
   if (rutsBaja.size > 0) {
     console.log(`==> Tecnicos de baja excluidos: ${excluidosBaja} de ${rutsBaja.size} en la lista.`);
   }
+  const rutsBajaMaestro = await loadRutsBajaMaestro();
+  for (const [rut, t] of byRut) t.baja = rutsBajaMaestro.has(rut);
+  console.log(`==> Tecnicos marcados BAJA en el dashboard: ${[...byRut.values()].filter((t) => t.baja).length}.`);
 
   for (const t of byRut.values()) {
     t.causasAnual = causasAnualPorRut.get(normalizeRut(t.rut)) || [];
@@ -1054,6 +1097,7 @@ async function main() {
       derivaciones: t.derivaciones,
       rgu: t.rgu,
       vecino: t.vecinoResumen || null,
+      baja: t.baja || undefined,
     })),
     // Sin las series por tecnico: van identificadas por RUT y el dashboard no las usa.
     evolutivoMensual: { ...evolutivoMensual, porTecnico: undefined },

@@ -164,6 +164,10 @@
   .valor-pill.warn{ background:var(--warn-bg); color:var(--warn); }
   .valor-pill.bad{ background:var(--bad-bg); color:var(--bad); }
   .valor-pill.na{ background:var(--panel-2); color:var(--text-dim); }
+  .tag-baja{ display:inline-block; margin-left:6px; padding:1px 6px; font-size:10px; font-weight:700; letter-spacing:.06em; color:#fff; background:#6b7a8c; vertical-align:1px; }
+  .gen-pill{ white-space:nowrap; }
+  .gen-punto{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:0; background:#c9d0d8; }
+  .gen-punto.ok{ background:var(--ok); } .gen-punto.warn{ background:#e0a100; } .gen-punto.bad{ background:var(--bad); }
   .sin-resultados{ padding:40px 20px; text-align:center; color:var(--text-dim); font-size:14px; }
 
   .pareto-fila{ display:grid; grid-template-columns:minmax(120px,220px) 1fr minmax(90px,150px); align-items:center; gap:10px; margin-bottom:7px; font-size:12.5px; }
@@ -326,6 +330,10 @@
           <th class="ordenable" onclick="ordenarPor('agencia')">Agencia<span class="sort-arrow" id="flecha-agencia"></span></th>
           <th class="ordenable" onclick="ordenarPor('supervisor')">Supervisor<span class="sort-arrow" id="flecha-supervisor"></span></th>
           <th class="num">
+            <span class="ordenable" onclick="ordenarPor('general')">General<span class="sort-arrow" id="flecha-general"></span></span>
+            <span class="info-ico clicable" onclick="mostrarInfo('general')">ⓘ</span>
+          </th>
+          <th class="num">
             <span class="ordenable" onclick="ordenarPor('calidad')">Calidad (repetidos)<span class="sort-arrow" id="flecha-calidad"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('calidad')">ⓘ</span>
           </th>
@@ -412,6 +420,43 @@ function estadoVecino(pct) {
   if (pct >= 100) return 'ok';
   return pct >= 90 ? 'warn' : 'bad';
 }
+// Evaluacion general: junta los 4 indicadores en una mirada. Cada uno vale
+// 2 si cumple, 1 si esta en atencion y 0 si esta critico; el puntaje es el
+// promedio sobre los que tienen datos (0 a 2). Se muestra un punto de color
+// por indicador y cuantos cumplen.
+function estadosTecnico(t) {
+  return [
+    t.calidad ? estadoCalidad(t.calidad.pctRepetidos, t.calidad.metaCalidad) : 'na',
+    t.derivaciones ? estadoDerivaciones(t.derivaciones.pctDerivaciones) : 'na',
+    t.rgu ? estadoRgu(t.rgu.pctCumplimiento) : 'na',
+    t.vecino ? estadoVecino(t.vecino.pct) : 'na',
+  ];
+}
+const PUNTOS_ESTADO = { ok: 2, warn: 1, bad: 0 };
+function puntajeGeneral(t) {
+  const con = estadosTecnico(t).filter((e) => e !== 'na');
+  return con.length ? con.reduce((a, e) => a + PUNTOS_ESTADO[e], 0) / con.length : null;
+}
+function pillGeneral(t) {
+  const estados = estadosTecnico(t);
+  const con = estados.filter((e) => e !== 'na');
+  if (!con.length) return '<span class="valor-pill na">Sin datos</span>';
+  const cumplen = con.filter((e) => e === 'ok').length;
+  const malos = con.filter((e) => e === 'bad').length;
+  const clase = cumplen === con.length ? 'ok' : malos * 2 >= con.length ? 'bad' : 'warn';
+  const nombres = ['Calidad', 'Derivaciones', 'Producción RGU', 'Estado vecino'];
+  const textos = { ok: 'cumple', warn: 'atención', bad: 'crítico', na: 'sin datos' };
+  const titulo = nombres.map((n, i) => n + ': ' + textos[estados[i]]).join('\n');
+  const puntos = estados.map((e) => '<i class="gen-punto ' + e + '"></i>').join('');
+  return '<span class="valor-pill gen-pill ' + clase + '" title="' + titulo + '">' + puntos + ' ' + cumplen + '/' + con.length + '</span>';
+}
+
+// Tecnico desvinculado (Estado Z en el Maestro): sigue apareciendo porque
+// tiene datos del periodo, pero se marca para no confundirlo con uno activo.
+function tagBaja(t) {
+  return t.baja ? ' <span class="tag-baja" title="Desvinculado según el Maestro (Estado Z)">BAJA</span>' : '';
+}
+
 function pill(pct, clase, sufijo) {
   if (pct == null) return '<span class="valor-pill na">Sin datos</span>';
   return '<span class="valor-pill ' + clase + '">' + pct.toFixed(1) + (sufijo || '%') + '</span>';
@@ -519,7 +564,7 @@ function nombreCorto(nombreCompleto) {
 function listaRanking(items, clase) {
   if (items.length === 0) return '<div class="ranking-vacio">Sin datos suficientes</div>';
   return items.map((i) =>
-    '<div class="ranking-item"><span class="nom">' + nombreCorto(i.nombre) + '</span><span class="val">' + i.val.toFixed(1) + '%</span></div>'
+    '<div class="ranking-item"><span class="nom">' + nombreCorto(i.nombre) + tagBaja(i) + '</span><span class="val">' + i.val.toFixed(1) + '%</span></div>'
   ).join('');
 }
 
@@ -528,7 +573,7 @@ function listaRanking(items, clase) {
 function renderRanking(lista) {
   function construirTarjeta(titulo, extraerPct, mejorEsBajo) {
     const valores = lista
-      .map((t) => (extraerPct(t) != null ? { nombre: t.nombre, val: extraerPct(t) } : null))
+      .map((t) => (extraerPct(t) != null ? { nombre: t.nombre, baja: t.baja, val: extraerPct(t) } : null))
       .filter(Boolean);
     const ordenAsc = [...valores].sort((a, b) => a.val - b.val);
     const mejores = mejorEsBajo ? ordenAsc.slice(0, 3) : ordenAsc.slice(-3).reverse();
@@ -564,6 +609,7 @@ function valorOrdenTabla(t, columna) {
     case 'derivaciones': return t.derivaciones ? t.derivaciones.pctDerivaciones : null;
     case 'rgu': return t.rgu ? t.rgu.pctCumplimiento : null;
     case 'vecino': return t.vecino ? t.vecino.pct : null;
+    case 'general': return puntajeGeneral(t);
     default: return null;
   }
 }
@@ -575,6 +621,12 @@ function compararOrdenTabla(a, b) {
   if (va == null) return 1;
   if (vb == null) return -1;
   const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+  // En la evaluacion general, a igual puntaje va primero el que tiene mas
+  // indicadores con datos: un 0/4 pesa mas que un 0/1.
+  if (cmp === 0 && ordenTabla.columna === 'general') {
+    const conDatos = (t) => estadosTecnico(t).filter((e) => e !== 'na').length;
+    return conDatos(b) - conDatos(a);
+  }
   return ordenTabla.sentido === 'asc' ? cmp : -cmp;
 }
 
@@ -590,7 +642,7 @@ function ordenarPor(columna) {
 window.ordenarPor = ordenarPor;
 
 function actualizarFlechasOrden() {
-  ['nombre', 'agencia', 'supervisor', 'calidad', 'derivaciones', 'rgu', 'vecino'].forEach((columna) => {
+  ['nombre', 'agencia', 'supervisor', 'general', 'calidad', 'derivaciones', 'rgu', 'vecino'].forEach((columna) => {
     const el = document.getElementById('flecha-' + columna);
     if (!el) return;
     el.textContent = columna !== ordenTabla.columna ? '' : (ordenTabla.sentido === 'asc' ? '▲' : '▼');
@@ -633,9 +685,10 @@ function renderTabla() {
       const vecPct = t.vecino ? t.vecino.pct : null;
       const vecClase = t.vecino ? estadoVecino(vecPct) : 'na';
       return '<tr>'
-        + '<td>' + t.nombre + '</td>'
+        + '<td>' + t.nombre + tagBaja(t) + '</td>'
         + '<td>' + (t.agencia || '—') + '</td>'
         + '<td>' + (t.supervisor || '—') + '</td>'
+        + '<td class="num">' + pillGeneral(t) + '</td>'
         + '<td class="num">' + pill(calPct, calClase) + '</td>'
         + '<td class="num">' + pill(derPct, derClase) + '</td>'
         + '<td class="num">' + pill(rguPct, rguClase) + '</td>'
@@ -668,7 +721,7 @@ function renderPeoresTecnicosCausas(lista, supervisorFiltro) {
       ? causas.slice(0, 3).map((c) => c.causa + ' (' + c.cnt + ')').join(' · ')
       : 'Sin causa registrada';
     return '<div class="peor-tecnico-item">'
-      + '<div class="peor-tecnico-cabecera"><span class="peor-tecnico-nombre">' + t.nombre + '</span>'
+      + '<div class="peor-tecnico-cabecera"><span class="peor-tecnico-nombre">' + t.nombre + tagBaja(t) + '</span>'
       + '<span class="peor-tecnico-pct">' + t.calidad.pctRepetidos.toFixed(1) + '% (' + t.calidad.repetidos30Dias + '/' + t.calidad.totalOrdenes + ')</span></div>'
       + '<div class="peor-tecnico-meta">' + (t.agencia || '—') + (t.supervisor ? ' · ' + t.supervisor : '') + '</div>'
       + '<div class="peor-tecnico-causas">' + listaCausas + '</div>'
@@ -703,7 +756,7 @@ function renderCausasComparacion(lista, supervisorFiltro) {
     .map((t) => {
       const causasMes = t.calidad ? t.calidad.causas : null;
       return '<tr>'
-        + '<td>' + t.nombre + '</td>'
+        + '<td>' + t.nombre + tagBaja(t) + '</td>'
         + '<td>' + (t.agencia || '—') + '</td>'
         + '<td>' + (t.supervisor || '—') + '</td>'
         + '<td>' + textoCausa(t.causasAnual) + '</td>'
@@ -1083,7 +1136,7 @@ function filasExcelTecnicos() {
   for (const t of lista) {
     const c = t.calidad || {}, d = t.derivaciones || {}, g = t.rgu || {}, v = t.vecino || {};
     filas.push([
-      t.nombre, t.agencia || '', t.supervisor || '',
+      t.nombre + (t.baja ? ' (BAJA)' : ''), t.agencia || '', t.supervisor || '',
       r1(c.pctRepetidos), c.totalOrdenes ?? '', c.repetidos30Dias ?? '', c.metaCalidad ?? '',
       r1(d.pctDerivaciones), d.qOrdenes ?? '', d.qDerivaciones ?? '',
       r1(g.pctCumplimiento), r2(g.rguCompletadaGsa), g.diasTrabajados ?? '', g.metaDiaria ?? '', r2(g.metaPeriodo),
@@ -1173,6 +1226,12 @@ const INFO_METRICAS = {
     queMide: 'En qué porcentaje de sus órdenes completadas el técnico hizo la consulta de estado vecino. Mientras más alto, mejor.',
     comoSeCalcula: 'Órdenes con consulta registrada (con resultado OK, NOK o en proceso) dividido por las órdenes completadas de Alta, Migración, Reparación y Alta Traslado, en el mismo mes que Derivaciones y Producción RGU. El detalle por técnico y por orden está en el botón "Consulta de estado vecino".',
     meta: 'La consulta es obligatoria en todas las órdenes: la meta es 100%. Entre 90% y 99,9% se marca en amarillo; por debajo de 90% queda en rojo.',
+  },
+  general: {
+    titulo: 'Evaluación general',
+    queMide: 'Una mirada rápida a los 4 indicadores juntos. Cada punto es un indicador, en este orden: Calidad, Derivaciones, Producción RGU y Estado vecino; el número dice cuántos cumplen de los que tienen datos.',
+    comoSeCalcula: 'Cada indicador vale 2 si cumple (verde), 1 si está en atención (amarillo) y 0 si está crítico (rojo); se promedia entre los que tienen datos. Al ordenar por esta columna, primero aparecen los técnicos con peor evaluación (o los mejores, al hacer clic de nuevo).',
+    meta: 'Verde: cumple todos. Rojo: la mitad o más están críticos. Amarillo: el resto.',
   },
 };
 
