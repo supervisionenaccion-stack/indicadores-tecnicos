@@ -320,7 +320,7 @@ const Acceso = (() => {
 const CFG = { url: 'https://puqexeqjnhsxyibyehdw.supabase.co', key: 'sb_publishable_0tGCVfVqnfeNQ_IYyHMwJg_ELlJBoUF', dominio: 'portal.local', prueba: '0' === '1' };
 Acceso.configurar({ url: CFG.url, key: CFG.key, dominio: CFG.dominio });
 
-const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'auditorias': 'Auditorías', 'admin': 'Administración / ingresos de técnicos', '-': '—' };
+const PAGINAS = { 'supervisor': 'Dashboard', 'reiteradas': 'Reiterados', 'vecino': 'Estado vecino', 'auditorias': 'Auditorías', 'brecha': 'Brecha RGU', 'graficos': 'Gráficos', 'admin': 'Administración / ingresos de técnicos', '-': '—' };
 const RESULTADOS = { cambio_clave: ['Definió su clave', 'ok'], ok: ['Ingresó', 'ok'], clave_incorrecta: ['Clave incorrecta', 'bad'], inactivo: ['Usuario desactivado', 'warn'] };
 function etiquetaResultado(r) {
   const m = /^borro_(\d+)_registros$/.exec(r);
