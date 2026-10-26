@@ -89,11 +89,15 @@
       <select id="filtroSupervisor"></select>
     </div>
     <div class="campo">
+      <label for="filtroTecnico">T&eacute;cnico</label>
+      <select id="filtroTecnico"></select>
+    </div>
+    <div class="campo">
       <label for="filtroMes">Mes</label>
       <select id="filtroMes"></select>
     </div>
     <div class="campo">
-      <label for="filtroBajas">T&eacute;cnicos</label>
+      <label for="filtroBajas">Desvinculados</label>
       <select id="filtroBajas"><option value="">Solo los activos</option><option value="1">Incluir desvinculados (BAJA)</option></select>
     </div>
     </div>
@@ -231,6 +235,16 @@ const delEquipo = (f) => !filtro.value || f.s === filtro.value;
 // Los totales del equipo y por agencia los siguen contando, para calzar con los informes.
 const filtroBajas = document.getElementById('filtroBajas');
 const visible = (f) => filtroBajas.value === '1' || !f.b;
+// Tecnico elegido arriba: la lista depende del supervisor y de los desvinculados.
+const filtroTec = document.getElementById('filtroTecnico');
+function llenarTecnicos() {
+  const previo = filtroTec.value;
+  const nombres = [...new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter((f) => delEquipo(f) && visible(f)).map((f) => f.n))))].sort((a, b) => corto(a).localeCompare(corto(b)));
+  filtroTec.innerHTML = '<option value="">Todos los técnicos</option>' + nombres.map((n) => '<option value="' + esc(n) + '">' + esc(corto(n)) + '</option>').join('');
+  filtroTec.value = nombres.includes(previo) ? previo : '';
+}
+const agenciaDe = (n) => { for (const l of Object.values(DATA.meses)) for (const m of l) { const f = m.filas.find((x) => x.n === n); if (f) return f.a; } return null; };
+
 // Agencias del filtro de supervisor (para elegir la meta de Calidad del grupo).
 const agenciasDelEquipo = () => [...new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter(delEquipo).map((f) => f.a))))];
 
@@ -382,14 +396,20 @@ function lecturaSerie(k, puntos, agencias) {
 
 // ---------------------------------------------------------------- Secciones
 function renderMeses() {
-  const grid = document.getElementById('gridMeses'), ags = agenciasDelEquipo();
-  grid.innerHTML = Object.keys(IND).map((k) => '<div class="panel graf"><h3>' + IND[k].titulo + ' <span class="meta-badge">Meta ' + reglaDe(k, ags) + '</span></h3><p class="bajada">' + IND[k].que[0].toUpperCase() + IND[k].que.slice(1) + '. ' + (IND[k].mejor === 'bajo' ? 'Más bajo es mejor.' : 'Más alto es mejor.') + (k === 'cal' && ags.length > 1 ? ' Con varias agencias, la meta es el promedio (' + numMeta(M.calDefault) + '%).' : '') + '</p><div class="lienzo" id="mes-' + k + '"></div><div class="lectura" id="lec-' + k + '"></div><div id="tab-' + k + '"></div></div>').join('');
+  const grid = document.getElementById('gridMeses'), ags = agenciasDelEquipo(), tec = filtroTec.value;
+  // Con un tecnico elegido, la meta de Calidad es la de su agencia.
+  const agsMeta = tec ? [agenciaDe(tec)] : ags;
+  grid.innerHTML = Object.keys(IND).map((k) => '<div class="panel graf"><h3>' + IND[k].titulo + ' <span class="meta-badge">Meta ' + reglaDe(k, agsMeta) + '</span></h3><div class="leyenda" id="ley-mes-' + k + '"></div><p class="bajada">' + IND[k].que[0].toUpperCase() + IND[k].que.slice(1) + '. ' + (IND[k].mejor === 'bajo' ? 'Más bajo es mejor.' : 'Más alto es mejor.') + (k === 'cal' && agsMeta.length > 1 ? ' Con varias agencias, la meta es el promedio (' + numMeta(M.calDefault) + '%).' : '') + '</p><div class="lienzo" id="mes-' + k + '"></div><div class="lectura" id="lec-' + k + '"></div><div id="tab-' + k + '"></div></div>').join('');
   for (const k of Object.keys(IND)) {
     const meses = DATA.meses[IND[k].fuente];
-    const s = [{ nombre: '', color: AZUL, puntos: serie(k) }];
-    const cfg = { k, titulo: IND[k].titulo, meses, series: s, meta: metaDe(k, ags), unidad: IND[k].unidad, dec: IND[k].dec, desde: k === 'vec' || k === 'rgu' ? 'auto' : 0 };
+    // Con un tecnico elegido: su linea (azul) contra la del equipo (gris).
+    const s = tec
+      ? [{ nombre: corto(tec), color: AZUL, puntos: serie(k, (f) => f.n === tec) }, { nombre: filtro.value ? 'Su equipo' : 'Todos', color: '#9aa5b1', puntos: serie(k) }]
+      : [{ nombre: '', color: AZUL, puntos: serie(k) }];
+    document.getElementById('ley-mes-' + k).innerHTML = tec ? s.map((x) => '<span><i style="background:' + x.color + '"></i>' + esc(x.nombre) + '</span>').join('') : '';
+    const cfg = { k, titulo: IND[k].titulo, meses, series: s, meta: metaDe(k, agsMeta), unidad: IND[k].unidad, dec: IND[k].dec, desde: k === 'vec' || k === 'rgu' ? 'auto' : 0 };
     lineas(document.getElementById('mes-' + k), cfg);
-    document.getElementById('lec-' + k).innerHTML = lecturaSerie(k, s[0].puntos, ags);
+    document.getElementById('lec-' + k).innerHTML = (tec ? '<b>' + esc(corto(tec)) + '</b> · ' : '') + lecturaSerie(k, s[0].puntos, agsMeta);
     document.getElementById('tab-' + k).innerHTML = tablaDatos(meses, s, cfg);
   }
 }
@@ -464,15 +484,18 @@ function renderDispersion() {
       [cx + 9, cy - 19], [cx + 9, cy + 5], [cx - 9 - w, cy - 19], [cx - 9 - w, cy + 5]];
     const sitio = opciones.find(([ox, oy]) => !choca({ x: ox, y: oy, w, h })) || opciones[0];
     ocupado.push({ x: sitio[0], y: sitio[1], w, h });
-    etiquetas += '<text x="' + sitio[0].toFixed(1) + '" y="' + (sitio[1] + 10).toFixed(1) + '" font-size="10.5" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3" pointer-events="none">' + esc(nombre) + '</text>';
+    const tenue = filtroTec.value && filtroTec.value !== t.nombre;
+    etiquetas += '<text x="' + sitio[0].toFixed(1) + '" y="' + (sitio[1] + 10).toFixed(1) + '" font-size="10.5"' + (tenue ? ' opacity=".35"' : filtroTec.value ? ' font-weight="800"' : '') + ' fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3" pointer-events="none">' + esc(nombre) + '</text>';
   });
   ts.forEach((t) => {
     const prodOk = t.rgu.v >= MP, repOk = cumple('cal', t.cal.v, t.agencia);
     grupos[prodOk && repOk ? 'bueno' : prodOk ? 'repite' : repOk ? 'lento' : 'ambos'].push(t);
     const cx = x(t.rgu.v), cy = y(t.cal.v), color = AGENCIA[t.agencia] || AZUL;
+    // Con un tecnico elegido, su punto se destaca y los demas quedan atenuados.
+    const elegido = filtroTec.value === t.nombre, atenuado = filtroTec.value && !elegido;
     svg += '<g style="cursor:help;"><title>' + esc(t.nombre + ' (' + nomAg(t.agencia) + ')\nCalidad: ' + num(t.cal.v, 1) + '% (' + t.cal.det + '; meta ' + numMeta(metaCalAg(t.agencia)) + '%)\nProducción RGU: ' + num(t.rgu.v, 1) + '% de la meta') + '</title>'
       + '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="12" fill="transparent"/>'
-      + '<circle' + (ANIMAR ? ' class="pop" style="animation-delay:' + (0.2 + ts.indexOf(t) * 0.05).toFixed(2) + 's"' : '') + ' cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="6" fill="' + color + '" stroke="#fff" stroke-width="2"/>'
+      + '<circle' + (ANIMAR ? ' class="pop" style="animation-delay:' + (0.2 + ts.indexOf(t) * 0.05).toFixed(2) + 's"' : '') + ' cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (elegido ? 9 : 6) + '" fill="' + color + '" stroke="' + (elegido ? TINTA : '#fff') + '" stroke-width="' + (elegido ? 3 : 2) + '"' + (atenuado ? ' opacity=".25"' : '') + '/>'
       + '</g>';
   });
   svg += etiquetas;
@@ -482,6 +505,15 @@ function renderDispersion() {
   if (grupos.repite.length) txt += ' <b class="bad">Producen pero repiten:</b> ' + lista(grupos.repite) + '.';
   if (grupos.ambos.length) txt += ' <b class="bad">Bajo en los dos (prioridad):</b> ' + lista(grupos.ambos) + '.';
   if (grupos.lento.length) txt += ' <b>Calidad, pero baja producción:</b> ' + lista(grupos.lento) + '.';
+  // Con un tecnico elegido, primero en que zona esta el.
+  const elegido = ts.find((t) => t.nombre === filtroTec.value);
+  if (elegido) {
+    const zonaDe = { bueno: '<b class="ok">en la zona ideal</b> (produce y con calidad)', repite: '<b class="bad">produce, pero repite</b>', lento: '<b>con calidad, pero baja producción</b>', ambos: '<b class="bad">bajo en los dos</b>' };
+    const g = Object.keys(grupos).find((k) => grupos[k].includes(elegido));
+    txt = '<b>' + esc(corto(elegido.nombre)) + '</b> está ' + zonaDe[g] + ': Calidad ' + num(elegido.cal.v, 1) + '% (meta ' + numMeta(metaCalAg(elegido.agencia)) + '%), RGU ' + num(elegido.rgu.v, 0) + '% de la meta.<br>' + txt;
+  } else if (filtroTec.value) {
+    txt = '<b>' + esc(corto(filtroTec.value)) + '</b> no tiene Calidad y Producción RGU a la vez en ' + mes.label + '.<br>' + txt;
+  }
   lec.innerHTML = txt;
 }
 
@@ -517,7 +549,7 @@ function renderBarras() {
   const selTec = document.getElementById('barTecnico'), previo = selTec.value;
   const nombres = delFiltro.map((t) => t.nombre).sort((a, b) => corto(a).localeCompare(corto(b)));
   selTec.innerHTML = '<option value="">Todos los técnicos</option>' + nombres.map((n) => '<option value="' + esc(n) + '">' + esc(corto(n)) + '</option>').join('');
-  selTec.value = nombres.includes(previo) ? previo : '';
+  selTec.value = filtroTec.value && nombres.includes(filtroTec.value) ? filtroTec.value : nombres.includes(previo) ? previo : '';
   const todos = delFiltro.filter((t) => !selTec.value || t.nombre === selTec.value);
   const orden = document.getElementById('barOrden').value;
   // "Mejor primero": en el resumen, menos metas sin cumplir y, si empatan, mas cerca de sus metas.
@@ -622,8 +654,9 @@ barSupervisor.addEventListener('change', () => { filtro.value = barSupervisor.va
 
 function renderTodo() {
   barSupervisor.value = filtro.value;
-  document.querySelectorAll('.tituloEquipo').forEach((e) => { e.textContent = filtro.value || 'Todos los equipos'; });
-  document.querySelectorAll('.tituloMes').forEach((e) => { const m = mesElegido(); e.textContent = m.label + (m.parcial ? ' (en curso)' : '') + (filtro.value ? ' · ' + filtro.value : ''); });
+  llenarTecnicos();
+  document.querySelectorAll('.tituloEquipo').forEach((e) => { e.textContent = filtroTec.value ? corto(filtroTec.value) + ' contra ' + (filtro.value ? 'su equipo' : 'todos') : filtro.value || 'Todos los equipos'; });
+  document.querySelectorAll('.tituloMes').forEach((e) => { const m = mesElegido(); e.textContent = m.label + (m.parcial ? ' (en curso)' : '') + (filtroTec.value ? ' · ' + corto(filtroTec.value) : filtro.value ? ' · ' + filtro.value : ''); });
   const ocultos = new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter((f) => delEquipo(f) && f.b).map((f) => f.n))));
   document.getElementById('notaBajas').textContent = !ocultos.size ? '' : filtroBajas.value === '1'
     ? 'Se muestran ' + ocultos.size + ' técnicos desvinculados, marcados con BAJA.'
@@ -633,9 +666,13 @@ function renderTodo() {
 filtro.addEventListener('change', renderTodo);
 filtroMes.addEventListener('change', renderTodo);
 filtroBajas.addEventListener('change', renderTodo);
+filtroTec.addEventListener('change', renderTodo);
 // Se puede abrir con el equipo ya elegido: graficos.html?supervisor=Nombre
 const pedido = new URLSearchParams(location.search).get('supervisor');
 if (pedido && sups.includes(pedido)) filtro.value = pedido;
+// ... y con un tecnico: graficos.html?tecnico=Nombre
+const pedidoTec = new URLSearchParams(location.search).get('tecnico');
+if (pedidoTec) { llenarTecnicos(); filtroTec.value = pedidoTec; }
 // ---------- Animaciones ----------
 // Solo en la primera carga: cada seccion queda "esperando" y se anima al entrar en
 // pantalla. Despues, al cambiar un filtro, los graficos aparecen directo.
