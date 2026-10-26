@@ -68,6 +68,11 @@
   .comb-ind i{ flex:none; width:6px; align-self:stretch; border-radius:3px; }
   .comb-ind .nombre{ font-size:12px; color:var(--text-dim); }
   .comb-ind .valor{ font-size:15px; font-weight:800; line-height:1.3; }
+  .tend-par{ display:inline-flex; align-items:flex-start; gap:10px; margin-top:4px; }
+  .tend-celda{ display:inline-flex; flex-direction:column; align-items:flex-start; }
+  .tend-num{ font-size:22px; font-weight:800; line-height:1.1; }
+  .tend-lbl{ font-size:11px; color:var(--text-dim); font-family:inherit; }
+  .tend-flecha{ font-size:20px; font-weight:800; line-height:1.2; }
   .comb-pie{ margin:10px 0 0; font-size:12px; color:var(--text-dim); line-height:1.5; }
   .comb-detalle{ margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
   .comb-detalle summary{ cursor:pointer; font-size:13px; font-weight:700; color:var(--cobra-blue); }
@@ -937,22 +942,23 @@ function renderCombinado() {
 
   // Tendencia de cada indicador, solo con sus meses completos (el parcial no
   // se compara): ultimo mes completo contra el promedio de los 2-3 anteriores.
-  const completos = (mapa) => meses.filter((mes) => mapa.has(mes) && !mapa.get(mes).parcial).map((mes) => mapa.get(mes).v);
-  // Frase corta: ultimo mes completo contra el promedio de los 2-3 anteriores.
-  function tendencia(valores, masEsMejor) {
-    if (valores.length < 2) return '';
-    const ultimo = valores[valores.length - 1];
-    const previos = valores.slice(Math.max(0, valores.length - 4), valores.length - 1);
-    const promedio = previos.reduce((a, b) => a + b, 0) / previos.length;
-    const diff = ultimo - promedio;
-    let icono = '', texto = 'Estable', color = 'var(--warn)';
-    if (Math.abs(diff) >= 0.5) {
-      const mejoro = masEsMejor ? diff > 0 : diff < 0;
-      icono = mejoro ? '' : '';
-      texto = mejoro ? 'Mejorando' : 'Empeorando';
-      color = mejoro ? 'var(--ok)' : 'var(--bad)';
-    }
-    return '<span style="color:' + color + ';">' + icono + ' ' + texto + '</span> · ' + promedio.toFixed(1) + '% → ' + ultimo.toFixed(1) + '%';
+  const completos = (mapa) => meses.filter((mes) => mapa.has(mes) && !mapa.get(mes).parcial).map((mes) => ({ mes, v: mapa.get(mes).v }));
+  // Antes -> ahora: promedio de los 2-3 meses anteriores contra el ultimo mes
+  // completo, con el numero nuevo en verde si mejoro, rojo si empeoro y
+  // ambar si se movio menos de medio punto. Sin palabras: se entiende al mirar.
+  function tendencia(puntos, masEsMejor) {
+    if (puntos.length < 2) return '';
+    const ultimo = puntos[puntos.length - 1];
+    const previos = puntos.slice(Math.max(0, puntos.length - 4), puntos.length - 1);
+    const promedio = previos.reduce((a, b) => a + b.v, 0) / previos.length;
+    const diff = ultimo.v - promedio;
+    let color = 'var(--warn)';
+    if (Math.abs(diff) >= 0.5) color = (masEsMejor ? diff > 0 : diff < 0) ? 'var(--ok)' : 'var(--bad)';
+    const rango = corto(previos[0].mes) + (previos.length > 1 ? '–' + corto(previos[previos.length - 1].mes) : '');
+    const celda = (valor, etiqueta, estilo) => '<span class="tend-celda"><span class="tend-num" style="' + estilo + '">' + num(valor, 1) + '%</span><span class="tend-lbl">' + etiqueta + '</span></span>';
+    return '<span class="tend-par">' + celda(promedio, rango, 'color:var(--text-dim);font-weight:500;')
+      + '<span class="tend-flecha" style="color:' + color + ';">➜</span>'
+      + celda(ultimo.v, corto(ultimo.mes), 'color:' + color + ';') + '</span>';
   }
   tendRgu.innerHTML = tendencia(completos(rgu), true);
   tendCal.innerHTML = tendencia(completos(cal), false);
@@ -1030,9 +1036,13 @@ function renderCombinado() {
     for (const q of puntos) {
       const y = yAt(q.p.v);
       const arriba = esRgu ? rguArriba(q.mes) : !rguArriba(q.mes);
+      // En el primer y el ultimo mes el porcentaje se corre hacia adentro para
+      // no pisar los numeros de los ejes.
+      const borde = q.x === 0 ? 'start' : q.x === meses.length - 1 ? 'end' : 'middle';
+      const tx = xAt(q.x) + (borde === 'start' ? -6 : borde === 'end' ? 6 : 0);
       out += '<g style="cursor:help;"><title>' + escXml(descripcion(q.mes, q.p, esRgu)) + '</title>'
         + '<circle cx="' + xAt(q.x).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4.5" fill="' + (q.p.parcial ? '#fff' : color) + '" stroke="' + color + '" stroke-width="2"/>'
-        + '<text x="' + xAt(q.x).toFixed(1) + '" y="' + (arriba ? y - 10 : y + 18).toFixed(1) + '" font-size="' + letra + '" font-weight="700" fill="' + color + '" text-anchor="middle">' + q.p.v.toFixed(1) + '%</text></g>';
+        + '<text x="' + tx.toFixed(1) + '" y="' + (arriba ? y - 10 : y + 18).toFixed(1) + '" font-size="' + letra + '" font-weight="700" fill="' + color + '" text-anchor="' + borde + '">' + q.p.v.toFixed(1) + '%</text></g>';
     }
     return out;
   }
