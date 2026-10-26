@@ -165,7 +165,9 @@
   .valor-pill.bad{ background:var(--bad-bg); color:var(--bad); }
   .valor-pill.na{ background:var(--panel-2); color:var(--text-dim); }
   .tag-baja{ display:inline-block; margin-left:6px; padding:1px 6px; font-size:10px; font-weight:700; letter-spacing:.06em; color:#fff; background:#6b7a8c; vertical-align:1px; }
-  .gen-pill{ white-space:nowrap; }
+  .gen-pill{ white-space:nowrap; border:none; cursor:pointer; font-family:inherit; }
+  .ranking-simple{ margin:-2px 0 8px; font-size:12px; color:var(--text-dim); }
+  .ranking-item .val.est-ok{ color:var(--ok); } .ranking-item .val.est-warn{ color:var(--warn); } .ranking-item .val.est-bad{ color:var(--bad); }
   .gen-punto{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:0; background:#c9d0d8; }
   .gen-punto.ok{ background:var(--ok); } .gen-punto.warn{ background:#e0a100; } .gen-punto.bad{ background:var(--bad); }
   .sin-resultados{ padding:40px 20px; text-align:center; color:var(--text-dim); font-size:14px; }
@@ -254,6 +256,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
         Brecha a la meta RGU
       </a>
+      <a class="btn-reiteradas" id="btnGraficos" href="graficos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        Gráficos del equipo
+      </a>
       </div>
     </div>
   </div>
@@ -332,22 +338,27 @@
           <th class="num">
             <span class="ordenable" onclick="ordenarPor('general')">General<span class="sort-arrow" id="flecha-general"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('general')">ⓘ</span>
+            <span class="th-explica">Cuántas metas cumple</span>
           </th>
           <th class="num">
             <span class="ordenable" onclick="ordenarPor('calidad')">Calidad (repetidos)<span class="sort-arrow" id="flecha-calidad"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('calidad')">ⓘ</span>
+            <span class="th-explica">Menos es mejor</span>
           </th>
           <th class="num">
             <span class="ordenable" onclick="ordenarPor('derivaciones')">Derivaciones<span class="sort-arrow" id="flecha-derivaciones"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('derivaciones')">ⓘ</span>
+            <span class="th-explica">Menos es mejor</span>
           </th>
           <th class="num">
             <span class="ordenable" onclick="ordenarPor('rgu')">Producción RGU<span class="sort-arrow" id="flecha-rgu"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('rgu')">ⓘ</span>
+            <span class="th-explica">Más es mejor</span>
           </th>
           <th class="num">
             <span class="ordenable" onclick="ordenarPor('vecino')">Estado vecino<span class="sort-arrow" id="flecha-vecino"></span></span>
             <span class="info-ico clicable" onclick="mostrarInfo('vecino')">ⓘ</span>
+            <span class="th-explica">Más es mejor</span>
           </th>
         </tr>
       </thead>
@@ -396,6 +407,10 @@ document.getElementById('footerText').innerHTML =
 document.getElementById('causasComparacionPeriodo').textContent = DATA.periodoCalidad;
 
 const META_DERIVACIONES = 35;
+// Meta de Calidad para un grupo con varias agencias (promedio de la tabla de metas).
+const META_CALIDAD_GRUPO = 5.31;
+// Numeros con coma decimal, como se escriben en Chile.
+const coma = (v, dec) => v.toLocaleString('es-CL', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
 function estadoCalidad(pct, meta) {
   if (pct == null) return 'na';
@@ -442,13 +457,14 @@ function pillGeneral(t) {
   const con = estados.filter((e) => e !== 'na');
   if (!con.length) return '<span class="valor-pill na">Sin datos</span>';
   const cumplen = con.filter((e) => e === 'ok').length;
-  const malos = con.filter((e) => e === 'bad').length;
-  const clase = cumplen === con.length ? 'ok' : malos * 2 >= con.length ? 'bad' : 'warn';
+  // Mismo puntaje que ordena la columna: a igual puntaje, igual color.
+  const puntaje = puntajeGeneral(t);
+  const clase = cumplen === con.length ? 'ok' : puntaje <= 1 ? 'bad' : 'warn';
   const nombres = ['Calidad', 'Derivaciones', 'Producción RGU', 'Estado vecino'];
   const textos = { ok: 'cumple', warn: 'atención', bad: 'crítico', na: 'sin datos' };
   const titulo = nombres.map((n, i) => n + ': ' + textos[estados[i]]).join('\n');
   const puntos = estados.map((e) => '<i class="gen-punto ' + e + '"></i>').join('');
-  return '<span class="valor-pill gen-pill ' + clase + '" title="' + titulo + '">' + puntos + ' ' + cumplen + '/' + con.length + '</span>';
+  return '<button type="button" class="valor-pill gen-pill ' + clase + '" title="' + titulo + '" onclick="mostrarGeneral(' + DATA.tecnicos.indexOf(t) + ')">' + puntos + ' ' + cumplen + ' de ' + con.length + '</button>';
 }
 
 // Tecnico desvinculado (Estado Z en el Maestro): sigue apareciendo porque
@@ -459,7 +475,7 @@ function tagBaja(t) {
 
 function pill(pct, clase, sufijo) {
   if (pct == null) return '<span class="valor-pill na">Sin datos</span>';
-  return '<span class="valor-pill ' + clase + '">' + pct.toFixed(1) + (sufijo || '%') + '</span>';
+  return '<span class="valor-pill ' + clase + '">' + coma(pct, 1) + (sufijo || '%') + '</span>';
 }
 
 function llenarSelect(el, valores, etiquetaTodos) {
@@ -501,9 +517,9 @@ function barraSegmentada(d) {
 }
 
 function tarjetaIndicador(titulo, d, desvTexto, incluyeWarn) {
-  const chips = ['<span class="chip-ok"><i class="punto ok"></i>' + d.ok + '</span>'];
-  if (incluyeWarn) chips.push('<span class="chip-warn"><i class="punto warn"></i>' + d.warn + '</span>');
-  chips.push('<span class="chip-bad"><i class="punto bad"></i>' + d.bad + '</span>');
+  const chips = ['<span class="chip-ok"><i class="punto ok"></i>' + d.ok + ' cumplen</span>'];
+  if (incluyeWarn) chips.push('<span class="chip-warn"><i class="punto warn"></i>' + d.warn + ' cerca</span>');
+  chips.push('<span class="chip-bad"><i class="punto bad"></i>' + d.bad + ' no cumplen</span>');
   return '<div class="panel resumen-card">'
     + '<div class="lbl" style="margin-bottom:8px;">' + titulo + '</div>'
     + barraSegmentada(d)
@@ -536,9 +552,9 @@ function renderResumen(lista) {
 
   document.getElementById('resumenRow').innerHTML =
     '<div class="panel resumen-card"><div class="num">' + lista.length + '</div><div class="lbl">Técnicos en el equipo seleccionado</div></div>'
-    + tarjetaIndicador('Calidad (repetidos)', dCalidad, desvCalidad != null ? 'Promedio: +' + desvCalidad.toFixed(1) + ' pts sobre la meta' : null, false)
-    + tarjetaIndicador('Derivaciones', dDeriv, desvDeriv != null ? 'Promedio: +' + desvDeriv.toFixed(1) + ' pts sobre la meta' : null, true)
-    + tarjetaIndicador('Producción RGU', dRgu, desvRgu != null ? 'Promedio: -' + desvRgu.toFixed(1) + ' pts bajo la meta' : null, true);
+    + tarjetaIndicador('Calidad (repetidos)', dCalidad, desvCalidad != null ? 'Promedio: +' + coma(desvCalidad, 1) + ' pts sobre la meta' : null, false)
+    + tarjetaIndicador('Derivaciones', dDeriv, desvDeriv != null ? 'Promedio: +' + coma(desvDeriv, 1) + ' pts sobre la meta' : null, true)
+    + tarjetaIndicador('Producción RGU', dRgu, desvRgu != null ? 'Promedio: −' + coma(desvRgu, 1) + ' pts bajo la meta' : null, true);
 }
 
 // Cuenta ocurrencias de cada causa dentro de una lista de eventos de
@@ -561,19 +577,19 @@ function nombreCorto(nombreCompleto) {
   return partes[0] + ' ' + apellido;
 }
 
-function listaRanking(items, clase) {
+function listaRanking(items) {
   if (items.length === 0) return '<div class="ranking-vacio">Sin datos suficientes</div>';
   return items.map((i) =>
-    '<div class="ranking-item"><span class="nom">' + nombreCorto(i.nombre) + tagBaja(i) + '</span><span class="val">' + i.val.toFixed(1) + '%</span></div>'
+    '<div class="ranking-item"><span class="nom">' + nombreCorto(i.nombre) + tagBaja(i) + '</span><span class="val est-' + i.estado + '">' + coma(i.val, 1) + '%</span></div>'
   ).join('');
 }
 
 // Top 3 mejores / peores por indicador, dentro del filtro actual. En
 // Calidad y Derivaciones, mejor = % mas bajo; en RGU, mejor = % mas alto.
 function renderRanking(lista) {
-  function construirTarjeta(titulo, extraerPct, mejorEsBajo) {
+  function construirTarjeta(titulo, simple, extraerPct, mejorEsBajo, estado) {
     const valores = lista
-      .map((t) => (extraerPct(t) != null ? { nombre: t.nombre, baja: t.baja, val: extraerPct(t) } : null))
+      .map((t) => (extraerPct(t) != null ? { nombre: t.nombre, baja: t.baja, val: extraerPct(t), estado: estado(t) } : null))
       .filter(Boolean);
     const ordenAsc = [...valores].sort((a, b) => a.val - b.val);
     const mejores = mejorEsBajo ? ordenAsc.slice(0, 3) : ordenAsc.slice(-3).reverse();
@@ -581,17 +597,19 @@ function renderRanking(lista) {
 
     return '<div class="panel ranking-card">'
       + '<h3>' + titulo + '</h3>'
+      + '<p class="ranking-simple">' + simple + '</p>'
       + '<div class="ranking-cols">'
       + '<div class="ranking-grupo mejores"><div class="titulo">🏆 3 mejores</div>' + listaRanking(mejores) + '</div>'
-      + '<div class="ranking-grupo peores"><div class="titulo">⚠ 3 peores</div>' + listaRanking(peores) + '</div>'
+      // Si los ultimos igual cumplen la meta, no se los llama "peores".
+      + '<div class="ranking-grupo peores"><div class="titulo">' + (peores.length && peores.every((p) => p.estado === 'ok') ? '3 últimos (igual cumplen la meta)' : '⚠ 3 peores') + '</div>' + listaRanking(peores) + '</div>'
       + '</div>'
       + '</div>';
   }
 
   document.getElementById('rankingRow').innerHTML =
-    construirTarjeta('Calidad (repetidos)', (t) => (t.calidad ? t.calidad.pctRepetidos : null), true)
-    + construirTarjeta('Derivaciones', (t) => (t.derivaciones ? t.derivaciones.pctDerivaciones : null), true)
-    + construirTarjeta('Producción RGU', (t) => (t.rgu ? t.rgu.pctCumplimiento : null), false);
+    construirTarjeta('Calidad (repetidos)', 'Trabajos que vuelven a fallar antes de 30 días. Más bajo es mejor.', (t) => (t.calidad ? t.calidad.pctRepetidos : null), true, (t) => estadoCalidad(t.calidad.pctRepetidos, t.calidad.metaCalidad))
+    + construirTarjeta('Derivaciones', 'Altas y migraciones que no se pudieron hacer. Más bajo es mejor.', (t) => (t.derivaciones ? t.derivaciones.pctDerivaciones : null), true, (t) => estadoDerivaciones(t.derivaciones.pctDerivaciones))
+    + construirTarjeta('Producción RGU', 'Cuánto de su meta de RGU cumplió. Más alto es mejor.', (t) => (t.rgu ? t.rgu.pctCumplimiento : null), false, (t) => estadoRgu(t.rgu.pctCumplimiento));
 }
 
 // Orden actual de la tabla principal. Por defecto alfabetico por tecnico;
@@ -722,7 +740,7 @@ function renderPeoresTecnicosCausas(lista, supervisorFiltro) {
       : 'Sin causa registrada';
     return '<div class="peor-tecnico-item">'
       + '<div class="peor-tecnico-cabecera"><span class="peor-tecnico-nombre">' + t.nombre + tagBaja(t) + '</span>'
-      + '<span class="peor-tecnico-pct">' + t.calidad.pctRepetidos.toFixed(1) + '% (' + t.calidad.repetidos30Dias + '/' + t.calidad.totalOrdenes + ')</span></div>'
+      + '<span class="peor-tecnico-pct">' + coma(t.calidad.pctRepetidos, 1) + '% (' + t.calidad.repetidos30Dias + '/' + t.calidad.totalOrdenes + ')</span></div>'
       + '<div class="peor-tecnico-meta">' + (t.agencia || '—') + (t.supervisor ? ' · ' + t.supervisor : '') + '</div>'
       + '<div class="peor-tecnico-causas">' + listaCausas + '</div>'
       + '</div>';
@@ -830,7 +848,7 @@ function renderAnalisisCausas(lista, supervisorFiltro) {
     return '<div class="pareto-fila">'
       + '<div class="pareto-etiqueta" title="' + b.causa + '">' + b.causa + '</div>'
       + '<div class="pareto-barra-wrap"><div class="pareto-barra" style="width:' + anchoBarra.toFixed(1) + '%"></div></div>'
-      + '<div class="pareto-valor">' + b.cnt + ' <span class="pareto-pct">(' + pct.toFixed(1) + '%'
+      + '<div class="pareto-valor">' + b.cnt + ' <span class="pareto-pct">(' + coma(pct, 1) + '%'
       + (b.causa !== 'Otras causas' ? ', acum. ' + pctAcum.toFixed(0) + '%' : '') + ')</span></div>'
       + '</div>';
   }).join('');
@@ -887,7 +905,7 @@ function renderAnalisisCausas(lista, supervisorFiltro) {
   document.getElementById('sugerenciasBody').innerHTML = top3.map((c) => {
     const accion = SUGERENCIAS_CAUSA[c.causa] || SUGERENCIA_GENERICA;
     return '<div class="sugerencia-item">'
-      + '<div class="sugerencia-causa">' + c.causa + ' <span class="sugerencia-n">(' + c.cnt + ' casos, ' + ((c.cnt / total) * 100).toFixed(1) + '%)</span></div>'
+      + '<div class="sugerencia-causa">' + c.causa + ' <span class="sugerencia-n">(' + c.cnt + ' casos, ' + coma((c.cnt / total) * 100, 1) + '%)</span></div>'
       + '<div class="sugerencia-accion">' + accion + '</div>'
       + '</div>';
   }).join('');
@@ -999,7 +1017,7 @@ function renderCombinado() {
   // Antes -> ahora: promedio de los 2-3 meses anteriores contra el ultimo mes
   // completo, con el numero nuevo en verde si mejoro, rojo si empeoro y
   // ambar si se movio menos de medio punto. Sin palabras: se entiende al mirar.
-  function tendencia(puntos, masEsMejor) {
+  function tendencia(puntos, masEsMejor, meta) {
     if (puntos.length < 2) return '';
     const ultimo = puntos[puntos.length - 1];
     const previos = puntos.slice(Math.max(0, puntos.length - 4), puntos.length - 1);
@@ -1007,14 +1025,18 @@ function renderCombinado() {
     const diff = ultimo.v - promedio;
     let color = 'var(--warn)';
     if (Math.abs(diff) >= 0.5) color = (masEsMejor ? diff > 0 : diff < 0) ? 'var(--ok)' : 'var(--bad)';
+    // Aunque mejore, si el ultimo mes sigue fuera de la meta va en rojo.
+    if (meta != null && (masEsMejor ? ultimo.v < meta : ultimo.v > meta)) color = 'var(--bad)';
     const rango = corto(previos[0].mes) + (previos.length > 1 ? '–' + corto(previos[previos.length - 1].mes) : '');
     const celda = (valor, etiqueta, estilo) => '<span class="tend-celda"><span class="tend-num" style="' + estilo + '">' + num(valor, 1) + '%</span><span class="tend-lbl">' + etiqueta + '</span></span>';
     return '<span class="tend-par">' + celda(promedio, rango, 'color:var(--text-dim);font-weight:500;')
       + '<span class="tend-flecha" style="color:' + color + ';">➜</span>'
       + celda(ultimo.v, corto(ultimo.mes), 'color:' + color + ';') + '</span>';
   }
-  tendRgu.innerHTML = tendencia(completos(rgu), true);
-  tendCal.innerHTML = tendencia(completos(cal), false);
+  // Meta de Calidad del grupo: la de su agencia si es una sola; con varias, el promedio de la tabla.
+  const metasCal = [...new Set(DATA.tecnicos.filter((t) => (!supervisor || t.supervisor === supervisor) && t.calidad).map((t) => t.calidad.metaCalidad))];
+  tendRgu.innerHTML = tendencia(completos(rgu), true, 100);
+  tendCal.innerHTML = tendencia(completos(cal), false, metasCal.length === 1 ? metasCal[0] : META_CALIDAD_GRUPO);
 
   // Se dibuja al ancho real del panel, con alto fijo: en pantallas anchas el
   // grafico se alarga en vez de escalarse (las letras no crecen).
@@ -1095,7 +1117,7 @@ function renderCombinado() {
       const tx = xAt(q.x) + (borde === 'start' ? -6 : borde === 'end' ? 6 : 0);
       out += '<g style="cursor:help;"><title>' + escXml(descripcion(q.mes, q.p, esRgu)) + '</title>'
         + '<circle cx="' + xAt(q.x).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4.5" fill="' + (q.p.parcial ? '#fff' : color) + '" stroke="' + color + '" stroke-width="2"/>'
-        + '<text x="' + tx.toFixed(1) + '" y="' + (arriba ? y - 10 : y + 18).toFixed(1) + '" font-size="' + letra + '" font-weight="700" fill="' + color + '" text-anchor="' + borde + '">' + q.p.v.toFixed(1) + '%</text></g>';
+        + '<text x="' + tx.toFixed(1) + '" y="' + (arriba ? y - 10 : y + 18).toFixed(1) + '" font-size="' + letra + '" font-weight="700" fill="' + color + '" text-anchor="' + borde + '">' + num(q.p.v, 1) + '%</text></g>';
     }
     return out;
   }
@@ -1121,13 +1143,18 @@ function renderCombinado() {
 // cdnjs para generar un .xlsx real; si no hay internet, cae a un .csv
 // (separado por ";" y con BOM) que Excel abre igual. Mismo mecanismo que
 // reiteradas.html y vecino.html.
+// "2 de 4": metas que cumple de las que tienen datos (columna General).
+function generalTexto(t) {
+  const con = estadosTecnico(t).filter((e) => e !== 'na');
+  return con.length ? con.filter((e) => e === 'ok').length + ' de ' + con.length : '';
+}
 function filasExcelTecnicos() {
   const supervisor = document.getElementById('filtroSupervisor').value;
   const lista = DATA.tecnicos.filter((t) => !supervisor || t.supervisor === supervisor).sort(compararOrdenTabla);
   const r1 = (v) => (v == null ? '' : Math.round(v * 10) / 10);
   const r2 = (v) => (v == null ? '' : Math.round(v * 100) / 100);
   const filas = [[
-    'Técnico', 'Agencia', 'Supervisor',
+    'Técnico', 'Agencia', 'Supervisor', 'General (cumple)',
     '% Calidad (repetidos)', 'Órdenes cerradas', 'Repetidos 30 días', 'Meta calidad %',
     '% Derivaciones', 'Órdenes Alta/Migración', 'Derivaciones',
     '% Producción RGU', 'RGU completada', 'Días trabajados', 'Meta diaria', 'Meta del período',
@@ -1136,7 +1163,7 @@ function filasExcelTecnicos() {
   for (const t of lista) {
     const c = t.calidad || {}, d = t.derivaciones || {}, g = t.rgu || {}, v = t.vecino || {};
     filas.push([
-      t.nombre + (t.baja ? ' (BAJA)' : ''), t.agencia || '', t.supervisor || '',
+      t.nombre + (t.baja ? ' (BAJA)' : ''), t.agencia || '', t.supervisor || '', generalTexto(t),
       r1(c.pctRepetidos), c.totalOrdenes ?? '', c.repetidos30Dias ?? '', c.metaCalidad ?? '',
       r1(d.pctDerivaciones), d.qOrdenes ?? '', d.qDerivaciones ?? '',
       r1(g.pctCumplimiento), r2(g.rguCompletadaGsa), g.diasTrabajados ?? '', g.metaDiaria ?? '', r2(g.metaPeriodo),
@@ -1231,7 +1258,7 @@ const INFO_METRICAS = {
     titulo: 'Evaluación general',
     queMide: 'Una mirada rápida a los 4 indicadores juntos. Cada punto es un indicador, en este orden: Calidad, Derivaciones, Producción RGU y Estado vecino; el número dice cuántos cumplen de los que tienen datos.',
     comoSeCalcula: 'Cada indicador vale 2 si cumple (verde), 1 si está en atención (amarillo) y 0 si está crítico (rojo); se promedia entre los que tienen datos. Al ordenar por esta columna, primero aparecen los técnicos con peor evaluación (o los mejores, al hacer clic de nuevo).',
-    meta: 'Verde: cumple todos. Rojo: la mitad o más están críticos. Amarillo: el resto.',
+    meta: 'Verde: cumple todos. Rojo: el puntaje es 1 o menos (más críticos que cumplidos). Amarillo: el resto. A igual puntaje, igual color. Toca la etiqueta de un técnico para ver el detalle de cada indicador.',
   },
 };
 
@@ -1245,6 +1272,19 @@ function mostrarInfo(clave) {
     + '<b>Meta:</b> ' + info.meta;
   document.getElementById('modalInfo').classList.add('abierto');
 }
+// Detalle de la columna General de un tecnico, al tocar su etiqueta.
+function mostrarGeneral(i) {
+  const t = DATA.tecnicos[i];
+  const estados = estadosTecnico(t);
+  const nombres = ['Calidad (repetidos)', 'Derivaciones', 'Producción RGU', 'Estado vecino'];
+  const valores = [t.calidad && t.calidad.pctRepetidos, t.derivaciones && t.derivaciones.pctDerivaciones, t.rgu && t.rgu.pctCumplimiento, t.vecino && t.vecino.pct];
+  const textos = { ok: 'cumple', warn: 'cerca de la meta', bad: 'no cumple', na: 'sin datos' };
+  document.getElementById('modalInfoTitulo').textContent = t.nombre + (t.baja ? ' (BAJA)' : '');
+  document.getElementById('modalInfoTexto').innerHTML = nombres.map((n, k) =>
+    '<i class="gen-punto ' + estados[k] + '"></i> <b>' + n + ':</b> ' + (valores[k] != null ? coma(valores[k], 1) + '% · ' : '') + textos[estados[k]]).join('<br>');
+  document.getElementById('modalInfo').classList.add('abierto');
+}
+window.mostrarGeneral = mostrarGeneral;
 function cerrarInfo() {
   document.getElementById('modalInfo').classList.remove('abierto');
 }
@@ -1257,6 +1297,7 @@ function actualizarLinkReiteradas() {
   document.getElementById('btnReiteradas').href = 'reiteradas.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnVecino').href = 'vecino.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnBrecha').href = 'brecha.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnGraficos').href = 'graficos.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
 }
 
 document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });

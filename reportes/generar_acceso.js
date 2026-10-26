@@ -26,6 +26,7 @@ const PAGINAS = [
   ["vecino.html", "vecino", "Consulta de estado vecino"],
   ["auditorias.html", "auditorias", "Auditorías de terreno"],
   ["brecha.html", "brecha", "Brecha a la meta RGU"],
+  ["graficos.html", "graficos", "Gráficos del equipo"],
 ];
 
 const RAIZ = path.join(__dirname, "..");

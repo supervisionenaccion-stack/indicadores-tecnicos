@@ -252,7 +252,7 @@ async function fetchRguBase(pool, startStr, endStr) {
     .request()
     .input("start", sql.Date, startStr)
     .input("end", sql.Date, endStr).query(`
-    SELECT [Rut o Bucket] AS Rut_Tecnico, Estado, RGU, [Area derivacion], [Orden de Trabajo], Fecha
+    SELECT [Rut o Bucket] AS Rut_Tecnico, Estado, RGU, [Area derivacion], [Orden de Trabajo], Fecha, [Tipo de Actividad]
     FROM MATRIZ_VTR
     WHERE Fecha >= @start AND Fecha < @end
       AND (Tecnico LIKE '%cobr%' OR Tecnico LIKE '%cbr%')
@@ -673,6 +673,97 @@ function construirEvolutivoMensualRgu(baseRows, supervisores) {
   };
 }
 
+// ---------- 2b'. Datos de graficos.html (mes a mes por tecnico) ----------
+// Cuentas crudas por tecnico y mes, para que la pagina sume equipos, agencias
+// y meses sin perder precision. Los tecnicos van por nombre (nunca RUT).
+//  - cal: cada mes es el del reporte (mes siguiente al de los cierres, como el
+//    grafico del dashboard); t = ordenes, r = repetidas antes de 30 dias.
+//  - der: Alta/Migracion con orden; o = ordenes (Completado/No Realizada), x = No Realizada.
+//  - rgu: g = RGU completada, d = dias trabajados, m = meta del periodo.
+//  - vec: T = ordenes completadas, C = con consulta de estado vecino.
+// b = 1 si el tecnico esta de baja (Maestro Estado Z o lista manual).
+const META_DERIVACIONES_GRAF = 35; // igual que META_DERIVACIONES del dashboard
+const MESES_LARGOS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+function construirDatosGraficos({ porDiaCal, calUltimoParcial, rguRows, supervisores, vecino, rutsBaja, mesParcial }) {
+  const mesSiguiente = (ym) => {
+    const [a, m] = ym.split("-").map(Number);
+    return m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
+  };
+  const infoMes = (slug, parcial) => {
+    const [a, m] = slug.split("-").map(Number);
+    return { slug, label: `${MESES_LARGOS[m - 1]} ${a}`, corto: MESES_LARGOS[m - 1].slice(0, 3), parcial: !!parcial };
+  };
+  const base = (rut) => {
+    const s = supervisores.get(rut);
+    if (!s) return null;
+    const f = { n: s.TECNICO, s: s.SUPERVISOR || "Sin supervisor asignado", a: s.AGENCIA || "" };
+    if (rutsBaja.has(rut)) f.b = 1;
+    return f;
+  };
+  const armar = (porMes, parcialDe) =>
+    [...porMes.keys()].sort().map((slug) => ({ ...infoMes(slug, parcialDe(slug)), filas: [...porMes.get(slug).values()] }));
+
+  // Calidad: se rotula con el mes siguiente al de los cierres.
+  const cal = new Map();
+  for (const [fecha, dia] of porDiaCal.entries()) {
+    const slug = mesSiguiente(fecha.slice(0, 7));
+    if (!cal.has(slug)) cal.set(slug, new Map());
+    for (const [rut, g] of dia.porTecnico.entries()) {
+      const f = base(rut);
+      if (!f) continue;
+      const m = cal.get(slug);
+      if (!m.has(rut)) m.set(rut, { ...f, t: 0, r: 0 });
+      m.get(rut).t += g.total;
+      m.get(rut).r += g.rep;
+    }
+  }
+
+  // Derivaciones y RGU salen de las mismas filas de MATRIZ_VTR del anio.
+  const der = new Map(), filasRguPorMes = new Map();
+  for (const row of rguRows) {
+    const slug = toSqlDate(new Date(row.Fecha)).slice(0, 7);
+    if (!filasRguPorMes.has(slug)) filasRguPorMes.set(slug, []);
+    filasRguPorMes.get(slug).push(row);
+    const tipo = row["Tipo de Actividad"] || "";
+    if (row["Orden de Trabajo"] == null || !(tipo === "Alta" || /^Migra/i.test(tipo))) continue;
+    const rut = normalizeRut(row.Rut_Tecnico);
+    const f = base(rut);
+    if (!f) continue;
+    if (!der.has(slug)) der.set(slug, new Map());
+    const m = der.get(slug);
+    if (!m.has(rut)) m.set(rut, { ...f, o: 0, x: 0 });
+    if (row.Estado === "Completado" || row.Estado === "No Realizada") m.get(rut).o += 1;
+    if (row.Estado === "No Realizada") m.get(rut).x += 1;
+  }
+  const rgu = new Map();
+  for (const [slug, filas] of filasRguPorMes.entries()) {
+    const m = new Map();
+    for (const t of calcularRgu(filas, supervisores)) {
+      const rut = normalizeRut(t.rut);
+      const f = base(rut);
+      if (f) m.set(rut, { ...f, g: Math.round(t.rguCompletadaGsa * 100) / 100, d: t.diasTrabajados, m: t.metaPeriodo });
+    }
+    rgu.set(slug, m);
+  }
+
+  const vec = new Map();
+  for (const mes of (vecino && vecino.meses) || []) {
+    const m = new Map();
+    for (const [rut, t] of mes.tecnicos.entries()) {
+      const f = base(rut);
+      if (f && t.total) m.set(rut, { ...f, T: t.total, C: t.conConsulta });
+    }
+    vec.set(mes.mes, m);
+  }
+
+  return {
+    cal: armar(cal, (slug) => calUltimoParcial && slug === [...cal.keys()].sort().pop()),
+    der: armar(der, (slug) => slug === mesParcial),
+    rgu: armar(rgu, (slug) => slug === mesParcial),
+    vec: armar(vec, (slug) => slug === mesParcial),
+  };
+}
+
 // ---------- 2c. Tecnicos de baja: exclusion manual (SUPERVISORES_VTR no tiene columna de estado) ----------
 // La BD no distingue tecnicos activos de los que ya no trabajan -- la tabla
 // simplemente sigue listando a todos los que alguna vez tuvieron datos. Por
@@ -959,6 +1050,29 @@ async function main() {
   const rutsBajaMaestro = await loadRutsBajaMaestro();
   for (const [rut, t] of byRut) t.baja = rutsBajaMaestro.has(rut);
   console.log(`==> Tecnicos marcados BAJA en el dashboard: ${[...byRut.values()].filter((t) => t.baja).length}.`);
+
+  // Graficos del equipo: mes a mes por tecnico desde enero.
+  const datosGraficos = construirDatosGraficos({
+    porDiaCal: historicoPorDia,
+    calUltimoParcial: evolutivoMensual.ultimoMesParcial,
+    rguRows: rguHistorico,
+    supervisores,
+    vecino,
+    rutsBaja: new Set([...rutsBajaMaestro, ...rutsBaja]),
+    mesParcial: evolutivoMensualRgu.ultimoMesParcial ? evolutivoMensualRgu.meses[evolutivoMensualRgu.meses.length - 1] : null,
+  });
+  // Lo arma en pagina reportes/generar_graficos.js (queda en privado/, no se sube).
+  fs.mkdirSync(DIR_PRIVADO, { recursive: true });
+  fs.writeFileSync(
+    path.join(DIR_PRIVADO, "graficos_datos.json"),
+    JSON.stringify({
+      generadoEl: new Date().toLocaleString("es-CL"),
+      metas: { calPorAgencia: META_CALIDAD_POR_CIUDAD, calDefault: META_CALIDAD_DEFAULT, der: META_DERIVACIONES_GRAF, rgu: 100, vec: 100 },
+      meses: datosGraficos,
+    }),
+    "utf-8"
+  );
+  console.log(`==> Datos de graficos: ${Object.entries(datosGraficos).map(([k, l]) => `${k} ${l.length} meses`).join(", ")}.`);
 
   for (const t of byRut.values()) {
     t.causasAnual = causasAnualPorRut.get(normalizeRut(t.rut)) || [];

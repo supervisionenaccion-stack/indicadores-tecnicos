@@ -58,6 +58,14 @@ if errorlevel 1 (
 )
 
 echo.
+echo ==^> Generando graficos del equipo...
+node reportes\generar_graficos.js
+if errorlevel 1 (
+    echo AVISO: graficos.html no se actualizo; se publica el resto igual.
+    git checkout -- graficos.html >nul 2>&1
+)
+
+echo.
 echo ==^> Publicando en GitHub (supervisionenaccion-stack)...
 rem gh auth switch es solo por prolijidad (para que "gh" en general apunte a
 rem la cuenta correcta si se usa a mano); el push en si NO depende de esto,
@@ -67,7 +75,7 @@ rem script si el switch falla -- antes eso hacia que el .bat abortara aunque
 rem el push hubiera funcionado igual.
 gh auth switch --hostname github.com --user supervisionenaccion-stack >nul 2>&1
 
-git add index.html supervisor.html reiteradas.html vecino.html brecha.html
+git add index.html supervisor.html reiteradas.html vecino.html brecha.html graficos.html
 git commit -m "Actualizar portal %date% %time%"
 if errorlevel 1 (
     echo No hay cambios nuevos para publicar.

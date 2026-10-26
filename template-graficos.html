@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gráficos del equipo · Cobra</title>
+<meta name="theme-color" content="#003c71">
+<style>/*__CSS_BASE__*/</style>
+<style>
+  .graf-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(380px, 1fr)); gap:18px; margin-bottom:18px; }
+  @media (max-width:440px){ .graf-grid{ grid-template-columns:1fr; } }
+  .graf{ padding:18px 20px 14px; min-width:0; }
+  .graf h3{ margin:0 0 2px; font-size:14.5px; color:var(--cobra-navy); display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; }
+  .graf .bajada{ margin:0 0 8px; font-size:12px; color:var(--text-dim); line-height:1.45; }
+  .graf .lienzo{ width:100%; min-height:60px; }
+  .leyenda{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--text); margin:0 0 6px; }
+  .leyenda i{ display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px; }
+  .leyenda i.punto{ width:10px; height:10px; border-radius:50%; }
+  .selector-ind{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+  .selector-ind button{ border:1px solid var(--border); background:#fff; color:var(--cobra-navy); padding:7px 12px; font:600 12px/1.2 inherit; cursor:pointer; border-radius:2px; }
+  .selector-ind button[aria-pressed="true"]{ background:var(--cobra-navy); color:#fff; border-color:var(--cobra-navy); }
+  .sin-datos{ padding:30px 0; text-align:center; color:var(--text-dim); font-size:13px; }
+  details.tabla-datos{ margin-top:6px; font-size:12px; }
+  details.tabla-datos summary{ cursor:pointer; color:var(--cobra-blue); font-weight:600; }
+  details.tabla-datos table{ min-width:0; font-size:12px; margin-top:6px; }
+  details.tabla-datos td, details.tabla-datos th{ padding:5px 8px; }
+  /* Metas siempre a la vista */
+  .metas{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; padding:14px 16px; margin-bottom:18px; }
+  .metas .titulo-metas{ grid-column:1 / -1; font:700 11px/1 var(--font, inherit); letter-spacing:.12em; text-transform:uppercase; color:var(--cobra-navy); }
+  .meta-item{ border-left:3px solid var(--amber, #f0a500); padding:4px 10px; }
+  .meta-item .n{ font-size:12px; color:var(--text-dim); }
+  .meta-item .v{ font-size:16px; font-weight:800; color:var(--cobra-navy); }
+  .meta-item .d{ font-size:11px; color:var(--text-dim); }
+  .meta-badge{ font:700 11px/1 var(--mono, monospace); color:var(--cobra-navy); background:#fdf1d8; border:1px solid #f0d08a; padding:4px 7px; border-radius:2px; white-space:nowrap; }
+  /* Explicaciones */
+  .como-leer{ background:var(--panel-2, #f7f8fa); border-left:3px solid var(--cobra-navy); padding:10px 14px; margin:0 0 14px; font-size:13px; line-height:1.55; color:var(--text); }
+  .como-leer summary{ cursor:pointer; font-weight:700; color:var(--cobra-navy); }
+  .como-leer ul{ margin:8px 0 2px; padding-left:18px; }
+  .como-leer li{ margin-bottom:4px; }
+  .lectura{ background:#eef4fb; border-left:3px solid #1f5fbf; padding:9px 13px; margin-top:8px; font-size:13px; line-height:1.5; color:var(--text); }
+  .lectura b.ok{ color:#1f7a45; } .lectura b.bad{ color:#c0392b; }
+  .aviso-prueba{ background:#fdf1d8; border:1px solid #f0d08a; color:#7a4b00; padding:10px 14px; margin:0 0 18px; font-size:13px; }
+  a.volver-equipo{ margin-left:auto; flex:none; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; box-sizing:border-box; border:1px solid #d9dbe0; border-radius:2px; background:#fff; color:#003c71; text-decoration:none; }
+  a.volver-equipo:hover, a.volver-equipo:focus-visible{ background:#eef2f8; border-color:#003c71; }
+  a.volver-equipo svg{ width:20px; height:20px; display:block; }
+  /* Animaciones (solo la primera vez que cada grafico entra en pantalla) */
+  @media (prefers-reduced-motion:no-preference){
+    .crecer{ transform-box:fill-box; transform-origin:left center; animation:crecer 1.2s cubic-bezier(.2,.7,.2,1) both; }
+    .pop{ transform-box:fill-box; transform-origin:center; animation:pop .55s cubic-bezier(.2,.7,.3,1.4) both; }
+    .esperando :is(.comb-dibujar, .crecer, .pop){ animation-play-state:paused; }
+    .rv{ opacity:0; transform:translateY(22px); }
+    .rv.rv-ver{ opacity:1; transform:none; transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+  }
+  @keyframes crecer{ from{ transform:scaleX(0); } to{ transform:none; } }
+  @keyframes pop{ from{ transform:scale(0); opacity:0; } to{ transform:none; opacity:1; } }
+  @media print{ .rv{ opacity:1 !important; transform:none !important; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>/*__ESTILO_ACADEMIA__*/</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="logo-cobra.png" alt="Cobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <a class="volver-equipo" href="supervisor.html" title="Volver a Mi Equipo" aria-label="Volver a Mi Equipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg></a>
+  </div>
+</header>
+<section class="hero" aria-label="Portada">
+  <div class="photo" role="img" aria-label="T&eacute;cnico trabajando en un poste"></div>
+  <div class="shade" aria-hidden="true"></div>
+  <div class="wrap"><div>
+    <p class="eyebrow">Cobra &middot; Calidad &amp; Producci&oacute;n</p>
+    <h1>Gr&aacute;ficos del <b>equipo</b></h1>
+    <p class="subtitle">Calidad contra producci&oacute;n, la evoluci&oacute;n mes a mes de cada indicador, las agencias comparadas y cada t&eacute;cnico contra su meta.</p>
+  </div></div>
+</section>
+
+<main>
+  <!--__AVISO_PRUEBA__-->
+  <div class="panel controles">
+    <div class="filtros-lado" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 18px;">
+    <div class="campo">
+      <label for="filtroSupervisor">Supervisor / Equipo</label>
+      <select id="filtroSupervisor"></select>
+    </div>
+    <div class="campo">
+      <label for="filtroMes">Mes</label>
+      <select id="filtroMes"></select>
+    </div>
+    <div class="campo">
+      <label for="filtroBajas">T&eacute;cnicos</label>
+      <select id="filtroBajas"><option value="">Solo los activos</option><option value="1">Incluir desvinculados (BAJA)</option></select>
+    </div>
+    </div>
+    <p class="explica-seccion" id="notaBajas" style="margin:10px 0 0;"></p>
+  </div>
+
+  <div class="panel metas" id="panelMetas"></div>
+
+  <!-- 1. Calidad contra produccion -->
+  <h2 class="titulo-seccion">Calidad contra <b>producci&oacute;n</b> &mdash; <b class="tituloMes"></b></h2>
+  <details class="como-leer" open>
+    <summary>C&oacute;mo leer este gr&aacute;fico</summary>
+    <ul>
+      <li><b>Cada punto es un t&eacute;cnico.</b> Hacia la <b>derecha</b> cumple m&aacute;s su meta de producci&oacute;n RGU; hacia <b>abajo</b> repite menos (sus trabajos no vuelven a fallar).</li>
+      <li>Las dos <b>l&iacute;neas punteadas son las metas</b> (100% de la meta RGU y Calidad <span class="txtMetaCal"></span>) y dividen el gr&aacute;fico en 4 zonas.</li>
+      <li><b>Abajo a la derecha (zona verde) es lo ideal:</b> produce sobre la meta y con calidad.</li>
+      <li><b>Arriba a la derecha:</b> produce mucho, pero sus trabajos vuelven a fallar. Conversar sobre calidad: no apurarse, revisar bien antes de cerrar.</li>
+      <li><b>Abajo a la izquierda:</b> trabaja bien, pero produce poco. Revisar ruta, tiempos o apoyo.</li>
+      <li><b>Arriba a la izquierda:</b> bajo en los dos. Es la prioridad de acompa&ntilde;amiento.</li>
+      <li>Cada t&eacute;cnico se compara con la meta de Calidad de <b>su agencia</b> (Arica 4,76%, Santiago 5,62%, V Regi&oacute;n 5,56%).</li>
+    </ul>
+  </details>
+  <div class="panel graf" style="margin-bottom:18px;">
+    <div class="leyenda" id="leyendaDispersion"></div>
+    <div class="lienzo" id="grafDispersion"></div>
+    <div class="lectura" id="lecturaDispersion"></div>
+    <p class="bajada" id="pieDispersion" style="margin-top:6px;"></p>
+  </div>
+
+  <!-- 2. Mes a mes -->
+  <h2 class="titulo-seccion">Mes a mes &mdash; <b class="tituloEquipo"></b></h2>
+  <details class="como-leer" open>
+    <summary>C&oacute;mo leer estos gr&aacute;ficos</summary>
+    <ul>
+      <li><b>Cada punto es un mes</b> y la l&iacute;nea muestra si el indicador va mejorando o empeorando.</li>
+      <li>La <b>l&iacute;nea punteada gris es la meta</b>. En <b>Calidad y Derivaciones</b> hay que estar <b>por debajo</b>; en <b>Producci&oacute;n RGU y Estado vecino</b>, <b>por encima</b>.</li>
+      <li>El <b>&uacute;ltimo mes (punto hueco y *)</b> todav&iacute;a no cierra: su valor puede cambiar.</li>
+      <li>La <b>franja celeste</b> marca el mes elegido arriba. Si eliges <b>"Todo 2026"</b> (mirada anual), los gr&aacute;ficos por t&eacute;cnico juntan todo el a&ntilde;o.</li>
+      <li>En Calidad, cada mes mide las &oacute;rdenes del mes anterior (Oct = &oacute;rdenes de septiembre), porque hay que esperar 30 d&iacute;as para saber si se repiten.</li>
+    </ul>
+  </details>
+  <div class="graf-grid" id="gridMeses"></div>
+
+  <!-- 3. Agencias -->
+  <h2 class="titulo-seccion">Las <b>agencias</b> comparadas &mdash; <b class="tituloEquipo"></b></h2>
+  <details class="como-leer" open>
+    <summary>C&oacute;mo leer estos gr&aacute;ficos</summary>
+    <ul>
+      <li>Las <b>tres agencias en el mismo gr&aacute;fico</b>, mes a mes: <b style="color:#1f5fbf">azul Santiago</b>, <b style="color:#d9480f">naranja V Regi&oacute;n</b> y <b style="color:#0f8a7e">verde azulado Arica</b>.</li>
+      <li>La l&iacute;nea punteada gris es la meta. En Calidad cada agencia tiene la suya; ah&iacute; la l&iacute;nea es el promedio y la lectura de abajo compara a cada agencia con su propia meta.</li>
+      <li>Ojo: una agencia con <b>pocos t&eacute;cnicos</b> mueve mucho su porcentaje con un solo caso. Mirar la tendencia de varios meses antes de sacar conclusiones.</li>
+    </ul>
+  </details>
+  <div class="graf-grid" id="gridAgencias"></div>
+
+  <!-- 4. Por tecnico -->
+  <h2 class="titulo-seccion">Cada t&eacute;cnico contra la <b>meta</b> &mdash; <b class="tituloMes"></b></h2>
+  <details class="como-leer" open>
+    <summary>C&oacute;mo leer este gr&aacute;fico</summary>
+    <ul>
+      <li><b>Resumen general</b> (primera columna): cu&aacute;ntas metas <b>no cumple</b> cada t&eacute;cnico de las que tiene datos (por ejemplo &laquo;2 de 4&raquo;). Verde = cumple todas, &aacute;mbar = falla una, rojo = falla dos o m&aacute;s. Ordenado del peor al mejor: si dos fallan las mismas, primero el que est&aacute; m&aacute;s lejos de sus metas. <b>Es la mirada para saber qui&eacute;n es el peor t&eacute;cnico en general.</b></li>
+      <li><b>Cada fila es un t&eacute;cnico</b> y cada columna un indicador, con su propia meta (l&iacute;nea vertical azul). Con <b>Orden</b> eliges del mejor al peor, del peor al mejor o por nombre.</li>
+      <li>El <b>indicador elegido</b> (bot&oacute;n azul) se ve con color intenso y <b>ordena la lista</b>; los otros quedan m&aacute;s claros. Toca otro bot&oacute;n o su columna para destacarlo.</li>
+      <li><b style="color:#1f7a45">Verde &#10003; cumple</b> la meta, <b style="color:#c0392b">rojo &#10007; no cumple</b>. Un gui&oacute;n (&mdash;) es que no hay dato ese mes.</li>
+      <li>&Uacute;salo para decidir <b>con qui&eacute;n conversar primero</b>.</li>
+    </ul>
+  </details>
+  <div class="panel graf" style="margin-bottom:18px;">
+    <div class="filtros-barras" style="display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin:0 0 12px;">
+      <div class="campo" style="min-width:200px;"><label for="barAgencia">Agencia</label><select id="barAgencia"></select></div>
+      <div class="campo" style="min-width:240px;"><label for="barSupervisor">Supervisor</label><select id="barSupervisor"></select></div>
+      <div class="campo" style="min-width:220px;"><label for="barTecnico">T&eacute;cnico</label><select id="barTecnico"><option value="">Todos los t&eacute;cnicos</option></select></div>
+      <div class="campo" style="min-width:200px;"><label for="barOrden">Orden</label><select id="barOrden"><option value="peor" selected>Del peor al mejor</option><option value="mejor">Del mejor al peor</option><option value="nombre">Por nombre (A-Z)</option></select></div>
+    </div>
+    <div class="selector-ind" id="selectorInd" role="group" aria-label="Indicador"></div>
+    <div class="lienzo" id="grafBarras"></div>
+    <div class="lectura" id="lecturaBarras"></div>
+  </div>
+</main>
+
+<footer class="foot"><div class="wrap">
+  <span id="footerText"></span>
+  <span class="by">Dise&ntilde;o y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span>
+</div></footer>
+
+<script>
+const DATA = /*__DATA__*/null;
+const M = DATA.metas;
+document.getElementById('footerText').textContent = 'Generado ' + DATA.generadoEl;
+
+// Colores: un indicador = una linea azul marino. Agencias: tres tonos distinguibles
+// con daltonismo. Estado: verde / rojo, siempre con su numero y simbolo.
+const AZUL = '#003c71', TINTA = '#334155', TENUE = '#62646e', GRILLA = '#e0e5ea', RESALTE = '#e6f0fb';
+const AGENCIA = { 'SANTIAGO': '#1f5fbf', 'V REGION': '#d9480f', 'ARICA': '#0f8a7e' };
+const NOMBRE_AGENCIA = { 'SANTIAGO': 'Santiago', 'V REGION': 'V Región', 'ARICA': 'Arica' };
+const nomAg = (a) => NOMBRE_AGENCIA[a] || a || 'Sin agencia';
+const ESTADO = { ok: '#1f7a45', bad: '#c0392b' };
+const num = (v, d) => v.toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function nombreCorto(n) { const p = String(n || '').trim().split(/\s+/); return p.length <= 2 ? n : p[0] + ' ' + (p.length >= 4 ? p[2] : p[1]); }
+const tc = (s) => String(s || '').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+const corto = (n) => tc(nombreCorto(n));
+
+// Meta de Calidad: cada agencia tiene la suya. Para un grupo con varias agencias se
+// usa el promedio de la tabla de metas (5,31%).
+const metaCalAg = (a) => (M.calPorAgencia[a] != null ? M.calPorAgencia[a] : M.calDefault);
+const IND = {
+  cal: { titulo: 'Calidad (repetidos)', corto: 'Calidad', fuente: 'cal', meta: M.calDefault, unidad: '%', dec: 1, mejor: 'bajo', regla: '≤ meta de su agencia', que: 'órdenes que se repiten antes de 30 días' },
+  der: { titulo: 'Derivaciones', corto: 'Derivaciones', fuente: 'der', meta: M.der, unidad: '%', dec: 1, mejor: 'bajo', regla: '≤ ' + num(M.der, 0) + '%', que: 'altas y migraciones que quedan No Realizadas' },
+  rgu: { titulo: 'Producción RGU', corto: 'RGU', fuente: 'rgu', meta: M.rgu, unidad: '%', dec: 1, mejor: 'alto', regla: '≥ ' + num(M.rgu, 0) + '%', que: 'cumplimiento de la meta de RGU por día trabajado' },
+  vec: { titulo: 'Estado vecino', corto: 'Vecino', fuente: 'vec', meta: M.vec, unidad: '%', dec: 1, mejor: 'alto', regla: '≥ ' + num(M.vec, 0) + '%', que: 'órdenes completadas con consulta de estado vecino' },
+};
+// Meta de un indicador para un conjunto de agencias (o una sola).
+function metaDe(k, agencias) {
+  if (k !== 'cal') return IND[k].meta;
+  const as = [...new Set([].concat(agencias || []).filter(Boolean))];
+  return as.length === 1 ? metaCalAg(as[0]) : M.calDefault;
+}
+const numMeta = (v) => num(v, Math.round(v * 100) % 100 === 0 ? 0 : Math.round(v * 100) % 10 === 0 ? 1 : 2);
+const reglaDe = (k, agencias) => (IND[k].mejor === 'bajo' ? '≤ ' : '≥ ') + numMeta(metaDe(k, agencias)) + IND[k].unidad;
+const cumple = (k, v, agencias) => (IND[k].mejor === 'bajo' ? v <= metaDe(k, agencias) : v >= metaDe(k, agencias));
+const fmt = (k, v) => num(v, IND[k].dec) + IND[k].unidad;
+
+// Metas siempre a la vista
+document.getElementById('panelMetas').innerHTML = '<div class="titulo-metas">Las metas</div>' + Object.keys(IND).map((k) =>
+  '<div class="meta-item"><div class="n">' + IND[k].titulo + '</div><div class="v">' + (k === 'cal' ? '≤ ' + Object.keys(M.calPorAgencia).map((a) => numMeta(M.calPorAgencia[a]) + '%').join(' / ') : IND[k].regla) + '</div><div class="d">' + (k === 'cal' ? Object.keys(M.calPorAgencia).map(nomAg).join(' / ') + ' · ' : '') + IND[k].que + ' · ' + (IND[k].mejor === 'bajo' ? 'más bajo es mejor' : 'más alto es mejor') + '</div></div>').join('');
+document.querySelectorAll('.txtMetaCal').forEach((e) => { e.textContent = 'de su agencia'; });
+
+// --------------------------------------------------------------- Filtros
+const filtro = document.getElementById('filtroSupervisor');
+const sups = [...new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.map((f) => f.s))))].filter((s) => s !== 'Sin supervisor asignado').sort();
+filtro.innerHTML = '<option value="">Todos los supervisores</option>' + sups.map((s) => '<option>' + esc(s) + '</option>').join('');
+const delEquipo = (f) => !filtro.value || f.s === filtro.value;
+// Tecnicos desvinculados (BAJA): por defecto no aparecen en las vistas por tecnico.
+// Los totales del equipo y por agencia los siguen contando, para calzar con los informes.
+const filtroBajas = document.getElementById('filtroBajas');
+const visible = (f) => filtroBajas.value === '1' || !f.b;
+// Agencias del filtro de supervisor (para elegir la meta de Calidad del grupo).
+const agenciasDelEquipo = () => [...new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter(delEquipo).map((f) => f.a))))];
+
+const filtroMes = document.getElementById('filtroMes');
+const todosMeses = {};
+Object.values(DATA.meses).forEach((l) => l.forEach((m) => { if (!todosMeses[m.slug] || m.parcial) todosMeses[m.slug] = { slug: m.slug, label: m.label, corto: m.corto, parcial: m.parcial || (todosMeses[m.slug] || {}).parcial }; }));
+const listaMeses = Object.values(todosMeses).sort((a, b) => b.slug.localeCompare(a.slug));
+// Mirada anual: "Todo AAAA" junta todos los meses de ese anio.
+const anios = [...new Set(listaMeses.map((m) => m.slug.slice(0, 4)))].sort().reverse();
+anios.forEach((a) => { const ms = listaMeses.filter((m) => m.slug.startsWith(a)); todosMeses['anual-' + a] = { slug: 'anual-' + a, label: 'Todo ' + a, corto: a, anual: true, parcial: false, desde: ms[ms.length - 1].corto.toLowerCase(), hasta: ms[0].corto.toLowerCase() }; });
+filtroMes.innerHTML = listaMeses.map((m) => '<option value="' + m.slug + '">' + m.label + (m.parcial ? ' (en curso)' : '') + '</option>').join('')
+  + anios.map((a) => { const t = todosMeses['anual-' + a]; return '<option value="' + t.slug + '">Todo ' + a + ' (' + t.desde + '–' + t.hasta + ', mirada anual)</option>'; }).join('');
+const mesElegido = () => todosMeses[filtroMes.value];
+
+// ---------------------------------------------------------------- Calculos
+const CALC = {
+  cal: (fs) => { const t = fs.reduce((s, f) => s + f.t, 0), r = fs.reduce((s, f) => s + f.r, 0); return t ? { v: r / t * 100, det: r + ' de ' + t + ' órdenes se repitieron', t } : null; },
+  der: (fs) => { const o = fs.reduce((s, f) => s + f.o, 0), x = fs.reduce((s, f) => s + f.x, 0); return o ? { v: x / o * 100, det: x + ' de ' + o + ' altas y migraciones quedaron No Realizadas' } : null; },
+  // RGU: % de cumplimiento de cada tecnico (RGU / meta de sus dias) y, para un grupo,
+  // el promedio simple de sus tecnicos, igual que el Excel de produccion.
+  rgu: (fs) => {
+    const t = {};
+    fs.filter((f) => f.m > 0).forEach((f) => { const x = t[f.n] = t[f.n] || { g: 0, d: 0, m: 0 }; x.g += f.g; x.d += f.d; x.m += f.m; });
+    const lista = Object.values(t), v = lista.map((x) => x.g / x.m * 100);
+    return v.length ? { v: v.reduce((a, b) => a + b, 0) / v.length, det: v.length === 1 ? num(lista[0].g, 1) + ' RGU en ' + lista[0].d + ' días trabajados (meta ' + num(lista[0].m, 1) + ')' : 'promedio de ' + v.length + ' técnicos' } : null;
+  },
+  vec: (fs) => { const T = fs.reduce((s, f) => s + f.T, 0), C = fs.reduce((s, f) => s + f.C, 0); return T ? { v: C / T * 100, det: C + ' de ' + T + ' órdenes con consulta' } : null; },
+};
+function serie(k, extra) {
+  return DATA.meses[IND[k].fuente].map((m) => {
+    const r = CALC[k](m.filas.filter((f) => delEquipo(f) && (!extra || extra(f))));
+    return { mes: m, v: r ? r.v : null, det: r ? r.det : '' };
+  });
+}
+// Indicadores de cada tecnico en un mes (para la dispersion y las barras).
+function tecnicosDelMes(slug) {
+  const t = new Map();
+  const de = (f) => { if (!t.has(f.n)) t.set(f.n, { nombre: f.n, s: f.s, a: f.a, b: f.b, fuentes: {} }); return t.get(f.n); };
+  for (const [fuente, lista] of Object.entries(DATA.meses)) {
+    const ms = slug.startsWith('anual-') ? lista.filter((x) => x.slug.startsWith(slug.slice(6))) : lista.filter((x) => x.slug === slug);
+    ms.forEach((m) => m.filas.filter((f) => delEquipo(f) && visible(f)).forEach((f) => { const x = de(f); (x.fuentes[fuente] = x.fuentes[fuente] || []).push(f); }));
+  }
+  return [...t.values()].map((x) => {
+    const o = { nombre: x.nombre, supervisor: x.s, agencia: x.a, baja: !!x.b };
+    for (const k of Object.keys(IND)) {
+      const fs = x.fuentes[IND[k].fuente];
+      const r = fs ? CALC[k](fs) : null;
+      if (r) o[k] = r;
+    }
+    return o;
+  });
+}
+
+// ------------------------------------------------------- Grafico de lineas
+function lineas(el, cfg) {
+  const meses = cfg.meses, series = cfg.series.filter((s) => s.puntos.some((p) => p.v != null));
+  if (meses.length < 2 || !series.length) { el.innerHTML = '<div class="sin-datos">Faltan meses con datos.</div>'; return; }
+  const W = Math.max(300, Math.round(el.clientWidth) || 420), H = 230, pL = 40, pR = 18, pT = 30, pB = 28, mg = 22;
+  const meta = cfg.meta;
+  const vals = series.flatMap((s) => s.puntos.map((p) => p.v)).filter((v) => v != null).concat([meta]);
+  let lo = 0, hi = Math.max(...vals) * 1.15;
+  if (cfg.desde === 'auto') { lo = Math.max(0, Math.floor((Math.min(...vals) - 8) / 10) * 10); hi = Math.min(110, Math.max(...vals) + 6); }
+  const paso = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50].find((p) => (hi - lo) / p <= 5) || 50;
+  hi = Math.ceil(hi / paso) * paso; lo = Math.floor(lo / paso) * paso;
+  const x = (i) => pL + mg + i * (W - pL - pR - 2 * mg) / (meses.length - 1);
+  const y = (v) => pT + (1 - (v - lo) / (hi - lo)) * (H - pT - pB);
+  let svg = '';
+  // Franja del mes elegido en el filtro.
+  const ie = meses.findIndex((m) => m.slug === filtroMes.value);
+  if (ie >= 0) { const ancho = Math.min(46, (W - pL - pR) / meses.length); svg += '<rect x="' + (x(ie) - ancho / 2).toFixed(1) + '" y="' + pT + '" width="' + ancho.toFixed(1) + '" height="' + (H - pT - pB) + '" fill="' + RESALTE + '"/>'; }
+  for (let v = lo; v <= hi + 1e-9; v += paso) {
+    svg += '<line x1="' + pL + '" x2="' + (W - pR) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="' + GRILLA + '"/>'
+      + '<text x="' + (pL - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" font-size="10" fill="' + TENUE + '" text-anchor="end">' + num(v, paso % 1 ? 1 : 0) + cfg.unidad + '</text>';
+  }
+  svg += '<line x1="' + pL + '" x2="' + (W - pR) + '" y1="' + y(meta).toFixed(1) + '" y2="' + y(meta).toFixed(1) + '" stroke="' + TENUE + '" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  // Leyenda de la meta arriba del grafico (en la linea chocaba con los valores).
+  svg += '<line x1="' + pL + '" x2="' + (pL + 18) + '" y1="9" y2="9" stroke="' + TENUE + '" stroke-width="1.5" stroke-dasharray="5 4"/>'
+    + '<text x="' + (pL + 24) + '" y="12" font-size="10.5" font-weight="700" fill="' + TINTA + '">' + (cfg.textoMeta || 'Meta ' + numMeta(meta) + cfg.unidad) + '</text>';
+  meses.forEach((m, i) => { svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 8) + '" font-size="11" fill="' + (m.parcial ? '#8a5a12' : TENUE) + '"' + (m.parcial || i === ie ? ' font-weight="700"' : '') + ' text-anchor="middle">' + m.corto + (m.parcial ? '*' : '') + '</text>'; });
+  const etiquetasTodas = series.length === 1;
+  // Con varias series, en cada mes el valor de la linea de mas arriba va sobre su punto y el
+  // de las otras debajo, con el color de su serie, para que no se pisen.
+  const conEtiqueta = (s, i) => { const pts = s.puntos.map((p, k) => (p.v == null ? -1 : k)).filter((k) => k >= 0); return s.puntos[i].v != null && (etiquetasTodas || i === pts[pts.length - 1] || i === ie); };
+  const vaAbajo = (si, i) => series.some((o, oi) => oi !== si && conEtiqueta(o, i) && (o.puntos[i].v > series[si].puntos[i].v || (o.puntos[i].v === series[si].puntos[i].v && oi < si)));
+  // Lugar de cada numero sin pisar a otro: se prueba arriba (o abajo si otra linea
+  // pasa por arriba en ese mes) y, si choca con uno ya puesto, mas arriba o mas
+  // abajo, hasta encontrar un hueco. Los mas altos de cada mes se ubican primero.
+  // La leyenda de la meta, arriba a la izquierda, tambien cuenta como ocupada.
+  const altoEtiqueta = {}, puestas = [{ x: pL, y: 0, w: 24 + (cfg.textoMeta || 'Meta ' + numMeta(meta) + cfg.unidad).length * 6.3, h: 16 }];
+  const cajaEtiqueta = (texto, i, base) => {
+    const w = texto.length * 6.3, ancla = i === 0 ? 'start' : i === meses.length - 1 ? 'end' : 'middle';
+    const tx = x(i) + (ancla === 'start' ? -6 : ancla === 'end' ? 6 : 0);
+    return { x: ancla === 'start' ? tx : ancla === 'end' ? tx - w : tx - w / 2, y: base - 10, w, h: 13 };
+  };
+  // Los puntos de todas las lineas tambien: un numero no debe tapar un punto.
+  series.forEach((s) => s.puntos.forEach((p, i) => { if (p.v != null) puestas.push({ x: x(i) - 5, y: y(p.v) - 5, w: 10, h: 10 }); }));
+  const chocaEtiqueta = (c) =>puestas.some((o) => c.x < o.x + o.w && c.x + c.w > o.x && c.y < o.y + o.h && c.y + c.h > o.y);
+  meses.forEach((m, i) => {
+    series.map((s, si) => ({ s, si })).filter(({ s }) => conEtiqueta(s, i)).sort((a, b) => b.s.puntos[i].v - a.s.puntos[i].v).forEach(({ s, si }) => {
+      const yp = y(s.puntos[i].v), texto = num(s.puntos[i].v, cfg.dec) + cfg.unidad;
+      const opciones = vaAbajo(si, i) ? [yp + 18, yp + 31, yp - 9, yp + 44, yp - 22] : [yp - 9, yp + 18, yp - 22, yp + 31, yp - 35];
+      const base = opciones.find((b) => !chocaEtiqueta(cajaEtiqueta(texto, i, b))) ?? opciones[0];
+      puestas.push(cajaEtiqueta(texto, i, base));
+      altoEtiqueta[si + '-' + i] = base;
+    });
+  });
+  svg += ANIMAR ? '<g class="comb-dibujar">' : '<g>';
+  series.forEach((s, si) => {
+    const pts = s.puntos.map((p, i) => (p.v == null ? null : { ...p, i })).filter(Boolean);
+    for (let j = 1; j < pts.length; j++) {
+      const a = pts[j - 1], b = pts[j];
+      svg += '<line x1="' + x(a.i).toFixed(1) + '" y1="' + y(a.v).toFixed(1) + '" x2="' + x(b.i).toFixed(1) + '" y2="' + y(b.v).toFixed(1) + '" stroke="' + s.color + '" stroke-width="2" stroke-linecap="round"' + (b.mes.parcial ? ' stroke-dasharray="5 4"' : '') + '/>';
+    }
+    pts.forEach((p, j) => {
+      const etiqueta = etiquetasTodas || j === pts.length - 1 || p.i === ie;
+      // Primer y ultimo mes: el numero se corre hacia adentro para no salirse.
+      const ancla = p.i === 0 ? 'start' : p.i === meses.length - 1 ? 'end' : 'middle';
+      const tx = x(p.i) + (ancla === 'start' ? -6 : ancla === 'end' ? 6 : 0);
+      svg += '<g style="cursor:help;"><title>' + esc((s.nombre ? s.nombre + ' · ' : '') + p.mes.label + (p.mes.parcial ? ' (parcial)' : '') + ': ' + num(p.v, cfg.dec) + cfg.unidad + (p.det ? '\n' + p.det : '') + '\nMeta ' + numMeta(s.meta != null ? s.meta : meta) + cfg.unidad) + '</title>'
+        + '<circle cx="' + x(p.i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="10" fill="transparent"/>'
+        + '<circle cx="' + x(p.i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="4" fill="' + (p.mes.parcial ? '#fff' : s.color) + '" stroke="' + s.color + '" stroke-width="2"/>'
+        + (etiqueta ? '<text x="' + tx.toFixed(1) + '" y="' + (altoEtiqueta[si + '-' + p.i] != null ? altoEtiqueta[si + '-' + p.i] : vaAbajo(si, p.i) ? y(p.v) + 18 : y(p.v) - 9).toFixed(1) + '" font-size="10.5" font-weight="700" fill="' + (etiquetasTodas ? TINTA : s.color) + '" text-anchor="' + ancla + '" paint-order="stroke" stroke="#fff" stroke-width="3">' + num(p.v, cfg.dec) + cfg.unidad + '</text>' : '')
+        + '</g>';
+    });
+  });
+  svg += '</g>';
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img" aria-label="' + esc(cfg.titulo) + '" style="display:block;font-family:inherit;">' + svg + '</svg>';
+}
+function tablaDatos(meses, series, cfg) {
+  return '<details class="tabla-datos"><summary>Ver los datos</summary><table><thead><tr><th>Mes</th>' + series.map((s) => '<th class="num">' + esc(s.nombre || cfg.titulo) + '</th>').join('') + '</tr></thead><tbody>'
+    + meses.map((m, i) => '<tr><td>' + m.label + (m.parcial ? ' (parcial)' : '') + '</td>' + series.map((s) => '<td class="num">' + (s.puntos[i].v == null ? '—' : num(s.puntos[i].v, cfg.dec) + cfg.unidad) + '</td>').join('') + '</tr>').join('')
+    + '</tbody></table></details>';
+}
+
+// Frase de lectura para una serie: el mes elegido (o el ultimo) contra la meta y contra el mes anterior.
+function lecturaSerie(k, puntos, agencias) {
+  const con = puntos.filter((p) => p.v != null);
+  if (!con.length) return 'Sin datos.';
+  let i = con.findIndex((p) => p.mes.slug === filtroMes.value);
+  if (i < 0) i = con.length - 1;
+  const p = con[i], ant = con[i - 1], ok = cumple(k, p.v, agencias);
+  let t = '<b>' + p.mes.label + (p.mes.parcial ? ' (en curso)' : '') + ':</b> ' + fmt(k, p.v) + ' — <b class="' + (ok ? 'ok">cumple' : 'bad">no cumple') + '</b> la meta (' + reglaDe(k, agencias) + ').';
+  if (ant) {
+    const d = p.v - ant.v, mejora = IND[k].mejor === 'bajo' ? d < 0 : d > 0;
+    t += Math.abs(d) < 0.05 ? ' Igual que en ' + ant.mes.label.split(' ')[0].toLowerCase() + '.' : ' ' + (mejora ? 'Mejoró' : 'Empeoró') + ' ' + num(Math.abs(d), IND[k].dec) + ' puntos respecto de ' + ant.mes.label.split(' ')[0].toLowerCase() + '.';
+  }
+  return t;
+}
+
+// ---------------------------------------------------------------- Secciones
+function renderMeses() {
+  const grid = document.getElementById('gridMeses'), ags = agenciasDelEquipo();
+  grid.innerHTML = Object.keys(IND).map((k) => '<div class="panel graf"><h3>' + IND[k].titulo + ' <span class="meta-badge">Meta ' + reglaDe(k, ags) + '</span></h3><p class="bajada">' + IND[k].que[0].toUpperCase() + IND[k].que.slice(1) + '. ' + (IND[k].mejor === 'bajo' ? 'Más bajo es mejor.' : 'Más alto es mejor.') + (k === 'cal' && ags.length > 1 ? ' Con varias agencias, la meta es el promedio (' + numMeta(M.calDefault) + '%).' : '') + '</p><div class="lienzo" id="mes-' + k + '"></div><div class="lectura" id="lec-' + k + '"></div><div id="tab-' + k + '"></div></div>').join('');
+  for (const k of Object.keys(IND)) {
+    const meses = DATA.meses[IND[k].fuente];
+    const s = [{ nombre: '', color: AZUL, puntos: serie(k) }];
+    const cfg = { k, titulo: IND[k].titulo, meses, series: s, meta: metaDe(k, ags), unidad: IND[k].unidad, dec: IND[k].dec, desde: k === 'vec' || k === 'rgu' ? 'auto' : 0 };
+    lineas(document.getElementById('mes-' + k), cfg);
+    document.getElementById('lec-' + k).innerHTML = lecturaSerie(k, s[0].puntos, ags);
+    document.getElementById('tab-' + k).innerHTML = tablaDatos(meses, s, cfg);
+  }
+}
+
+function renderAgencias() {
+  const grid = document.getElementById('gridAgencias');
+  const ks = ['cal', 'der', 'rgu'];
+  grid.innerHTML = ks.map((k) => '<div class="panel graf"><h3>' + IND[k].titulo + ' <span class="meta-badge">Meta ' + (k === 'cal' ? 'según agencia' : IND[k].regla) + '</span></h3><div class="leyenda" id="ley-ag-' + k + '"></div><div class="lienzo" id="ag-' + k + '"></div><div class="lectura" id="lec-ag-' + k + '"></div><div id="tab-ag-' + k + '"></div></div>').join('');
+  for (const k of ks) {
+    const meses = DATA.meses[IND[k].fuente];
+    const s = Object.keys(AGENCIA).map((a) => ({ nombre: nomAg(a), ag: a, color: AGENCIA[a], meta: metaDe(k, a), puntos: serie(k, (f) => f.a === a) })).filter((x) => x.puntos.some((p) => p.v != null));
+    document.getElementById('ley-ag-' + k).innerHTML = s.map((x) => '<span><i style="background:' + x.color + '"></i>' + x.nombre + (k === 'cal' ? ' (meta ' + numMeta(x.meta) + '%)' : '') + '</span>').join('');
+    const cfg = { k, titulo: IND[k].titulo + ' por agencia', meses, series: s, meta: metaDe(k, s.map((x) => x.ag)), textoMeta: k === 'cal' && s.length > 1 ? 'Meta promedio ' + numMeta(M.calDefault) + '%' : null, unidad: IND[k].unidad, dec: IND[k].dec, desde: k === 'rgu' ? 'auto' : 0 };
+    lineas(document.getElementById('ag-' + k), cfg);
+    // Lectura: en el mes elegido (o el ultimo con datos), que agencia va mejor contra su meta.
+    let i = meses.findIndex((m) => m.slug === filtroMes.value);
+    if (i < 0) i = meses.length - 1;
+    const vals = s.map((x) => ({ a: x.nombre, ag: x.ag, v: x.puntos[i] && x.puntos[i].v })).filter((x) => x.v != null);
+    let lec = 'Sin datos de las agencias en ' + meses[i].label + '.';
+    if (vals.length) {
+      const holgura = (x) => (IND[k].mejor === 'bajo' ? metaDe(k, x.ag) - x.v : x.v - metaDe(k, x.ag));
+      const mejor = vals.reduce((a, b) => (holgura(b) > holgura(a) ? b : a));
+      lec = '<b>' + meses[i].label + ':</b> ' + vals.map((x) => x.a + ' ' + fmt(k, x.v) + ' (<b class="' + (cumple(k, x.v, x.ag) ? 'ok">cumple' : 'bad">no cumple') + '</b>)').join(' · ') + '.' + (vals.length > 1 ? ' Va mejor contra su meta <b>' + mejor.a + '</b>.' : '');
+    }
+    document.getElementById('lec-ag-' + k).innerHTML = lec;
+    document.getElementById('tab-ag-' + k).innerHTML = s.length ? tablaDatos(meses, s, cfg) : '';
+  }
+}
+
+// Dispersion: % de cumplimiento RGU (x) contra Calidad (y), un punto por tecnico, en el mes elegido.
+function renderDispersion() {
+  const el = document.getElementById('grafDispersion'), mes = mesElegido();
+  const ts = tecnicosDelMes(mes.slug).filter((t) => t.cal && t.rgu);
+  const ags = [...new Set(ts.map((t) => t.agencia))];
+  const MC = metaDe('cal', ags), MP = M.rgu;
+  document.getElementById('leyendaDispersion').innerHTML = ags.map((a) => '<span><i class="punto" style="background:' + (AGENCIA[a] || AZUL) + '"></i>' + esc(nomAg(a)) + '</span>').join('')
+    + '<span class="meta-badge">Metas: RGU ≥ 100% · Calidad ' + (ags.length === 1 ? '≤ ' + numMeta(MC) + '%' : 'según agencia (línea = promedio ' + numMeta(MC) + '%)') + '</span>';
+  document.getElementById('pieDispersion').textContent = (mes.anual ? 'Mirada anual: ' + mes.label + ' (' + mes.desde + '–' + mes.hasta + '), cada técnico con todas sus órdenes y RGU del año.' : 'Calidad: ' + mes.label + ' (órdenes del mes anterior) · Producción RGU: ' + mes.label + (mes.parcial ? ' (en curso)' : '') + '.') + ' Pasa el cursor sobre un punto para ver el detalle.';
+  const lec = document.getElementById('lecturaDispersion');
+  if (!ts.length) { el.innerHTML = '<div class="sin-datos">En ' + mes.label + ' no hay Calidad y Producción RGU a la vez. Elige otro mes.</div>'; lec.innerHTML = ''; return; }
+  const W = Math.max(320, Math.round(el.clientWidth) || 700), H = 380, pL = 46, pR = 20, pT = 18, pB = 40;
+  const xs = ts.map((t) => t.rgu.v).concat([MP]), ys = ts.map((t) => t.cal.v).concat([MC]);
+  const x0 = Math.max(0, Math.floor((Math.min(...xs) - 5) / 10) * 10), x1 = Math.ceil((Math.max(...xs) + 5) / 10) * 10;
+  const y1 = Math.ceil((Math.max(...ys) * 1.12) / 2) * 2;
+  const x = (v) => pL + (v - x0) / (x1 - x0) * (W - pL - pR), y = (v) => pT + (1 - v / y1) * (H - pT - pB);
+  let svg = '<rect x="' + x(MP).toFixed(1) + '" y="' + y(MC).toFixed(1) + '" width="' + (W - pR - x(MP)).toFixed(1) + '" height="' + (y(0) - y(MC)).toFixed(1) + '" fill="#1f7a45" opacity=".07"/>';
+  for (let v = 0; v <= y1; v += 2) svg += '<line x1="' + pL + '" x2="' + (W - pR) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="' + GRILLA + '"/><text x="' + (pL - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" font-size="10" fill="' + TENUE + '" text-anchor="end">' + v + '%</text>';
+  const pasoX = x1 - x0 > 100 ? 20 : 10;
+  for (let v = x0; v <= x1; v += pasoX) svg += '<text x="' + x(v).toFixed(1) + '" y="' + (H - pB + 16) + '" font-size="10" fill="' + TENUE + '" text-anchor="middle">' + v + '%</text>';
+  svg += '<text x="' + ((pL + W - pR) / 2) + '" y="' + (H - 6) + '" font-size="11" fill="' + TINTA + '" text-anchor="middle">Cumplimiento de la meta RGU →</text>'
+    + '<text x="12" y="' + ((pT + H - pB) / 2) + '" font-size="11" fill="' + TINTA + '" text-anchor="middle" transform="rotate(-90 12 ' + ((pT + H - pB) / 2) + ')">← Calidad, % repetidos (más bajo es mejor)</text>';
+  svg += '<line x1="' + x(MP).toFixed(1) + '" x2="' + x(MP).toFixed(1) + '" y1="' + pT + '" y2="' + y(0).toFixed(1) + '" stroke="' + TINTA + '" stroke-width="1.5" stroke-dasharray="5 4"/>'
+    + '<line x1="' + pL + '" x2="' + (W - pR) + '" y1="' + y(MC).toFixed(1) + '" y2="' + y(MC).toFixed(1) + '" stroke="' + TINTA + '" stroke-width="1.5" stroke-dasharray="5 4"/>'
+    + '<text x="' + (x(MP) + 5).toFixed(1) + '" y="' + (pT + 26) + '" font-size="10.5" font-weight="700" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3">Meta RGU 100%</text>'
+    + '<text x="' + (pL + 6) + '" y="' + (y(MC) - 6).toFixed(1) + '" font-size="10.5" font-weight="700" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3">Meta Calidad ' + (ags.length === 1 ? '' : 'prom. ') + numMeta(MC) + '%</text>';
+  const zona = (tx, ty, a, t) => '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" font-size="10.5" font-weight="600" fill="' + TENUE + '" text-anchor="' + a + '">' + t + '</text>';
+  svg += zona(W - pR - 6, y(0) - 8, 'end', 'Produce y con calidad ✓') + zona(W - pR - 6, pT + 12, 'end', 'Produce, pero repite')
+    + zona(pL + 6, y(0) - 8, 'start', 'Calidad, baja producción') + zona(pL + 6, pT + 12, 'start', 'Bajo en los dos');
+  const grupos = { bueno: [], repite: [], lento: [], ambos: [] };
+  // Nombres de todos los tecnicos: cada nombre prueba a la derecha, izquierda, arriba
+  // y abajo de su punto y toma el primer lugar libre.
+  const ocupado = [], anchoTxt = (t) => t.length * 5.9 + 4;
+  const choca = (r) => r.x < pL || r.x + r.w > W - pR || r.y < pT || r.y + r.h > y(0) + 2
+    || ocupado.some((o) => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+  ocupado.push({ x: W - pR - 140, y: y(0) - 20, w: 140, h: 16 }, { x: W - pR - 120, y: pT, w: 120, h: 16 }, { x: pL, y: y(0) - 20, w: 140, h: 16 }, { x: pL, y: pT, w: 100, h: 16 },
+    { x: x(MP), y: pT + 14, w: 90, h: 16 }, { x: pL, y: y(MC) - 18, w: 130, h: 14 });
+  ts.forEach((t) => ocupado.push({ x: x(t.rgu.v) - 6, y: y(t.cal.v) - 6, w: 12, h: 12 }));
+  let etiquetas = '';
+  [...ts].sort((a, b) => b.cal.v - a.cal.v || a.rgu.v - b.rgu.v).forEach((t) => {
+    const cx = x(t.rgu.v), cy = y(t.cal.v), nombre = corto(t.nombre) + (t.baja ? ' (BAJA)' : ''), w = anchoTxt(nombre), h = 13;
+    const opciones = [[cx + 9, cy - 7], [cx - 9 - w, cy - 7], [cx - w / 2, cy - 21], [cx - w / 2, cy + 8],
+      [cx + 9, cy - 19], [cx + 9, cy + 5], [cx - 9 - w, cy - 19], [cx - 9 - w, cy + 5]];
+    const sitio = opciones.find(([ox, oy]) => !choca({ x: ox, y: oy, w, h })) || opciones[0];
+    ocupado.push({ x: sitio[0], y: sitio[1], w, h });
+    etiquetas += '<text x="' + sitio[0].toFixed(1) + '" y="' + (sitio[1] + 10).toFixed(1) + '" font-size="10.5" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3" pointer-events="none">' + esc(nombre) + '</text>';
+  });
+  ts.forEach((t) => {
+    const prodOk = t.rgu.v >= MP, repOk = cumple('cal', t.cal.v, t.agencia);
+    grupos[prodOk && repOk ? 'bueno' : prodOk ? 'repite' : repOk ? 'lento' : 'ambos'].push(t);
+    const cx = x(t.rgu.v), cy = y(t.cal.v), color = AGENCIA[t.agencia] || AZUL;
+    svg += '<g style="cursor:help;"><title>' + esc(t.nombre + ' (' + nomAg(t.agencia) + ')\nCalidad: ' + num(t.cal.v, 1) + '% (' + t.cal.det + '; meta ' + numMeta(metaCalAg(t.agencia)) + '%)\nProducción RGU: ' + num(t.rgu.v, 1) + '% de la meta') + '</title>'
+      + '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="12" fill="transparent"/>'
+      + '<circle' + (ANIMAR ? ' class="pop" style="animation-delay:' + (0.2 + ts.indexOf(t) * 0.05).toFixed(2) + 's"' : '') + ' cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="6" fill="' + color + '" stroke="#fff" stroke-width="2"/>'
+      + '</g>';
+  });
+  svg += etiquetas;
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img" aria-label="Calidad contra producción por técnico" style="display:block;font-family:inherit;">' + svg + '</svg>';
+  const lista = (g) => g.sort((a, b) => b.cal.v - a.cal.v).map((t) => corto(t.nombre) + ' (' + num(t.cal.v, 1) + '%, RGU ' + num(t.rgu.v, 0) + '%)').join(', ');
+  let txt = '<b>' + grupos.bueno.length + ' de ' + ts.length + '</b> técnicos están en la zona ideal' + (grupos.bueno.length ? ': ' + lista(grupos.bueno) : '') + '.';
+  if (grupos.repite.length) txt += ' <b class="bad">Producen pero repiten:</b> ' + lista(grupos.repite) + '.';
+  if (grupos.ambos.length) txt += ' <b class="bad">Bajo en los dos (prioridad):</b> ' + lista(grupos.ambos) + '.';
+  if (grupos.lento.length) txt += ' <b>Calidad, pero baja producción:</b> ' + lista(grupos.lento) + '.';
+  lec.innerHTML = txt;
+}
+
+// Barras: cada tecnico contra la meta del indicador elegido, en el mes elegido.
+let indBarras = 'gen';
+const CLAVES_BARRAS = ['cal', 'der', 'rgu', 'vec'];
+const TITULO_BARRA = (k) => (k === 'gen' ? 'Resumen general' : IND[k].titulo);
+function renderSelector() {
+  document.getElementById('selectorInd').innerHTML = ['gen'].concat(Object.keys(IND)).map((k) => '<button type="button" data-k="' + k + '" aria-pressed="' + (k === indBarras) + '">' + TITULO_BARRA(k) + '</button>').join('');
+}
+document.getElementById('selectorInd').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-k]'); if (!b) return; indBarras = b.dataset.k; renderSelector(); renderBarras(); });
+
+// Resumen general de un tecnico: cuantas metas NO cumple de las que tiene datos, y
+// que tan lejos esta de ellas (suma de la distancia relativa a cada meta que no cumple).
+function resumenGeneral(t) {
+  const evaluados = CLAVES_BARRAS.filter((k) => t[k]);
+  const fallan = evaluados.filter((k) => !cumple(k, t[k].v, t.agencia));
+  const desvio = fallan.reduce((s, k) => s + Math.abs(t[k].v - metaDe(k, t.agencia)) / Math.max(Math.abs(metaDe(k, t.agencia)), 1), 0);
+  return { v: fallan.length, evaluados: evaluados.length, fallan, desvio,
+    det: fallan.length ? 'No cumple: ' + fallan.map((k) => IND[k].titulo + ' ' + fmt(k, t[k].v) + ' (meta ' + reglaDe(k, t.agencia) + ')').join(' · ') : 'Cumple todas sus metas con datos' };
+}
+
+// Barras: cada tecnico contra la meta. Primera columna "Resumen general" (cuantas
+// metas no cumple) y luego los 4 indicadores, cada uno con su escala y su meta. El
+// elegido va con color intenso y ordena la lista; los demas quedan semitransparentes.
+// Clic en un boton o en una columna la elige. En pantallas angostas, solo la elegida.
+function renderBarras() {
+  const kSel = indBarras, el = document.getElementById('grafBarras'), lec = document.getElementById('lecturaBarras'), mes = mesElegido();
+  const agSel = document.getElementById('barAgencia').value;
+  const delFiltro = tecnicosDelMes(mes.slug).filter((t) => CLAVES_BARRAS.some((k) => t[k]) && (!agSel || t.agencia === agSel));
+  delFiltro.forEach((t) => { t.gen = resumenGeneral(t); });
+  // Lista de tecnicos segun mes, agencia y supervisor; se conserva el elegido si sigue estando.
+  const selTec = document.getElementById('barTecnico'), previo = selTec.value;
+  const nombres = delFiltro.map((t) => t.nombre).sort((a, b) => corto(a).localeCompare(corto(b)));
+  selTec.innerHTML = '<option value="">Todos los técnicos</option>' + nombres.map((n) => '<option value="' + esc(n) + '">' + esc(corto(n)) + '</option>').join('');
+  selTec.value = nombres.includes(previo) ? previo : '';
+  const todos = delFiltro.filter((t) => !selTec.value || t.nombre === selTec.value);
+  const orden = document.getElementById('barOrden').value;
+  // "Mejor primero": en el resumen, menos metas sin cumplir y, si empatan, mas cerca de sus metas.
+  const mejorPrimero = kSel === 'gen'
+    ? (a, b) => a.gen.v - b.gen.v || a.gen.desvio - b.gen.desvio
+    : (a, b) => (IND[kSel].mejor === 'bajo' ? a[kSel].v - b[kSel].v : b[kSel].v - a[kSel].v);
+  const conSel = todos.filter((t) => t[kSel]).sort(orden === 'nombre' ? (a, b) => corto(a.nombre).localeCompare(corto(b.nombre)) : orden === 'peor' ? (a, b) => -mejorPrimero(a, b) : mejorPrimero);
+  const ts = conSel.concat(todos.filter((t) => !t[kSel]).sort((a, b) => a.nombre.localeCompare(b.nombre)));
+  if (!conSel.length && !selTec.value) { el.innerHTML = '<div class="sin-datos">Sin datos de ' + TITULO_BARRA(kSel) + ' en ' + mes.label + (agSel ? ' para ' + nomAg(agSel) : '') + '. Prueba con otro mes, agencia o indicador.</div>'; lec.innerHTML = ''; return; }
+  const W = Math.max(320, Math.round(el.clientWidth) || 900);
+  const angosto = W < 760;
+  const ks = angosto ? [kSel] : ['gen'].concat(CLAVES_BARRAS);
+  const fila = 24, pL = 140, pT = 40, gap = 16, pR = 8, H = pT + ts.length * fila + 8;
+  const ancho = (W - pL - pR - gap * (ks.length - 1)) / ks.length;
+  let svg = '';
+  ts.forEach((t, i) => {
+    const yy = pT + i * fila;
+    if (i % 2 === 0) svg += '<rect x="0" y="' + yy + '" width="' + W + '" height="' + fila + '" fill="#f7f8fa"/>';
+    svg += '<text x="' + (pL - 8) + '" y="' + (yy + 16) + '" font-size="11.5" fill="' + TINTA + '" text-anchor="end"' + (t[kSel] ? '' : ' opacity=".55"') + '>' + esc(corto(t.nombre) + (t.baja ? ' (BAJA)' : '')) + '</text>';
+  });
+  ks.forEach((k, c) => {
+    const elegido = k === kSel, x0p = pL + c * (ancho + gap);
+    const op = elegido ? 1 : 0.28;
+    svg += '<g class="col-ind" data-k="' + k + '" style="cursor:pointer;" opacity="' + op + '">'
+      + '<title>' + esc(TITULO_BARRA(k) + (elegido ? '' : ' · clic para ordenar por este indicador')) + '</title>'
+      + '<rect x="' + x0p.toFixed(1) + '" y="0" width="' + ancho.toFixed(1) + '" height="' + H + '" fill="transparent"/>'
+      + '<text x="' + x0p.toFixed(1) + '" y="13" font-size="11.5" font-weight="700" fill="' + AZUL + '">' + esc(TITULO_BARRA(k)) + '</text>'
+      + '<text x="' + x0p.toFixed(1) + '" y="27" font-size="10.5" fill="' + TENUE + '">' + (k === 'gen' ? 'Metas sin cumplir' : 'Meta ' + (k === 'cal' && !agSel ? 'según agencia' : reglaDe(k, agSel))) + '</text>';
+    if (k === 'gen') {
+      // Barra = metas sin cumplir sobre las evaluadas (fondo gris = las evaluadas).
+      const etiq = 62, max = CLAVES_BARRAS.length;
+      const x = (v) => x0p + v / max * (ancho - etiq);
+      ts.forEach((t, i) => {
+        const yy = pT + i * fila, g = t.gen;
+        const color = g.v === 0 ? ESTADO.ok : g.v === 1 ? '#c98a1a' : ESTADO.bad;
+        svg += '<g><title>' + esc(t.nombre + ' · ' + g.v + ' de ' + g.evaluados + ' metas sin cumplir\n' + g.det) + '</title>'
+          + '<rect x="' + x0p.toFixed(1) + '" y="' + (yy + 5) + '" width="' + (x(g.evaluados) - x0p).toFixed(1) + '" height="14" rx="3" fill="#e5e8ec"/>'
+          + (g.v ? '<rect' + (ANIMAR ? ' class="crecer" style="animation-delay:' + (0.15 + i * 0.035).toFixed(2) + 's"' : '') + ' x="' + x0p.toFixed(1) + '" y="' + (yy + 5) + '" width="' + (x(g.v) - x0p).toFixed(1) + '" height="14" rx="3" fill="' + color + '"/>' : '<rect x="' + x0p.toFixed(1) + '" y="' + (yy + 5) + '" width="3" height="14" rx="1" fill="' + ESTADO.ok + '"/>')
+          + '<text x="' + (x(g.evaluados) + 4).toFixed(1) + '" y="' + (yy + 16) + '" font-size="10.5" font-weight="700" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3">' + (g.v ? g.v + ' de ' + g.evaluados + ' ✗' : 'todas ✓') + '</text></g>';
+      });
+      svg += '</g>';
+      return;
+    }
+    const ind = IND[k];
+    const vals = ts.map((t) => (t[k] ? t[k].v : null)).filter((v) => v != null);
+    const metas = ts.filter((t) => t[k]).map((t) => metaDe(k, t.agencia));
+    const etiq = 42; // espacio para el numero al final de la barra
+    const max = Math.max(...metas, ...vals, 1) * 1.05, min = Math.min(0, ...vals);
+    const x = (v) => x0p + (v - min) / (max - min || 1) * (ancho - etiq);
+    // Linea de meta: una sola si todos tienen la misma (en Calidad depende de la agencia).
+    [...new Set(metas)].forEach((mt) => {
+      const xm = x(mt).toFixed(1);
+      svg += '<line x1="' + xm + '" x2="' + xm + '" y1="' + (pT - 4) + '" y2="' + (H - 4) + '" stroke="' + AZUL + '" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    });
+    ts.forEach((t, i) => {
+      const yy = pT + i * fila;
+      if (!t[k]) { svg += '<text x="' + (x0p + 2).toFixed(1) + '" y="' + (yy + 16) + '" font-size="10.5" fill="' + TENUE + '">—</text>'; return; }
+      const v = t[k].v, ok = cumple(k, v, t.agencia);
+      const xa = x(Math.min(0, v)), largo = Math.max(2, Math.abs(x(v) - x(0)));
+      svg += '<g><title>' + esc(t.nombre + ' · ' + ind.titulo + ': ' + fmt(k, v) + ' · ' + (ok ? 'cumple' : 'no cumple') + ' la meta (' + reglaDe(k, t.agencia) + ')\n' + t[k].det) + '</title>'
+        + '<rect' + (ANIMAR ? ' class="crecer" style="animation-delay:' + (0.15 + i * 0.035).toFixed(2) + 's"' : '') + ' x="' + xa.toFixed(1) + '" y="' + (yy + 5) + '" width="' + largo.toFixed(1) + '" height="14" rx="3" fill="' + (ok ? ESTADO.ok : ESTADO.bad) + '"/>'
+        + '<text x="' + (Math.max(x(v), x(0)) + 4).toFixed(1) + '" y="' + (yy + 16) + '" font-size="10.5" font-weight="700" fill="' + TINTA + '" paint-order="stroke" stroke="#fff" stroke-width="3">' + fmt(k, v) + (ok ? ' ✓' : ' ✗') + '</text></g>';
+    });
+    svg += '</g>';
+  });
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img" aria-label="Cada técnico contra la meta, ' + esc(TITULO_BARRA(kSel)) + ' destacado" style="display:block;font-family:inherit;">' + svg + '</svg>';
+  el.querySelectorAll('.col-ind').forEach((g) => {
+    g.addEventListener('mouseenter', () => { if (g.dataset.k !== indBarras) g.setAttribute('opacity', '.6'); });
+    g.addEventListener('mouseleave', () => { if (g.dataset.k !== indBarras) g.setAttribute('opacity', '.28'); });
+    g.addEventListener('click', () => { if (g.dataset.k === indBarras) return; indBarras = g.dataset.k; renderSelector(); renderBarras(); });
+  });
+  const donde = (agSel ? ' en ' + nomAg(agSel) : '') + (filtro.value ? ' (equipo de ' + filtro.value + ')' : '');
+  if (selTec.value) {
+    const t = todos[0];
+    lec.innerHTML = '<b>' + esc(corto(t.nombre)) + '</b> en ' + mes.label + ': ' + (t.gen.v ? '<b class="bad">no cumple ' + t.gen.v + ' de ' + t.gen.evaluados + ' metas</b>' : '<b class="ok">cumple todas sus metas</b>') + '. '
+      + CLAVES_BARRAS.map((k) => IND[k].titulo + ' ' + (t[k] ? fmt(k, t[k].v) + ' <b class="' + (cumple(k, t[k].v, t.agencia) ? 'ok">✓' : 'bad">✗') + '</b>' : '—')).join(' · ') + '.';
+    return;
+  }
+  if (kSel === 'gen') {
+    const peores = conSel.filter((t) => t.gen.v > 0).sort(mejorPrimero).reverse().slice(0, 3);
+    const todasOk = conSel.filter((t) => t.gen.v === 0).length;
+    lec.innerHTML = '<b>' + todasOk + ' de ' + conSel.length + '</b> técnicos cumplen todas sus metas en ' + mes.label + donde + '.'
+      + (peores.length ? ' <b class="bad">Peor en general:</b> ' + peores.map((t) => '<b>' + esc(corto(t.nombre)) + '</b> (no cumple ' + t.gen.v + ' de ' + t.gen.evaluados + ': ' + t.gen.fallan.map((k) => IND[k].corto + ' ' + fmt(k, t[k].v)).join(', ') + ')').join('; ') + '.' : '')
+      + (angosto ? '' : ' Toca un indicador para ver solo ese.');
+    return;
+  }
+  const ind = IND[kSel], no = conSel.filter((r) => !cumple(kSel, r[kSel].v, r.agencia)).sort(mejorPrimero);
+  lec.innerHTML = '<b>' + (conSel.length - no.length) + ' de ' + conSel.length + '</b> técnicos cumplen la meta de ' + ind.titulo + ' (' + (kSel === 'cal' ? 'la de su agencia' : ind.regla) + ') en ' + mes.label + donde + '.'
+    + (no.length ? ' <b class="bad">Más lejos de la meta:</b> ' + no.slice(-3).reverse().map((r) => corto(r.nombre) + ' (' + fmt(kSel, r[kSel].v) + ')').join(', ') + '.' : ' <b class="ok">¡Todos cumplen!</b>')
+    + (angosto ? '' : ' Los otros indicadores se ven más claros; toca uno para destacarlo y ordenar por él.');
+}
+
+// Filtros del grafico por tecnico: agencia (solo este grafico) y supervisor
+// (sincronizado con el de arriba de la pagina, para que nunca se contradigan).
+const barAgencia = document.getElementById('barAgencia'), barSupervisor = document.getElementById('barSupervisor');
+barAgencia.innerHTML = '<option value="">Todas las agencias</option>' + Object.keys(AGENCIA).map((a) => '<option value="' + a + '">' + nomAg(a) + '</option>').join('');
+barSupervisor.innerHTML = filtro.innerHTML;
+barAgencia.addEventListener('change', renderBarras);
+document.getElementById('barOrden').addEventListener('change', renderBarras);
+document.getElementById('barTecnico').addEventListener('change', renderBarras);
+barSupervisor.addEventListener('change', () => { filtro.value = barSupervisor.value; renderTodo(); });
+
+function renderTodo() {
+  barSupervisor.value = filtro.value;
+  document.querySelectorAll('.tituloEquipo').forEach((e) => { e.textContent = filtro.value || 'Todos los equipos'; });
+  document.querySelectorAll('.tituloMes').forEach((e) => { const m = mesElegido(); e.textContent = m.label + (m.parcial ? ' (en curso)' : '') + (filtro.value ? ' · ' + filtro.value : ''); });
+  const ocultos = new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter((f) => delEquipo(f) && f.b).map((f) => f.n))));
+  document.getElementById('notaBajas').textContent = !ocultos.size ? '' : filtroBajas.value === '1'
+    ? 'Se muestran ' + ocultos.size + ' técnicos desvinculados, marcados con BAJA.'
+    : ocultos.size + (ocultos.size === 1 ? ' técnico desvinculado no aparece' : ' técnicos desvinculados no aparecen') + ' en los gráficos por técnico. Los totales del equipo y por agencia sí los cuentan, igual que los informes.';
+  renderDispersion(); renderMeses(); renderAgencias(); renderBarras();
+}
+filtro.addEventListener('change', renderTodo);
+filtroMes.addEventListener('change', renderTodo);
+filtroBajas.addEventListener('change', renderTodo);
+// Se puede abrir con el equipo ya elegido: graficos.html?supervisor=Nombre
+const pedido = new URLSearchParams(location.search).get('supervisor');
+if (pedido && sups.includes(pedido)) filtro.value = pedido;
+// ---------- Animaciones ----------
+// Solo en la primera carga: cada seccion queda "esperando" y se anima al entrar en
+// pantalla. Despues, al cambiar un filtro, los graficos aparecen directo.
+const SIN_MOVIMIENTO = !('IntersectionObserver' in window) || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+let ANIMAR = !SIN_MOVIMIENTO;
+function alVer(el, fn) {
+  if (!el) return;
+  if (SIN_MOVIMIENTO) { fn(el); return; }
+  const o = new IntersectionObserver((en) => { if (en.some((e) => e.isIntersecting)) { o.disconnect(); fn(el); } }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  o.observe(el);
+}
+const SECCIONES = ['grafDispersion', 'gridMeses', 'gridAgencias', 'grafBarras'].map((id) => document.getElementById(id));
+if (ANIMAR) SECCIONES.forEach((el) => { el.classList.add('esperando'); alVer(el, () => el.classList.remove('esperando')); });
+renderSelector();
+renderTodo();
+ANIMAR = false;
+// Bloques que aparecen al bajar (como en Mi Equipo).
+if (!SIN_MOVIMIENTO) {
+  document.querySelectorAll('main > *').forEach((b) => {
+    const piezas = b.matches('.graf-grid') && b.children.length ? Array.from(b.children) : [b];
+    piezas.forEach((el, i) => {
+      el.classList.add('rv');
+      el.style.transitionDelay = (piezas.length > 1 ? Math.min(i, 5) * 110 : 0) + 'ms';
+      alVer(el, () => { el.classList.add('rv-ver'); setTimeout(() => { el.style.transitionDelay = ''; }, 1800); });
+    });
+  });
+}
+let espera = null;
+window.addEventListener('resize', () => { clearTimeout(espera); espera = setTimeout(renderTodo, 150); });
+</script>
+</body>
+</html>
