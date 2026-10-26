@@ -142,7 +142,8 @@
   <div class="graf-grid" id="gridMeses"></div>
 
   <!-- 3. Agencias -->
-  <h2 class="titulo-seccion">Las <b>agencias</b> comparadas &mdash; <b class="tituloEquipo"></b></h2>
+  <h2 class="titulo-seccion">Las <b>agencias</b> comparadas &mdash; <b class="tituloGrupo"></b></h2>
+  <p class="explica-seccion" id="notaAgenciasTec" style="margin:-6px 0 12px;"></p>
   <details class="como-leer" open>
     <summary>C&oacute;mo leer estos gr&aacute;ficos</summary>
     <ul>
@@ -306,7 +307,7 @@ function lineas(el, cfg) {
   const meta = cfg.meta;
   const vals = series.flatMap((s) => s.puntos.map((p) => p.v)).filter((v) => v != null).concat([meta]);
   let lo = 0, hi = Math.max(...vals) * 1.15;
-  if (cfg.desde === 'auto') { lo = Math.max(0, Math.floor((Math.min(...vals) - 8) / 10) * 10); hi = Math.min(110, Math.max(...vals) + 6); }
+  if (cfg.desde === 'auto') { lo = Math.max(0, Math.floor((Math.min(...vals) - 8) / 10) * 10); hi = Math.max(...vals) + 6; }
   const paso = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50].find((p) => (hi - lo) / p <= 5) || 50;
   hi = Math.ceil(hi / paso) * paso; lo = Math.floor(lo / paso) * paso;
   const x = (i) => pL + mg + i * (W - pL - pR - 2 * mg) / (meses.length - 1);
@@ -656,6 +657,9 @@ function renderTodo() {
   barSupervisor.value = filtro.value;
   llenarTecnicos();
   document.querySelectorAll('.tituloEquipo').forEach((e) => { e.textContent = filtroTec.value ? corto(filtroTec.value) + ' contra ' + (filtro.value ? 'su equipo' : 'todos') : filtro.value || 'Todos los equipos'; });
+  // Las agencias son siempre del grupo (supervisor o todos), aunque haya un tecnico elegido.
+  document.querySelectorAll('.tituloGrupo').forEach((e) => { e.textContent = filtro.value || 'Todos los equipos'; });
+  document.getElementById('notaAgenciasTec').textContent = filtroTec.value ? 'Esta comparación es de ' + (filtro.value ? 'todo el equipo de ' + filtro.value : 'todos los técnicos') + ', no cambia al elegir a ' + corto(filtroTec.value) + '.' : '';
   document.querySelectorAll('.tituloMes').forEach((e) => { const m = mesElegido(); e.textContent = m.label + (m.parcial ? ' (en curso)' : '') + (filtroTec.value ? ' · ' + corto(filtroTec.value) : filtro.value ? ' · ' + filtro.value : ''); });
   const ocultos = new Set(Object.values(DATA.meses).flatMap((l) => l.flatMap((m) => m.filas.filter((f) => delEquipo(f) && f.b).map((f) => f.n))));
   document.getElementById('notaBajas').textContent = !ocultos.size ? '' : filtroBajas.value === '1'
