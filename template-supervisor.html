@@ -1337,7 +1337,9 @@ if (!slugsMes.length) selMes.parentElement.style.display = 'none';
 function tecnicosDeMes(slug) {
   const h = DATA.historico, filas = (k) => { const m = h.meses[k].find((x) => x.slug === slug), mp = new Map(); if (m) m.f.forEach((f) => mp.set(f[0], f)); return mp; };
   const cal = filas('cal'), der = filas('der'), rgu = filas('rgu'), vec = filas('vec');
-  return TEC_ACTUAL.map((t, i) => {
+  // tecnicos actuales y, al final, los que trabajaron antes y hoy estan de baja
+  const todos = TEC_ACTUAL.concat((h.extra || []).map((e) => ({ nombre: e[0], supervisor: e[1], agencia: e[2], baja: true, causasAnual: [] })));
+  return todos.map((t, i) => {
     const c = cal.get(i), d = der.get(i), g = rgu.get(i), v = vec.get(i);
     const meta = (h.metas.calPorAgencia[t.agencia] != null) ? h.metas.calPorAgencia[t.agencia] : h.metas.calDefault;
     return Object.assign({}, t, {
@@ -1358,6 +1360,10 @@ function aplicarMes() {
     DATA.periodoCalidad = DATA.etiquetaCalidad = etiquetaMes(slug) + ' (cierres del mes anterior)';
   }
   document.getElementById('footerText').innerHTML = 'Calidad: ' + (DATA.etiquetaCalidad || DATA.periodoCalidad) + ' · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+  // la lista de supervisores es la de ese mes (un supervisor de antes puede ya no estar)
+  const selSup = document.getElementById('filtroSupervisor'), supActual = selSup.value;
+  llenarSelect(selSup, [...new Set(DATA.tecnicos.map((t) => t.supervisor).filter(Boolean))].sort(), 'Todos los supervisores');
+  selSup.value = [...selSup.options].some((o) => o.value === supActual) ? supActual : '';
   renderTabla(); renderCombinado(); actualizarLinkReiteradas();
 }
 selMes.addEventListener('change', aplicarMes);

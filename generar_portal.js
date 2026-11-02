@@ -1223,11 +1223,22 @@ async function main() {
   };
   {
     const pos = new Map(dataSupervisor.tecnicos.map((t, i) => [t.nombre, i]));
+    // Tecnicos que trabajaron en algun mes pero ya no estan en el dashboard (bajas):
+    // van al final de la lista, para que cada mes cuadre con quienes trabajaron ese mes.
+    const extra = [];
+    for (const k of ["cal", "der", "rgu", "vec"]) {
+      for (const m of datosGraficos[k]) {
+        for (const f of m.filas) {
+          if (!pos.has(f.n)) { pos.set(f.n, dataSupervisor.tecnicos.length + extra.length); extra.push([f.n, f.s, f.a]); }
+        }
+      }
+    }
+    dataSupervisor.historico.extra = extra;
     const campos = { cal: ["t", "r"], der: ["o", "x"], rgu: ["g", "d", "m"], vec: ["T", "C"] };
     for (const k of Object.keys(campos)) {
       dataSupervisor.historico.meses[k] = datosGraficos[k].map((m) => ({
         slug: m.slug,
-        f: m.filas.filter((f) => pos.has(f.n)).map((f) => [pos.get(f.n), ...campos[k].map((c) => f[c])]),
+        f: m.filas.map((f) => [pos.get(f.n), ...campos[k].map((c) => f[c])]),
       }));
     }
   }
