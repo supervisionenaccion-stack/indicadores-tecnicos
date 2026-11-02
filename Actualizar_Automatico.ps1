@@ -13,7 +13,7 @@
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2e. reportes\generar_graficos.js -> graficos.html (boton en supervisor.html);
 #       si falla, se deja la version anterior y el resto se publica igual
-#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html y graficos.html (reintenta)
+#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html y recursos.html (reintenta)
 #   4. espera a que el sitio publico muestre la version nueva
 #   5. notificacion de Windows con el resultado (exito o error)
 # Cada corrida deja su detalle en logs\actualizacion_AAAA-MM-DD.log
@@ -76,7 +76,14 @@ if ($r.Codigo -ne 0) {
   Fallar "la validacion" (($r.Salida -split "`n" | Select-Object -Skip 1) -join " ")
 }
 $resumen = ($r.Salida -split "`n" | Where-Object { $_ -like "VALIDACION OK*" }) -replace "^VALIDACION OK: ", ""
-$hashLocal = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $PSScriptRoot "index.html")).Hash
+# Hash sin los CR de fin de linea: git (autocrlf) deja el archivo local con CRLF y
+# GitHub Pages lo sirve con LF; desde el 31-10-2026 eso hacia fallar la confirmacion
+# en linea aunque el sitio ya mostraba la version nueva.
+function HashSinCR([byte[]]$bytes) {
+  $sinCR = [byte[]]($bytes | Where-Object { $_ -ne 13 })
+  return ([BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($sinCR))).Replace("-", "")
+}
+$hashLocal = HashSinCR ([System.IO.File]::ReadAllBytes((Join-Path $PSScriptRoot "index.html")))
 
 # 2a. Datos de cada tecnico a Supabase: el index.html publico va sin ellos y el
 # portal los pide con el ID. Si no se suben, no se publica nada (los tecnicos
@@ -129,9 +136,28 @@ if ($r.Codigo -ne 0) {
   $avisoReiteradas += " (graficos NO actualizados, ver log)"
 }
 
+# 2f. Estadistica del autochequeo de herramientas (boton en supervisor.html; lee el
+# Excel de Forms sincronizado en OneDrive). Complemento: si falla, NO bloquea.
+Log "2f/4 Generando estadistica del autochequeo..."
+$r = Correr $Node @("reportesgenerar_autochequeo.js")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: autochequeo.html no se actualizo hoy; queda publicada la version anterior."
+  Correr $Git @("checkout", "--", "autochequeo.html") | Out-Null
+  $avisoReiteradas += " (autochequeo NO actualizado, ver log)"
+}
+
+# 2g. Recursos del equipo (videos, fotos y registros; boton en supervisor.html).
+Log "2g/4 Generando recursos del equipo..."
+$r = Correr $Node @("reportesgenerar_recursos.js")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: recursos.html no se actualizo hoy; queda publicada la version anterior."
+  Correr $Git @("checkout", "--", "recursos.html") | Out-Null
+  $avisoReiteradas += " (recursos NO actualizados, ver log)"
+}
+
 # 3. Publicar
 Log "3/4 Publicando en GitHub..."
-Correr $Git @("add", "index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html") | Out-Null
+Correr $Git @("add", "index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html", "autochequeo.html", "recursos.html") | Out-Null
 $r = Correr $Git @("diff", "--cached", "--quiet")
 if ($r.Codigo -eq 0) {
   Log "No hay cambios nuevos respecto de lo ya publicado."
@@ -170,8 +196,7 @@ foreach ($ronda in 1..4) {
     try {
       # Se compara el archivo publicado byte a byte (hash) con el generado aqui.
       $resp = Invoke-WebRequest -UseBasicParsing -Uri ($SitioUrl + "index.html?nc=" + [guid]::NewGuid()) -Headers @{ "Cache-Control" = "no-cache" } -TimeoutSec 30
-      $sha = [System.Security.Cryptography.SHA256]::Create()
-      $hashEnLinea = ([BitConverter]::ToString($sha.ComputeHash($resp.RawContentStream.ToArray()))).Replace("-", "")
+      $hashEnLinea = HashSinCR $resp.RawContentStream.ToArray()
       if ($hashEnLinea -eq $hashLocal) { $enLinea = $true; break }
     } catch {
       Log ("Consulta al sitio fallo: " + $_.Exception.Message)

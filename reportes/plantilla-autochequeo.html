@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Autochequeo de herramientas · Cobra</title>
+<style>
+  :root{
+    --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
+    --cobra-navy:#003c71; --cobra-blue:#0071ce; --celeste:#29a9e0; --celeste-soft:#e8f6fd;
+    --ok:#1fa971; --ok-bg:#e2f6ee; --warn:#e2962e; --warn-bg:#fdf1e2; --bad:#e2523e; --bad-bg:#fce4e0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+  .aviso-prueba{ background:var(--warn-bg); color:#8a5a12; font-weight:700; font-size:13px; text-align:center; padding:8px 16px; border-bottom:1px solid var(--warn); }
+  .brand-row{ display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .brand-row img{ height:36px; }
+  .brand-divider{ width:1px; height:28px; background:var(--border); }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:12px; color:var(--celeste); font-weight:800; }
+  .link-portal{ color:var(--cobra-blue); font-weight:700; font-size:13px; text-decoration:none; }
+  .link-portal:hover{ text-decoration:underline; }
+  h2{ margin:0 0 4px; font-size:17px; color:var(--cobra-navy); }
+  main{ padding:24px clamp(16px,3vw,56px) 60px; max-width:1400px; margin:0 auto; }
+  .filtros{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  select, .btn{ padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fff; color:var(--text); font-family:inherit; }
+  .btn{ background:var(--cobra-navy); color:#fff; border-color:var(--cobra-navy); font-weight:700; cursor:pointer; margin-left:auto; }
+  .btn:hover{ background:var(--cobra-blue); }
+  .resumen{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  .card .lbl{ font-size:12px; color:var(--text-dim); }
+  .card .num{ font-size:28px; font-weight:800; color:var(--cobra-navy); margin-top:2px; }
+  .card .num small{ font-size:14px; font-weight:600; color:var(--text-dim); }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .panel > .exp{ font-size:13px; color:var(--text-dim); margin:0 0 12px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:860px){ .grid2{ grid-template-columns:1fr; } }
+  /* barras horizontales: herramientas que mas faltan */
+  .hb{ display:grid; grid-template-columns:minmax(120px,38%) 1fr 56px; gap:8px; align-items:center; margin:7px 0; font-size:14px; }
+  .hb .nom{ line-height:1.25; }
+  .hb .pista{ height:16px; background:var(--panel-2); border-radius:8px; overflow:hidden; }
+  .hb .pista i{ display:block; height:100%; border-radius:8px; background:var(--bad); }
+  .hb .val{ position:relative; text-align:right; font-weight:800; color:var(--cobra-navy); font-variant-numeric:tabular-nums; cursor:help; outline:none; }
+  .hb .val:hover, .hb .val:focus{ color:var(--cobra-blue); }
+  .hb .tip{ display:none; position:absolute; right:0; bottom:calc(100% + 6px); z-index:5; min-width:230px; max-width:320px; text-align:left; background:var(--cobra-navy); color:#fff; border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,30,60,.25); font-weight:400; font-size:13px; line-height:1.45; }
+  .hb .tip b{ display:block; font-size:12px; color:var(--celeste); margin-bottom:5px; }
+  .hb .tip span{ display:block; }
+  .hb .val:hover .tip, .hb .val:focus .tip{ display:block; }
+  .vacio{ color:var(--text-dim); font-size:14px; padding:8px 0; }
+  /* barras por dia */
+  .dias{ display:flex; align-items:flex-end; gap:3px; height:130px; padding-top:10px; }
+  .dias .d{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; min-width:0; }
+  .dias .d i{ display:block; width:100%; background:var(--cobra-blue); border-radius:3px 3px 0 0; min-height:2px; }
+  .dias .d b{ font-size:11px; color:var(--cobra-navy); }
+  .dias .d span{ font-size:10px; color:var(--text-dim); margin-top:3px; }
+  /* tarjetas por supervisor */
+  .sups{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+  .sup{ border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--panel-2); }
+  .sup h3{ margin:0 0 8px; font-size:15px; color:var(--cobra-navy); }
+  .prog{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .prog .pista{ flex:1; height:12px; background:#fff; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .prog .pista i{ display:block; height:100%; }
+  .prog b{ font-size:13px; white-space:nowrap; }
+  .sup p{ margin:6px 0; font-size:13px; line-height:1.45; }
+  .sup details{ margin-top:6px; font-size:13px; }
+  .sup summary{ cursor:pointer; color:var(--cobra-blue); font-weight:600; }
+  .sup ul{ margin:6px 0 0; padding-left:18px; }
+  .f-ok,.f-warn,.f-bad{ background:var(--cobra-navy); }
+  /* tabla */
+  .tabla{ overflow-x:auto; }
+  th.ord{ cursor:pointer; user-select:none; }
+  th.ord:hover{ color:#fff; text-decoration:underline; }
+  th.ord::after{ content:' ⇅'; opacity:.35; }
+  th.ord[data-dir=asc]::after{ content:' ▲'; opacity:1; }
+  th.ord[data-dir=desc]::after{ content:' ▼'; opacity:1; }
+  .filtros-tabla{ display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 12px; }
+  .c-tec{ min-width:210px; } .c-tec b{ font-weight:700; color:var(--cobra-navy); }
+  .c-tiene{ min-width:130px; } .c-falta{ min-width:240px; }
+  .prog2{ display:flex; align-items:center; gap:8px; } .prog2 .pista{ flex:1; height:9px; background:var(--panel-2); border-radius:5px; overflow:hidden; } .prog2 .pista i{ display:block; height:100%; border-radius:5px; } .prog2 b{ font-size:13px; white-space:nowrap; }
+  .chip{ display:inline-block; background:var(--bad-bg); color:#a3301f; border-radius:999px; padding:3px 10px; font-size:12px; margin:2px 4px 2px 0; }
+  details.mas{ display:inline; } details.mas > summary{ display:inline-block; cursor:pointer; list-style:none; background:var(--celeste-soft); color:var(--cobra-blue); font-weight:700; border-radius:999px; padding:3px 10px; font-size:12px; margin:2px 0; } details.mas > summary::-webkit-details-marker{ display:none; }
+  details.mas[open] > summary{ display:block; width:max-content; margin-bottom:4px; }
+  table{ width:100%; border-collapse:collapse; min-width:680px; }
+  th{ text-align:left; font-size:12px; color:var(--text-dim); font-weight:700; padding:10px 12px; border-bottom:1px solid var(--border); background:var(--panel-2); white-space:nowrap; }
+  td{ padding:9px 12px; border-bottom:1px solid var(--border); font-size:14px; vertical-align:top; }
+  tr:last-child td{ border-bottom:none; }
+  .sub{ font-size:12px; color:var(--text-dim); }
+  .pill{ display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .ok{ background:var(--ok-bg); color:#12764e; } .warn{ background:var(--warn-bg); color:#8a5a12; } .bad{ background:var(--bad-bg); color:#a3301f; }
+  .nota{ font-size:12px; color:var(--text-dim); line-height:1.6; margin-top:10px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Sistema de diseno de la Academia Tecnica: el generador incrusta aca reportes/estilo-academia.css -->
+<style>/*__ESTILO_ACADEMIA__*/</style>
+<style>
+  /* ---- diseno de graficos (va despues del estilo Academia para que mande) ---- */
+  main .kpis{ display:grid; grid-template-columns:minmax(300px,1.5fr) repeat(4,minmax(140px,1fr)); gap:14px; margin-bottom:18px; }
+  main .kpi{ position:relative; background:#fff; border:1px solid var(--border); border-top:1px solid var(--border); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; justify-content:center; min-height:132px; }
+  main .kpi .lbl{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); font-weight:700; }
+  main .kpi .num{ font-size:44px; line-height:1.05; font-weight:300; margin-top:6px; }
+  main .kpi .num small{ font-size:14px; font-weight:600; color:var(--text-dim); margin-left:4px; }
+  main .kpi .cap{ font-size:12.5px; color:var(--text-dim); margin-top:6px; line-height:1.35; }
+  main .kpi.k-main{ flex-direction:row; align-items:center; gap:18px; }
+  main .kpi .leyenda{ display:grid; gap:7px; font-size:13.5px; }
+  main .kpi .leyenda div{ display:flex; align-items:center; gap:8px; }
+  main .kpi .leyenda i{ width:11px; height:11px; border-radius:3px; flex:none; }
+  main .kpi .leyenda b{ margin-left:auto; padding-left:10px; font-variant-numeric:tabular-nums; }
+  .dona{ flex:none; display:block; }
+  .dona text{ font-family:inherit; }
+  @media (max-width:1100px){ main .kpis{ grid-template-columns:repeat(2,1fr); } main .kpi.k-main{ grid-column:1 / -1; } }
+  @media (max-width:480px){ main .kpi.k-main{ flex-direction:column; align-items:flex-start; } main .kpi .num{ font-size:36px; } }
+
+  /* herramientas que mas faltan */
+  main .panel h2{ font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--cobra-blue); font-weight:800; margin-bottom:6px; }
+  .escala{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--text-dim); margin:0 0 14px; }
+  .escala span{ display:inline-flex; align-items:center; gap:6px; } .escala i{ width:18px; height:8px; border-radius:4px; }
+  .hb2{ display:grid; grid-template-columns:minmax(110px,32%) 1fr 80px; gap:10px; align-items:center; padding:7px 0; font-size:14px; }
+  .hb2:last-child{ border-bottom:none; }
+  .hb2 .rk{ width:24px; height:24px; border-radius:50%; background:var(--panel-2); color:var(--text-dim); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .hb2:nth-child(-n+3) .rk{ background:var(--bad-bg); color:#a3301f; }
+  .hb2 .nom{ line-height:1.25; font-weight:500; }
+  .hb2 .pista{ height:8px; background:var(--panel-2); border-radius:10px; overflow:hidden; position:relative; }
+  .hb2 .pista i{ display:block; height:100%; border-radius:10px; min-width:8px; }
+  .hb2 .val{ position:relative; text-align:right; font-weight:800; color:var(--cobra-navy); font-variant-numeric:tabular-nums; cursor:help; outline:none; font-size:17px; white-space:nowrap; }
+  .hb2 .val small{ font-size:12px; font-weight:600; color:var(--text-dim); margin-left:4px; }
+  .hb2 .val:hover, .hb2 .val:focus{ color:var(--cobra-blue); }
+  .hb2 .tip{ display:none; position:absolute; right:0; bottom:calc(100% + 6px); z-index:5; min-width:230px; max-width:320px; text-align:left; background:var(--cobra-navy); color:#fff; border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,30,60,.25); font-weight:400; font-size:13px; line-height:1.45; white-space:normal; }
+  .hb2 .tip b{ display:block; font-size:12px; color:var(--celeste); margin-bottom:5px; }
+  .hb2 .tip span{ display:block; }
+  .hb2 .val:hover .tip, .hb2 .val:focus .tip{ display:block; }
+  .s1,.s2,.s3,.s4{ background:var(--cobra-navy); } .s1,.s2{ opacity:1; } .s3,.s4{ opacity:.55; }
+  @media (max-width:560px){ .hb2{ grid-template-columns:1fr 80px; } .hb2 .pista{ grid-column:1 / 3; grid-row:2; } }
+
+  /* supervisores */
+  main .sup{ display:flex; gap:14px; align-items:flex-start; background:#fff; }
+  main .sup .cuerpo{ flex:1; min-width:0; }
+  main .sup h3{ margin:0 0 2px; }
+  main .sup .res{ font-size:13px; color:var(--text-dim); margin:0 0 6px; }
+
+  /* autochequeos por dia */
+  .dias{ position:relative; height:170px; gap:4px; padding:18px 0 0; border-bottom:2px solid var(--border);
+    background:repeating-linear-gradient(to top, transparent 0, transparent 33px, #eef1f4 33px, #eef1f4 34px); }
+  .dias .d i{ background:#6f93b8; border-radius:3px 3px 0 0; transition:filter .15s; }
+  .dias .d i{ min-height:0; }
+  .dias .d.pico i{ background:var(--cobra-navy); }
+  .dias .d:hover i{ filter:brightness(1.15); }
+  .dias .d b{ font-size:12px; margin-bottom:3px; }
+  .dias .d span{ position:absolute; bottom:-20px; }
+  .dias .d{ position:relative; }
+  #dias{ margin-bottom:24px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap brand-row">
+    <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
+    <div class="brand-divider"></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <a class="link-portal" href="supervisor.html">&larr; Volver al dashboard</a>
+  </div>
+</header>
+<section class="hero sin-foto" aria-label="Portada">
+  <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
+  <div class="wrap"><div>
+    <p class="eyebrow">Cobra &middot; Herramientas</p>
+    <h1>Autochequeo de <b>herramientas</b></h1>
+    <p class="subtitle" id="subtitulo"></p>
+  </div></div>
+</section>
+<main>
+  <div class="filtros">
+    <select id="fMes" aria-label="Mes"></select>
+    <select id="fSemana" aria-label="Semana"></select>
+    <select id="fSup" aria-label="Supervisor"></select>
+    <button class="btn" id="btnExcel" type="button">Descargar Excel</button>
+  </div>
+
+  <div class="kpis" id="resumen"></div>
+
+  <div class="panel">
+    <h2>Herramientas que más faltan</h2>
+    <p class="exp">Cuántos técnicos dicen que NO la tienen, según su último autochequeo del período. Pasa el cursor (o toca) el número para ver quiénes son.</p>
+    <div id="topHerr"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Cómo va cada supervisor</h2>
+    <p class="exp">Cuántos de sus técnicos ya hicieron el autochequeo, qué es lo que más les falta y quiénes no han respondido.</p>
+    <div class="sups" id="sups"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Autochequeos por día</h2>
+    <p class="exp">Cuántos técnicos respondieron cada día del período.</p>
+    <div class="dias" id="dias"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Detalle por técnico</h2>
+    <div class="filtros-tabla">
+      <select id="fSupTabla" aria-label="Filtrar por supervisor"></select>
+    </div>
+    <div class="tabla">
+      <table>
+        <thead><tr>
+          <th class="ord" data-col="nombre" title="Ordenar por técnico">Técnico</th><th class="ord" data-col="estado" title="Ordenar por estado">Estado</th><th class="ord" data-col="pct" title="Ordenar por porcentaje">Tiene</th><th class="ord" data-col="faltan" title="Ordenar por cantidad de herramientas que faltan">Qué le falta</th>
+        </tr></thead>
+        <tbody id="filas"></tbody>
+      </table>
+    </div>
+    <p class="nota" id="nota"></p>
+  </div>
+</main>
+<footer class="foot"><div class="wrap">
+  <span class="by">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span>
+</div></footer>
+
+<script>
+const D = __DATA_AUTOCHEQUEO_JSON__;
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dmy = (iso) => iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4);
+const dm = (iso) => iso.slice(8, 10) + '-' + iso.slice(5, 7);
+const corto = (n) => { let t = String(n).split(/\. |\(/)[0].trim(); return t.length > 38 ? t.slice(0, 36).trim() + '…' : t; };
+const nombreCorto = (n) => { const p = String(n).trim().split(/\s+/); return p.length > 2 ? p[0] + ' ' + p[p.length - 2] : n; };
+
+// ---------- periodos ----------
+const hoyMes = D.hoy.slice(0, 7);
+const mesesConDatos = [...new Set(D.respuestas.map((r) => r.f.slice(0, 7)).concat([hoyMes]))].sort().reverse();
+const fMes = document.getElementById('fMes'), fSemana = document.getElementById('fSemana'), fSup = document.getElementById('fSup');
+fMes.innerHTML = mesesConDatos.map((m) => '<option value="' + m + '">' + MESES[+m.slice(5) - 1] + ' ' + m.slice(0, 4) + '</option>').join('');
+
+function lunesDe(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+function sumarDias(iso, n) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function semanasDelMes(mes) {
+  const ini = mes + '-01';
+  const fin = new Date(Date.UTC(+mes.slice(0, 4), +mes.slice(5), 0)).toISOString().slice(0, 10);
+  const lista = [];
+  for (let l = lunesDe(ini); l <= fin; l = sumarDias(l, 7)) lista.push({ ini: l < ini ? ini : l, fin: sumarDias(l, 6) > fin ? fin : sumarDias(l, 6), lunes: l });
+  return lista;
+}
+function llenarSemanas() {
+  const mes = fMes.value;
+  fSemana.innerHTML = '<option value="">Todo el mes</option>' + semanasDelMes(mes).map((s, i) =>
+    '<option value="' + i + '">Semana del ' + dm(s.ini) + ' al ' + dm(s.fin) + '</option>').join('');
+}
+function periodo() {
+  const mes = fMes.value, sem = fSemana.value;
+  if (sem !== '') { const s = semanasDelMes(mes)[+sem]; return { ini: s.ini, fin: s.fin, etiqueta: 'semana del ' + dm(s.ini) + ' al ' + dm(s.fin) }; }
+  const fin = new Date(Date.UTC(+mes.slice(0, 4), +mes.slice(5), 0)).toISOString().slice(0, 10);
+  return { ini: mes + '-01', fin, etiqueta: MESES[+mes.slice(5) - 1] + ' ' + mes.slice(0, 4) };
+}
+
+const sups = [...new Set(D.tecnicos.map((t) => t.supervisor).filter(Boolean))].sort();
+fSup.innerHTML = '<option value="">Todos los supervisores</option>' + sups.map((s) => '<option>' + esc(s) + '</option>').join('');
+const fSupTabla = document.getElementById('fSupTabla');
+fSupTabla.innerHTML = fSup.innerHTML;
+fSupTabla.addEventListener('change', () => { fSup.value = fSupTabla.value; pintar(); });
+fMes.value = hoyMes; llenarSemanas();
+{ const q = new URLSearchParams(location.search).get('supervisor'); if (q && sups.includes(q)) fSup.value = q; }   // abre con el equipo ya elegido: autochequeo.html?supervisor=Nombre
+
+// ---------- calculo ----------
+let ULTIMO = null;
+const ORD = { col: 'estado', dir: 1 };   // 1 = ascendente; en pct y faltan -1 = de más a menos   // lo que se muestra, para el Excel
+function calcular() {
+  const per = periodo(), supSel = fSup.value;
+  const resp = D.respuestas.filter((r) => r.f >= per.ini && r.f <= per.fin);
+  const tecs = D.tecnicos.map((t, i) => Object.assign({ i }, t)).filter((t) => !supSel || t.supervisor === supSel);
+  // ultimo autochequeo de cada tecnico dentro del periodo
+  const ult = {}, cuenta = {};
+  resp.forEach((r) => { if (r.t >= 0) { ult[r.t] = r; cuenta[r.t] = (cuenta[r.t] || 0) + 1; } });   // ordenadas por fecha
+  const filas = tecs.map((t) => {
+    const r = ult[t.i];
+    return { t, r, n: cuenta[t.i] || 0, pct: r ? Math.round((r.si / (r.si + r.no)) * 100) : null };
+  });
+  const respondieron = filas.filter((f) => f.r);
+  const conFalta = respondieron.filter((f) => f.r.no > 0);
+  // herramientas que mas faltan (tecnicos distintos con NO en su ultimo autochequeo)
+  const cont = {};
+  respondieron.forEach((f) => f.r.x.forEach((k) => { (cont[k] = cont[k] || []).push(f.t.nombre); }));
+  const top = Object.entries(cont).map(([k, l]) => ({ nombre: D.herramientas[k], n: l.length, quienes: l.slice().sort((a, b) => a.localeCompare(b)) })).sort((a, b) => b.n - a.n);
+  const dias = {};
+  resp.filter((r) => r.t < 0 || !supSel || (D.tecnicos[r.t] && D.tecnicos[r.t].supervisor === supSel)).forEach((r) => { dias[r.f] = (dias[r.f] || 0) + 1; });
+  ULTIMO = { per, supSel, filas, top, dias, resp };
+  return ULTIMO;
+}
+
+function dona(partes, tam, gr, centro, sub) {
+  const r = (tam - gr) / 2, C = 2 * Math.PI * r, tot = partes.reduce((s, x) => s + x.n, 0);
+  let acc = 0;
+  const arcos = tot ? partes.filter((x) => x.n > 0).map((x) => { const l = (x.n / tot) * C, s = '<circle cx="' + tam / 2 + '" cy="' + tam / 2 + '" r="' + r + '" fill="none" stroke="' + x.c + '" stroke-width="' + gr + '" stroke-dasharray="' + l + ' ' + (C - l) + '" stroke-dashoffset="' + -acc + '"/>'; acc += l; return s; }).join('') : '';
+  return '<svg class="dona" width="' + tam + '" height="' + tam + '" viewBox="0 0 ' + tam + ' ' + tam + '" role="img"><circle cx="' + tam / 2 + '" cy="' + tam / 2 + '" r="' + r + '" fill="none" stroke="#eef1f4" stroke-width="' + gr + '"/><g transform="rotate(-90 ' + tam / 2 + ' ' + tam / 2 + ')">' + arcos + '</g>' +
+    '<text x="50%" y="' + (sub ? '48%' : '52%') + '" text-anchor="middle" dominant-baseline="middle" font-size="' + (tam > 100 ? 30 : 16) + '" font-weight="300" fill="#003c71">' + centro + '</text>' +
+    (sub ? '<text x="50%" y="66%" text-anchor="middle" font-size="11" fill="#6b7a8c">' + sub + '</text>' : '') + '</svg>';
+}
+function pintar() {
+  fSupTabla.value = fSup.value;   // los dos filtros de supervisor siempre muestran lo mismo
+  const { per, filas, top, dias } = calcular();
+  const N = filas.length, R = filas.filter((f) => f.r).length;
+  const pctResp = N ? Math.round((R / N) * 100) : 0;
+  const conFalta = filas.filter((f) => f.r && f.r.no > 0).length;
+  const cumplen = filas.filter((f) => f.r && f.r.no === 0).length;
+  document.getElementById('subtitulo').textContent =
+    'Período: ' + per.etiqueta + '. Cada técnico hace el autochequeo una vez por semana; aquí se ve quién lo hizo y qué herramientas faltan.';
+  const sinResp = N - R;
+  document.getElementById('resumen').innerHTML =
+    '<div class="kpi k-main">' + dona([{ n: cumplen, c: '#003c71' }, { n: conFalta, c: '#6f93b8' }, { n: sinResp, c: '#e3e8ee' }], 124, 16, pctResp + ' %', 'respondieron') +
+      '<div class="leyenda"><div><i style="background:#003c71"></i>Completo<b>' + cumplen + '</b></div><div><i style="background:#6f93b8"></i>Con faltantes<b>' + conFalta + '</b></div><div><i style="background:#e3e8ee"></i>Sin responder<b>' + sinResp + '</b></div></div></div>' +
+    '<div class="kpi"><div class="lbl">Técnicos</div><div class="num" style="color:var(--cobra-navy)">' + N + '</div><div class="cap">en el equipo' + (fSup.value ? ' del supervisor' : '') + '</div></div>' +
+    '<div class="kpi"><div class="lbl">Sin responder</div><div class="num">' + sinResp + '</div><div class="cap">' + (sinResp ? 'faltan por hacer el autochequeo' : 'todos respondieron') + '</div></div>' +
+    '<div class="kpi"><div class="lbl">Con todo completo</div><div class="num">' + cumplen + '</div><div class="cap">tienen todas sus herramientas</div></div>' +
+    '<div class="kpi"><div class="lbl">Con faltantes</div><div class="num">' + conFalta + '</div><div class="cap">les falta al menos una herramienta</div></div>';
+
+  // herramientas que mas faltan
+  const sev = (p) => (p >= 75 ? 's1' : p >= 50 ? 's2' : p >= 25 ? 's3' : 's4');
+  document.getElementById('topHerr').innerHTML = top.length
+    ? '' +
+      top.slice(0, 10).map((h, k) => { const p = Math.round((h.n / R) * 100); return '<div class="hb2"><div class="nom">' + esc(h.nombre) + '</div><div class="pista"><i class="' + sev(p) + '" style="width:' + Math.max(3, p) + '%"></i></div><div class="val" tabindex="0">' + h.n + '<small>' + p + ' %</small><div class="tip"><b>' + esc(h.nombre) + '</b>' + h.quienes.map((q) => '<span>' + esc(q) + '</span>').join('') + '</div></div></div>'; }).join('')
+    : '<div class="vacio">' + (R ? 'Ningún técnico reporta herramientas faltantes en este período.' : 'Todavía no hay autochequeos en este período.') + '</div>';
+
+  // por supervisor
+  const listaSup = (fSup.value ? [fSup.value] : sups);
+  document.getElementById('sups').innerHTML = listaSup.map((s) => {
+    const fs = filas.filter((f) => f.t.supervisor === s);
+    if (!fs.length) return '';
+    const r = fs.filter((f) => f.r), sin = fs.filter((f) => !f.r);
+    const p = Math.round((r.length / fs.length) * 100);
+    const c = {}; r.forEach((f) => f.r.x.forEach((k) => { c[k] = (c[k] || 0) + 1; }));
+    const faltan = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => esc(D.herramientas[k]) + ' (' + n + ')');
+    const col = '#003c71';
+    return '<div class="sup">' + dona([{ n: r.length, c: col }, { n: sin.length, c: '#e3e8ee' }], 72, 10, p + ' %') +
+      '<div class="cuerpo"><h3>' + esc(s) + '</h3><p class="res">' + r.length + ' de ' + fs.length + ' técnicos hicieron el autochequeo</p>' +
+      '<p><b>Lo que más les falta:</b> ' + (faltan.length ? faltan.join(', ') : (r.length ? 'nada, todo completo' : 'sin datos aún')) + '</p>' +
+      (sin.length ? '<details><summary>Sin responder (' + sin.length + ')</summary><ul>' + sin.map((f) => '<li>' + esc(nombreCorto(f.t.nombre)) + '</li>').join('') + '</ul></details>' : '<p>Todos respondieron.</p>') +
+      '</div></div>';
+  }).join('') || '<div class="vacio">Sin técnicos para mostrar.</div>';
+
+  // por dia
+  const ini = per.ini, fin = per.fin, lista = [];
+  for (let d = ini; d <= fin; d = sumarDias(d, 1)) lista.push(d);
+  const mx = Math.max(1, ...lista.map((d) => dias[d] || 0));
+  document.getElementById('dias').innerHTML = lista.map((d) =>
+    '<div class="d' + ((dias[d] || 0) === mx && mx > 1 ? ' pico' : '') + '" title="' + dmy(d) + ': ' + (dias[d] || 0) + '"><b>' + (dias[d] || '') + '</b><i style="height:' + ((dias[d] || 0) / mx) * 80 + '%"></i><span>' + (lista.length > 16 ? (+d.slice(8) % 5 === 0 || d.slice(8) === '01' ? +d.slice(8) : '') : +d.slice(8)) + '</span></div>').join('');
+
+  // tabla
+    const nFalta = (f) => (f.r ? f.r.no : null), porNombre = (a, b) => a.t.nombre.localeCompare(b.t.nombre);
+  // los que no respondieron no tienen dato: van siempre al final al ordenar por cantidad o por %
+  const num = (get) => (a, b) => { const x = get(a), y = get(b); if (x == null && y == null) return porNombre(a, b); if (x == null) return 1; if (y == null) return -1; return (ORD.dir * (x - y)) || porNombre(a, b); };
+  const ORDENES = {
+    nombre: (a, b) => ORD.dir * porNombre(a, b),
+    estado: (a, b) => ORD.dir * ((!!a.r - !!b.r) || ((a.pct == null ? 101 : a.pct) - (b.pct == null ? 101 : b.pct))) || porNombre(a, b),
+    pct: num((f) => f.pct), faltan: num(nFalta),
+  };
+  const orden = filas.slice().sort(ORDENES[ORD.col]);
+  ULTIMO.orden = orden;
+  document.querySelectorAll('th.ord').forEach((th) => { th.dataset.dir = th.dataset.col === ORD.col ? (ORD.dir === 1 ? 'asc' : 'desc') : ''; });
+  const chip = (k) => '<span class="chip" title="' + esc(D.herramientas[k]) + '">' + esc(corto(D.herramientas[k])) + '</span>';
+  document.getElementById('filas').innerHTML = orden.map((f) => {
+    const estado = !f.r ? '<span class="pill bad">Sin responder</span>' : f.r.no === 0 ? '<span class="pill ok">Completo</span>' : '<span class="pill warn">Faltan herramientas</span>';
+    const total = f.r ? f.r.si + f.r.no : 0;
+    const clase = f.pct == null ? '' : f.pct >= 90 ? 'f-ok' : f.pct >= 75 ? 'f-warn' : 'f-bad';
+    const tiene = f.r ? '<div class="prog2"><div class="pista"><i class="' + clase + '" style="width:' + f.pct + '%"></i></div><b>' + f.pct + ' %</b></div><div class="sub">' + f.r.si + ' de ' + total + ' herramientas</div>' : '—';
+    let falta = f.r ? '<span class="sub">Nada, todo completo</span>' : '<span class="sub">Aún no hace el autochequeo</span>';
+    if (f.r && f.r.x.length) {
+      const a = f.r.x.slice(0, 3).map(chip).join(''), resto = f.r.x.slice(3);
+      falta = a + (resto.length ? '<details class="mas"><summary>+' + resto.length + ' más</summary>' + resto.map(chip).join('') + '</details>' : '');
+    }
+    return '<tr><td class="c-tec"><b>' + esc(f.t.nombre) + '</b><div class="sub">' + esc(f.t.agencia || '') + ' · Sup. ' + esc(nombreCorto(f.t.supervisor || '')) + '</div></td><td>' + estado + (f.r ? '<div class="sub">Último: ' + dmy(f.r.f) + (f.n > 1 ? ' · ' + f.n + ' autochequeos' : '') + '</div>' : '') + '</td><td class="c-tiene">' + tiene + '</td><td class="c-falta">' + falta + '</td></tr>';
+  }).join('');
+  if (!orden.length) document.getElementById('filas').innerHTML = '<tr><td colspan="4" class="vacio">No hay técnicos con ese filtro.</td></tr>';
+  const fuera = ULTIMO.resp.filter((r) => r.t < 0).length;
+  document.getElementById('nota').textContent =
+    'Fuente: ' + D.archivo + ' (última modificación ' + dmy(D.archivoModificado.slice(0, 10)) + '). Se toma el último autochequeo de cada técnico dentro del período. ' +
+    (fuera ? fuera + ' respuesta(s) del período son de personas que no están en el portal y no se cuentan. ' : '') +
+    'Portal generado el ' + esc(D.generadoEl) + '.';
+}
+
+fMes.addEventListener('change', () => { llenarSemanas(); pintar(); });
+fSemana.addEventListener('change', pintar);
+fSup.addEventListener('change', pintar);
+document.querySelectorAll('th.ord').forEach((th) => th.addEventListener('click', () => {
+  const col = th.dataset.col;
+  if (ORD.col === col) ORD.dir = -ORD.dir; else { ORD.col = col; ORD.dir = (col === 'pct' || col === 'faltan') ? -1 : 1; }   // numericas: primero de más a menos
+  pintar();
+}));
+pintar();
+
+// ---------- Excel (.xlsx escrito a mano: sin librerias ni conexion) ----------
+const CRC = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zip(archivos) {   // sin compresion
+  const enc = new TextEncoder(), partes = [], central = []; let pos = 0;
+  const u16 = (v) => [v & 255, (v >> 8) & 255], u32 = (v) => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  archivos.forEach(([nombre, texto]) => {
+    const n = enc.encode(nombre), d = enc.encode(texto), c = crc32(d);
+    const cab = [0x50, 0x4b, 3, 4, 20, 0, 0, 8, 0, 0, 0, 0, 0, 0, ...u32(c), ...u32(d.length), ...u32(d.length), ...u16(n.length), 0, 0];
+    partes.push(new Uint8Array(cab), n, d);
+    central.push(new Uint8Array([0x50, 0x4b, 1, 2, 20, 0, 20, 0, 0, 8, 0, 0, 0, 0, 0, 0, ...u32(c), ...u32(d.length), ...u32(d.length), ...u16(n.length), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...u32(pos)]), n);
+    pos += cab.length + n.length + d.length;
+  });
+  const tamCentral = central.reduce((s, p) => s + p.length, 0);
+  const fin = new Uint8Array([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...u16(archivos.length), ...u16(archivos.length), ...u32(tamCentral), ...u32(pos), 0, 0]);
+  return new Blob([...partes, ...central, fin], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+const colLetra = (i) => { let s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s; return s; };
+const xml = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const NL = String.fromCharCode(10);
+const CAB = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+// Estilos: 1 titulo de columna, 2 texto, 3 rojo, 4 ambar, 5 verde, 6 titulo grande, 7 etiqueta en negrita, 8 numero centrado, 9 porcentaje centrado, 10 nota gris
+const ESTILOS = CAB + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+  '<numFmts count="1"><numFmt numFmtId="164" formatCode="0&quot; %&quot;"/></numFmts>' +
+  '<fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><color rgb="FF003C71"/><name val="Calibri"/></font><font><i/><sz val="10"/><color rgb="FF6B7A8C"/><name val="Calibri"/></font></fonts>' +
+  '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+  '<fill><patternFill patternType="solid"><fgColor rgb="FF003C71"/><bgColor indexed="64"/></patternFill></fill>' +
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFFCE4E0"/><bgColor indexed="64"/></patternFill></fill>' +
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFFDF1E2"/><bgColor indexed="64"/></patternFill></fill>' +
+  '<fill><patternFill patternType="solid"><fgColor rgb="FFE2F6EE"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+  '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+  '<border><left style="thin"><color rgb="FFE0E5EA"/></left><right style="thin"><color rgb="FFE0E5EA"/></right><top style="thin"><color rgb="FFE0E5EA"/></top><bottom style="thin"><color rgb="FFE0E5EA"/></bottom><diagonal/></border></borders>' +
+  '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+  '<cellXfs count="11">' +
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+  '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>' +
+  '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +
+  '<xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +
+  '<xf numFmtId="0" fontId="2" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +
+  '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+  '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>' +
+  '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>' +
+  '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+  '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+// celda con estilo: c(valor, estilo); una fila es una lista de valores o de celdas
+const c = (v, s) => ({ v, s });
+function hoja(filas, o) {
+  o = o || {};
+  const ancho = (o.anchos || []).map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('');
+  const filasXml = filas.map((f, r) => '<row r="' + (r + 1) + '">' + f.map((x, k) => {
+    const celda = x && typeof x === 'object' ? x : { v: x, s: 2 };
+    const ref = colLetra(k) + (r + 1), st = celda.s ? ' s="' + celda.s + '"' : '';
+    if (celda.v === '' || celda.v == null) return '<c r="' + ref + '"' + st + '/>';
+    return typeof celda.v === 'number'
+      ? '<c r="' + ref + '"' + st + '><v>' + celda.v + '</v></c>'
+      : '<c r="' + ref + '"' + st + ' t="inlineStr"><is><t xml:space="preserve">' + xml(celda.v) + '</t></is></c>';
+  }).join('') + '</row>').join('');
+  const cols = o.anchos ? o.anchos.length : 1;
+  return CAB + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"' + (o.sinCuadricula ? ' showGridLines="0"' : '') + '>' +
+    (o.congelar ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' : '') + '</sheetView></sheetViews>' +
+    '<cols>' + ancho + '</cols><sheetData>' + filasXml + '</sheetData>' +
+    (o.filtro ? '<autoFilter ref="A1:' + colLetra(cols - 1) + filas.length + '"/>' : '') + '</worksheet>';
+}
+const celdaEstado = (f) => (!f.r ? c('Sin responder', 3) : f.r.no ? c('Faltan herramientas', 4) : c('Completo', 5));
+
+document.getElementById('btnExcel').addEventListener('click', () => {
+  const { per, filas, top, resp, supSel } = ULTIMO;
+  const lista = ULTIMO.orden || filas;
+  const N = filas.length, R = filas.filter((f) => f.r).length, completos = filas.filter((f) => f.r && f.r.no === 0).length;
+  const nombres = (k) => k.map((i) => D.herramientas[i]).join(NL);
+
+  const resumen = [
+    [c('Autochequeo de herramientas', 6)],
+    [c('Período', 7), c(per.etiqueta, 0)],
+    [c('Supervisor', 7), c(supSel || 'Todos', 0)],
+    [c('Fecha del reporte', 7), c(dmy(D.hoy), 0)],
+    [],
+    [c('Técnicos', 7), c(N, 0)],
+    [c('Hicieron el autochequeo', 7), c(R + ' (' + (N ? Math.round((R / N) * 100) : 0) + ' %)', 0)],
+    [c('Sin responder', 7), c(N - R, 0)],
+    [c('Con todo completo', 7), c(completos, 0)],
+    [c('Con herramientas faltantes', 7), c(R - completos, 0)],
+    [],
+    [c('Cómo leer este archivo', 7)],
+    [c('Por técnico: quién respondió, cuánto tiene y qué le falta (una herramienta por línea).', 10)],
+    [c('Herramientas que faltan: cuántos técnicos no tienen cada herramienta y quiénes son.', 10)],
+    [c('Respuestas: cada autochequeo hecho dentro del período.', 10)],
+    [c('Se toma el último autochequeo de cada técnico dentro del período.', 10)],
+  ];
+
+  const porTecnico = [['Técnico', 'Supervisor', 'Agencia', 'Estado', 'Último autochequeo', 'Autochequeos en el período', '% que tiene', 'Cuántas le faltan', 'Qué le falta'].map((t) => c(t, 1))]
+    .concat(lista.map((f) => [
+      c(f.t.nombre, 2), c(f.t.supervisor || '', 2), c(f.t.agencia || '', 2), celdaEstado(f),
+      c(f.r ? dmy(f.r.f) : '', 8), c(f.n, 8), f.pct == null ? c('', 8) : c(f.pct, 9), f.r ? c(f.r.no, 8) : c('', 8),
+      c(f.r ? (f.r.x.length ? nombres(f.r.x) : 'Nada, todo completo') : 'Aún no hace el autochequeo', 2),
+    ]));
+
+  const herr = [['Herramienta', 'Técnicos que no la tienen', '% de los que respondieron', 'Quiénes (uno por línea)'].map((t) => c(t, 1))]
+    .concat(top.map((h) => [c(h.nombre, 2), c(h.n, 8), c(R ? Math.round((h.n / R) * 100) : 0, 9), c(h.quienes.join(NL), 2)]));
+
+  const det = [['Fecha', 'Técnico', 'Supervisor', 'Tiene (SI)', 'Le faltan (NO)', 'Qué le falta'].map((t) => c(t, 1))]
+    .concat(resp.filter((r) => r.t >= 0 && (!supSel || D.tecnicos[r.t].supervisor === supSel))
+      .map((r) => [c(dmy(r.f), 8), c(D.tecnicos[r.t].nombre, 2), c(D.tecnicos[r.t].supervisor || '', 2), c(r.si, 8), c(r.no, 8), c(r.x.length ? nombres(r.x) : 'Nada, todo completo', 2)]));
+
+  const hojas = [
+    ['Resumen', hoja(resumen, { anchos: [30, 48], sinCuadricula: true })],
+    ['Por técnico', hoja(porTecnico, { anchos: [34, 32, 14, 20, 16, 14, 12, 12, 60], congelar: true, filtro: true })],
+    ['Herramientas que faltan', hoja(herr, { anchos: [52, 16, 18, 44], congelar: true, filtro: true })],
+    ['Respuestas', hoja(det, { anchos: [12, 34, 32, 11, 13, 60], congelar: true, filtro: true })],
+  ];
+  const arch = [
+    ['[Content_Types].xml', CAB + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      hojas.map((h, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') + '</Types>'],
+    ['_rels/.rels', CAB + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', CAB + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+      hojas.map((h, i) => '<sheet name="' + xml(h[0]) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels', CAB + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      hojas.map((h, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+      '<Relationship Id="rId' + (hojas.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml', ESTILOS],
+  ].concat(hojas.map((h, i) => ['xl/worksheets/sheet' + (i + 1) + '.xml', h[1]]));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zip(arch));
+  a.download = 'Autochequeo_' + per.ini + '_a_' + per.fin + '.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+</script>
+</body>
+</html>

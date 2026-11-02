@@ -260,6 +260,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
         Gráficos del equipo
       </a>
+      <a class="btn-reiteradas" id="btnAutochequeo" href="autochequeo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4"/><path d="M9 17h6"/></svg>
+        Autochequeo de herramientas
+      </a>
+      <a class="btn-reiteradas" id="btnRecursos" href="recursos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>
+        Recursos del equipo
+      </a>
       </div>
     </div>
   </div>
@@ -1298,6 +1306,7 @@ function actualizarLinkReiteradas() {
   document.getElementById('btnVecino').href = 'vecino.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnBrecha').href = 'brecha.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnGraficos').href = 'graficos.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnAutochequeo').href = 'autochequeo.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
 }
 
 document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });
