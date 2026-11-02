@@ -264,7 +264,7 @@ main{ max-width:1400px; padding:48px 24px 72px; }
 /* laminas de mejores y peores: borde superior con el color de su categoria */
 .ranking-row{ gap:24px; margin-bottom:24px; }
 .ranking-card{ padding:24px 26px 20px; margin-bottom:0 !important; }
-.ranking-card:nth-child(1){ border-top-color:var(--f1); } .ranking-card:nth-child(2){ border-top-color:var(--f2); } .ranking-card:nth-child(3){ border-top-color:var(--f3); }
+.ranking-card:nth-child(n){ border-top-color:var(--navy); }
 .ranking-card h3{ font:600 20px/1.2 var(--font); color:var(--navy); margin-bottom:14px; }
 .ranking-grupo .titulo{ font:600 10.5px/1.2 var(--font); letter-spacing:.14em; margin-bottom:6px; }
 .ranking-grupo.peores .titulo{ color:var(--warn); }
@@ -643,7 +643,7 @@ tr.detalle td{ background:var(--panel-2); }
 </div></footer>
 
 <script>
-const DATA = {"generadoEl":"02-11-2026, 3:30:08 p. m.","periodoCalidad":"octubre de 2026","etiquetaCalidad":"Noviembre 2026 (cierres de octubre)","periodoMatriz":"1 al 1 de noviembre de 2026","cierreMes":false,"tecnicos":{},"totalTecnicos":27};
+const DATA = {"generadoEl":"02-11-2026, 3:32:14 p. m.","periodoCalidad":"octubre de 2026","etiquetaCalidad":"Noviembre 2026 (cierres de octubre)","periodoMatriz":"1 al 1 de noviembre de 2026","cierreMes":false,"tecnicos":{},"totalTecnicos":27};
 
 function titleCase(s) { return (s || '').split(' ').map(w => w ? w[0] + w.slice(1).toLowerCase() : w).join(' '); }
 function formatFechaLarga(iso) {
