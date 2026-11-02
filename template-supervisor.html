@@ -234,6 +234,10 @@
 <main>
   <div class="panel controles">
     <div class="campo">
+      <label for="filtroMes">Mes</label>
+      <select id="filtroMes"></select>
+    </div>
+    <div class="campo">
       <label for="filtroSupervisor">Supervisor / Equipo</label>
       <select id="filtroSupervisor"></select>
     </div>
@@ -1310,6 +1314,50 @@ function actualizarLinkReiteradas() {
 }
 
 document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });
+
+// ---------- Filtro de mes ----------
+// Cada mes toma de DATA.historico las cuentas por tecnico (Calidad, Derivaciones,
+// RGU y Vecino) y arma los mismos objetos que usa el dashboard. Calidad de un mes
+// es la de los cierres del mes anterior (igual que el grafico mensual). El detalle
+// de causas y la brecha a la meta solo existen para el mes en curso.
+const TEC_ACTUAL = DATA.tecnicos;
+const TXT_ACTUAL = { periodoCalidad: DATA.periodoCalidad, etiquetaCalidad: DATA.etiquetaCalidad, periodoMatriz: DATA.periodoMatriz, cierreMes: DATA.cierreMes };
+const NOMBRES_MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const etiquetaMes = (slug) => { const [a, m] = slug.split('-').map(Number); return NOMBRES_MES[m - 1].charAt(0).toUpperCase() + NOMBRES_MES[m - 1].slice(1) + ' ' + a; };
+const slugsMes = DATA.historico ? [...new Set(['cal', 'der', 'rgu', 'vec'].flatMap((k) => (DATA.historico.meses[k] || []).map((m) => m.slug)))].sort().reverse() : [];
+const MES_EN_CURSO = slugsMes[0] || '';   // el mas reciente es el del dashboard actual
+const selMes = document.getElementById('filtroMes');
+selMes.innerHTML = slugsMes.map((s) => '<option value="' + s + '">' + etiquetaMes(s) + (s === MES_EN_CURSO ? ' (en curso)' : '') + '</option>').join('');
+selMes.value = MES_EN_CURSO;
+if (!slugsMes.length) selMes.parentElement.style.display = 'none';
+
+function tecnicosDeMes(slug) {
+  const h = DATA.historico, filas = (k) => { const m = h.meses[k].find((x) => x.slug === slug), mp = new Map(); if (m) m.f.forEach((f) => mp.set(f[0], f)); return mp; };
+  const cal = filas('cal'), der = filas('der'), rgu = filas('rgu'), vec = filas('vec');
+  return TEC_ACTUAL.map((t, i) => {
+    const c = cal.get(i), d = der.get(i), g = rgu.get(i), v = vec.get(i);
+    const meta = (h.metas.calPorAgencia[t.agencia] != null) ? h.metas.calPorAgencia[t.agencia] : h.metas.calDefault;
+    return Object.assign({}, t, {
+      calidad: c && c[1] ? { totalOrdenes: c[1], repetidos30Dias: c[2], pctRepetidos: (c[2] / c[1]) * 100, metaCalidad: meta, causas: [] } : null,
+      derivaciones: d && d[1] ? { qOrdenes: d[1], qDerivaciones: d[2], pctDerivaciones: (d[2] / d[1]) * 100 } : null,
+      rgu: g ? { rguTotal: g[1], rguCompletadaGsa: g[1], diasTrabajados: g[2], metaDiaria: null, metaPeriodo: g[3], pctCumplimiento: g[3] ? (g[1] / g[3]) * 100 : 0, brecha: null } : null,
+      vecino: v ? { total: v[1], conConsulta: v[2], pct: (v[2] / v[1]) * 100 } : null,
+    });
+  }).filter((t) => t.calidad || t.derivaciones || t.rgu || t.vecino);
+}
+function aplicarMes() {
+  const slug = selMes.value;
+  if (slug === MES_EN_CURSO) {
+    DATA.tecnicos = TEC_ACTUAL; Object.assign(DATA, TXT_ACTUAL);
+  } else {
+    DATA.tecnicos = tecnicosDeMes(slug);
+    DATA.periodoMatriz = etiquetaMes(slug); DATA.cierreMes = true;
+    DATA.periodoCalidad = DATA.etiquetaCalidad = etiquetaMes(slug) + ' (cierres del mes anterior)';
+  }
+  document.getElementById('footerText').innerHTML = 'Calidad: ' + (DATA.etiquetaCalidad || DATA.periodoCalidad) + ' · Derivaciones/RGU: ' + DATA.periodoMatriz + ' (' + (DATA.cierreMes ? 'cierre del mes' : 'avance del mes') + ') · Generado ' + DATA.generadoEl;
+  renderTabla(); renderCombinado(); actualizarLinkReiteradas();
+}
+selMes.addEventListener('change', aplicarMes);
 
 renderTabla();
 actualizarLinkReiteradas();

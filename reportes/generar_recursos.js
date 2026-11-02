@@ -1,6 +1,6 @@
-// "Recursos del equipo": videos, fotos y registros de capacitacion. Se publica cifrada
+// "Recursos del equipo": videos y fotos de los tecnicos. Se publica cifrada
 // como recursos.html (boton en supervisor.html); la copia sin cifrar queda en privado/.
-// Para agregar algo nuevo: copiar una linea de VIDEOS, FOTOS o REGISTROS y cambiar los datos.
+// Para agregar algo nuevo: copiar una linea de VIDEOS o FOTOS y cambiar los datos.
 // Los videos y fotos viven en el sitio de capacitacion; aca solo se enlazan.
 const fs = require("fs");
 const path = require("path");
@@ -14,10 +14,6 @@ const VIDEOS = [
 const FOTOS = [
   // { titulo: "Texto de la foto", foto: "fotos/archivo.jpg" },
 ];
-const REGISTROS = [
-  { titulo: "Autochequeo semanal de herramientas", detalle: "Quién lo hizo y qué herramientas faltan, por mes y supervisor. Con Excel descargable.", url: "autochequeo.html", etiqueta: "Ver estadística" },
-  { titulo: "Capacitación técnica", detalle: "Autochequeo, videos de armado del conector por región y paso a paso con fotos de terreno.", url: SITIO, etiqueta: "Abrir página" },
-];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dmy = (iso) => iso.split("-").reverse().join("-");
@@ -25,7 +21,6 @@ const css = fs.readFileSync(path.join(__dirname, "estilo-academia.css"), "utf-8"
 
 const videos = VIDEOS.map((v) => `<a class="rc" href="https://vimeo.com/${v.id}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></div><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span></div></a>`).join("");
 const fotos = FOTOS.map((f) => `<a class="rc" href="${SITIO}${f.foto}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${f.foto}" alt="${esc(f.titulo)}" loading="lazy"></div><div class="tx"><b>${esc(f.titulo)}</b><span>Abrir y guardar</span></div></a>`).join("");
-const registros = REGISTROS.map((r) => `<a class="reg" href="${esc(r.url)}"${r.url.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}><div><b>${esc(r.titulo)}</b><span>${esc(r.detalle)}</span></div><em>${esc(r.etiqueta)} →</em></a>`).join("");
 
 const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
@@ -54,12 +49,11 @@ main .panel .exp{ margin:0 0 14px; font-size:13px; color:var(--dim); }
 <style>${css}</style>
 </head><body>
 <header class="top"><div class="wrap brand-row"><img src="logo-cobra.png" alt="Cobra"><div class="brand-divider"></div><div class="brand-name">Portal <strong>Supervisor</strong></div><a class="link-portal" href="supervisor.html">&larr; Volver al dashboard</a></div></header>
-<section class="hero sin-foto"><div class="wrap"><div><p class="eyebrow">Cobra &middot; Claro VTR</p><h1>Recursos del <b>equipo</b></h1><p class="subtitle">Videos, fotos y registros de capacitación de los técnicos.</p></div></div></section>
+<section class="hero sin-foto"><div class="wrap"><div><p class="eyebrow">Cobra &middot; Claro VTR</p><h1>Recursos del <b>equipo</b></h1><p class="subtitle">Videos y fotos de los técnicos.</p></div></div></section>
 <main>
   <div class="panel"><h2>Videos de técnicos</h2><p class="exp">Armado del conector de campo, grabado por los propios técnicos.</p><div class="grid">${videos}</div></div>
   <div class="panel"><h2>Fotos de terreno</h2><p class="exp">Fotos de los técnicos en terreno. Toca una para abrirla y guardarla.</p>${fotos ? `<div class="grid">${fotos}</div>` : `<p class="exp">Próximamente.</p>`}</div>
-  <div class="panel"><h2>Registros de capacitación</h2><p class="exp">Estadísticas y páginas de capacitación.</p>${registros}</div>
 </main>
 <footer class="foot"><div class="wrap"><span class="by">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span></div></footer>
 </body></html>`;
-publicarProtegida(html, "recursos.html", "recursos", "Recursos del equipo").then(() => console.log("==> Generado recursos.html:", VIDEOS.length, "videos,", FOTOS.length, "fotos,", REGISTROS.length, "registros")).catch((e) => { console.error("ERROR:", e.message); process.exit(1); });
+publicarProtegida(html, "recursos.html", "recursos", "Recursos del equipo").then(() => console.log("==> Generado recursos.html:", VIDEOS.length, "videos,", FOTOS.length, "fotos,")).catch((e) => { console.error("ERROR:", e.message); process.exit(1); });

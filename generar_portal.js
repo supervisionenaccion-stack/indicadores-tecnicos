@@ -1216,7 +1216,21 @@ async function main() {
     // Sin las series por tecnico: van identificadas por RUT y el dashboard no las usa.
     evolutivoMensual: { ...evolutivoMensual, porTecnico: undefined },
     evolutivoMensualRgu: { ...evolutivoMensualRgu, porTecnico: undefined },
+    // Mes a mes por tecnico (por nombre, nunca RUT) para el filtro de mes del dashboard.
+    // Formato compacto (pocas bytes: la pagina se sube cifrada cada dia): cada fila es
+    // [posicion del tecnico en "tecnicos", cuentas...]. cal [t, r]; der [o, x]; rgu [g, d, m]; vec [T, C].
+    historico: { metas: { calPorAgencia: META_CALIDAD_POR_CIUDAD, calDefault: META_CALIDAD_DEFAULT }, meses: {} },
   };
+  {
+    const pos = new Map(dataSupervisor.tecnicos.map((t, i) => [t.nombre, i]));
+    const campos = { cal: ["t", "r"], der: ["o", "x"], rgu: ["g", "d", "m"], vec: ["T", "C"] };
+    for (const k of Object.keys(campos)) {
+      dataSupervisor.historico.meses[k] = datosGraficos[k].map((m) => ({
+        slug: m.slug,
+        f: m.filas.filter((f) => pos.has(f.n)).map((f) => [pos.get(f.n), ...campos[k].map((c) => f[c])]),
+      }));
+    }
+  }
   // El formato visual (sistema de diseno de la Academia Tecnica) vive en un solo
   // archivo, compartido con reiteradas.html y vecino.html; se incrusta en la pagina.
   const estiloAcademia = fs.readFileSync(path.join(__dirname, "reportes", "estilo-academia.css"), "utf-8");
