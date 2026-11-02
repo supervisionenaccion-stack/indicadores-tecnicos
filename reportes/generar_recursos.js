@@ -19,7 +19,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 const dmy = (iso) => iso.split("-").reverse().join("-");
 const css = fs.readFileSync(path.join(__dirname, "estilo-academia.css"), "utf-8");
 
-const videos = VIDEOS.map((v) => `<a class="rc" href="https://vimeo.com/${v.id}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></div><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span></div></a>`).join("");
+const videos = VIDEOS.map((v) => `<div class="rc video"><button type="button" class="img" data-id="${esc(v.id)}" data-titulo="${esc(v.titulo)}" aria-label="Ver video: ${esc(v.titulo)}, ${esc(v.tecnico)}"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></button><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span></div></div>`).join("");
 const fotos = FOTOS.map((f) => `<a class="rc" href="${SITIO}${f.foto}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${f.foto}" alt="${esc(f.titulo)}" loading="lazy"></div><div class="tx"><b>${esc(f.titulo)}</b><span>Abrir y guardar</span></div></a>`).join("");
 
 const html = `<!DOCTYPE html>
@@ -38,7 +38,8 @@ main .panel .exp{ margin:0 0 14px; font-size:13px; color:var(--dim); }
 .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
 .rc{ display:block; text-decoration:none; color:inherit; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff; transition:box-shadow .15s; }
 .rc:hover{ box-shadow:0 6px 18px rgba(0,30,60,.12); }
-.rc .img{ position:relative; aspect-ratio:16/10; background:#e8edf2; overflow:hidden; } .rc img{ width:100%; height:100%; object-fit:cover; display:block; }
+.rc .img{ display:block; width:100%; padding:0; border:0; cursor:pointer;  position:relative; aspect-ratio:16/10; background:#e8edf2; overflow:hidden; } .rc img{ width:100%; height:100%; object-fit:cover; display:block; }
+.rc .img iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
 .rc .play{ position:absolute; inset:0; margin:auto; width:46px; height:46px; border-radius:50%; background:rgba(0,60,113,.85); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; padding-left:3px; }
 .rc .tx{ padding:10px 12px; } .rc .tx b{ display:block; font-size:14px; color:var(--navy); } .rc .tx span{ display:block; font-size:12px; color:var(--dim); margin-top:2px; }
 .reg{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--border); text-decoration:none; color:inherit; }
@@ -55,5 +56,16 @@ main .panel .exp{ margin:0 0 14px; font-size:13px; color:var(--dim); }
   <div class="panel"><h2>Fotos de terreno</h2><p class="exp">Fotos de los técnicos en terreno. Toca una para abrirla y guardarla.</p>${fotos ? `<div class="grid">${fotos}</div>` : `<p class="exp">Próximamente.</p>`}</div>
 </main>
 <footer class="foot"><div class="wrap"><span class="by">Diseño y desarrollo <b>J.V.Soft...</b> &middot; <b>SMSI</b> &middot; Construyendo ideas</span></div></footer>
+<script>
+document.querySelectorAll(".video .img").forEach(function (b) {
+  b.addEventListener("click", function () {   // el video se carga solo al tocar y se ve aqui mismo
+    var f = document.createElement("iframe");
+    f.src = "https://player.vimeo.com/video/" + encodeURIComponent(b.dataset.id) + "?autoplay=1";
+    f.title = b.dataset.titulo; f.allow = "autoplay; fullscreen; picture-in-picture"; f.allowFullscreen = true;
+    var d = document.createElement("div"); d.className = "img"; d.appendChild(f);
+    b.replaceWith(d);
+  });
+});
+</script>
 </body></html>`;
 publicarProtegida(html, "recursos.html", "recursos", "Recursos del equipo").then(() => console.log("==> Generado recursos.html:", VIDEOS.length, "videos,", FOTOS.length, "fotos,")).catch((e) => { console.error("ERROR:", e.message); process.exit(1); });
