@@ -1,6 +1,7 @@
 // "Recursos del equipo": videos y fotos de los tecnicos. Se publica cifrada
 // como recursos.html (boton en supervisor.html); la copia sin cifrar queda en privado/.
 // Para agregar algo nuevo: copiar una linea de VIDEOS o FOTOS y cambiar los datos.
+// En VIDEOS, "obs" (opcional) muestra una observacion destacada en la tarjeta.
 // Los videos y fotos viven en el sitio de capacitacion; aca solo se enlazan.
 const fs = require("fs");
 const path = require("path");
@@ -8,8 +9,9 @@ const { publicarProtegida } = require("./proteger.js");
 
 const SITIO = "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/";
 const VIDEOS = [
-  { titulo: "Armado del conector", tecnico: "Tomas Ponce", region: "Quinta región", fecha: "2026-10-30", id: "1241466378", foto: "fotos/video_1241466378.jpg" },
+  { titulo: "Armado del conector", tecnico: "Tomas Ponce", region: "Quinta región", fecha: "2026-10-30", id: "1241466378", foto: "fotos/video_1241466378.jpg", obs: "Insertó la rosca antes de cerrar el seguro" },
   { titulo: "Armado del conector", tecnico: "Andres Rodriguez", region: "RM", fecha: "2026-11-02", id: "1242463711", foto: "fotos/video_1242463711.jpg" },
+  { titulo: "Armado del conector", tecnico: "Dario Chambe", region: "Arica", fecha: "2026-11-03", id: "1242812804", foto: "fotos/video_1242812804.jpg", obs: "Olvidó usar OneClick (limpieza del conector)" },
 ];
 const FOTOS = [
   // { titulo: "Texto de la foto", foto: "fotos/archivo.jpg" },
@@ -19,7 +21,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 const dmy = (iso) => iso.split("-").reverse().join("-");
 const css = fs.readFileSync(path.join(__dirname, "estilo-academia.css"), "utf-8");
 
-const videos = VIDEOS.map((v) => `<div class="rc video"><button type="button" class="img" data-id="${esc(v.id)}" data-titulo="${esc(v.titulo)}" aria-label="Ver video: ${esc(v.titulo)}, ${esc(v.tecnico)}"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></button><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span></div></div>`).join("");
+const videos = VIDEOS.map((v) => `<div class="rc video"><button type="button" class="img" data-id="${esc(v.id)}" data-titulo="${esc(v.titulo)}" aria-label="Ver video: ${esc(v.titulo)}, ${esc(v.tecnico)}"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></button><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span>${v.obs ? `<span class="obs">Observación: ${esc(v.obs)}</span>` : ""}</div></div>`).join("");
 const fotos = FOTOS.map((f) => `<a class="rc" href="${SITIO}${f.foto}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${f.foto}" alt="${esc(f.titulo)}" loading="lazy"></div><div class="tx"><b>${esc(f.titulo)}</b><span>Abrir y guardar</span></div></a>`).join("");
 
 const html = `<!DOCTYPE html>
@@ -42,6 +44,7 @@ main .panel .exp{ margin:0 0 14px; font-size:13px; color:var(--dim); }
 .rc .img iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
 .rc .play{ position:absolute; inset:0; margin:auto; width:46px; height:46px; border-radius:50%; background:rgba(0,60,113,.85); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; padding-left:3px; }
 .rc .tx{ padding:10px 12px; } .rc .tx b{ display:block; font-size:14px; color:var(--navy); } .rc .tx span{ display:block; font-size:12px; color:var(--dim); margin-top:2px; }
+.rc .tx .obs{ margin-top:8px; padding:5px 8px; font-weight:600; color:#8a5a12; background:#fdf1e2; border-left:3px solid #e2962e; border-radius:4px; }
 .reg{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--border); text-decoration:none; color:inherit; }
 .reg:last-child{ border-bottom:none; } .reg b{ display:block; color:var(--navy); } .reg span{ display:block; font-size:13px; color:var(--dim); margin-top:2px; } .reg em{ font-style:normal; font-weight:700; font-size:13px; color:var(--blue); white-space:nowrap; }
 .reg:hover em{ text-decoration:underline; }
