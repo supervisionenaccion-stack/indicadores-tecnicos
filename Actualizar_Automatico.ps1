@@ -54,9 +54,21 @@ function Correr($exe, [string[]]$argumentos) {
   return @{ Codigo = $LASTEXITCODE; Salida = ($salida -join "`n") }
 }
 
+# Avisa a la pagina de estado (C:\Bases_Tigo\registrar_estado.js). Nunca detiene la actualizacion.
+function Estado($clave, $estado, $detalle) {
+  try {
+    & $Node "C:\Bases_Tigo\registrar_estado.js" $clave $estado $detalle 2>&1 | Out-Null
+    $bat = "C:\Bases_Tigo\estado_web\Actualizar_Estado.bat"
+    if (Test-Path -LiteralPath $bat) { & cmd.exe /c "`"$bat`"" 2>&1 | Out-Null }
+  } catch {
+    Log ("No se pudo registrar el estado: " + $_.Exception.Message)
+  }
+}
+
 function Fallar($paso, $detalle) {
   Log ("ERROR en " + $paso + ": " + $detalle)
   Notificar "Portal NO actualizado" ("Fallo en " + $paso + ". El sitio sigue con la version anterior. Detalle en logs\" + (Split-Path $LogFile -Leaf))
+  Estado "portal_vtr" "ERROR" ("fallo en " + $paso + ": " + $detalle)
   exit 1
 }
 
@@ -139,20 +151,26 @@ if ($r.Codigo -ne 0) {
 # 2f. Estadistica del autochequeo de herramientas (boton en supervisor.html; lee el
 # Excel de Forms sincronizado en OneDrive). Complemento: si falla, NO bloquea.
 Log "2f/4 Generando estadistica del autochequeo..."
-$r = Correr $Node @("reportesgenerar_autochequeo.js")
+$r = Correr $Node @("reportes\generar_autochequeo.js")
 if ($r.Codigo -ne 0) {
   Log "AVISO: autochequeo.html no se actualizo hoy; queda publicada la version anterior."
   Correr $Git @("checkout", "--", "autochequeo.html") | Out-Null
   $avisoReiteradas += " (autochequeo NO actualizado, ver log)"
+  Estado "autochequeo" "ERROR" "autochequeo.html no se actualizo, queda la version anterior"
+} else {
+  Estado "autochequeo" "OK" "autochequeo.html actualizado"
 }
 
 # 2g. Recursos del equipo (videos, fotos y registros; boton en supervisor.html).
 Log "2g/4 Generando recursos del equipo..."
-$r = Correr $Node @("reportesgenerar_recursos.js")
+$r = Correr $Node @("reportes\generar_recursos.js")
 if ($r.Codigo -ne 0) {
   Log "AVISO: recursos.html no se actualizo hoy; queda publicada la version anterior."
   Correr $Git @("checkout", "--", "recursos.html") | Out-Null
   $avisoReiteradas += " (recursos NO actualizados, ver log)"
+  Estado "recursos" "ERROR" "recursos.html no se actualizo, queda la version anterior"
+} else {
+  Estado "recursos" "OK" "recursos.html actualizado"
 }
 
 # 3. Publicar
@@ -162,6 +180,7 @@ $r = Correr $Git @("diff", "--cached", "--quiet")
 if ($r.Codigo -eq 0) {
   Log "No hay cambios nuevos respecto de lo ya publicado."
   Notificar "Portal sin cambios" "Los datos de hoy son iguales a los ya publicados. $resumen"
+  if ($avisoReiteradas) { Estado "portal_vtr" "ERROR" ("sin cambios; con avisos:" + $avisoReiteradas) } else { Estado "portal_vtr" "OK" "sin cambios: los datos de hoy ya estaban publicados" }
   exit 0
 }
 $r = Correr $Git @("commit", "-m", ("Actualizar portal (automatico) " + (Get-Date -Format "dd-MM-yyyy HH:mm")))
@@ -182,11 +201,18 @@ $enLinea = $false
 # Si GitHub cancela la publicacion (le pasa cuando su servicio Actions anda
 # mal), se pide de nuevo: hasta 4 rondas de 10 minutos.
 $Gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
+# La cuenta activa de gh puede ser otra (JhonasVK no tiene permiso de escritura aqui y GitHub
+# responde 404 al pedir la publicacion). Se usa la cuenta duena del repositorio, solo para ese pedido.
+$TokenPortal = $null
+if ($Gh) { try { $TokenPortal = (& $Gh auth token --user supervisionenaccion-stack 2>$null) | Select-Object -First 1 } catch { } }
 foreach ($ronda in 1..4) {
   if ($ronda -gt 1) {
     if ($Gh) {
       Log ("Sin publicar todavia: se pide a GitHub publicar de nuevo (intento " + $ronda + ").")
+      $tokenAnterior = $env:GH_TOKEN
+      if ($TokenPortal) { $env:GH_TOKEN = $TokenPortal }
       Correr $Gh @("api", "-X", "POST", "repos/supervisionenaccion-stack/indicadores-tecnicos/pages/builds") | Out-Null
+      $env:GH_TOKEN = $tokenAnterior
     } else {
       Log "Sin publicar todavia y sin gh instalado para pedirlo de nuevo; se sigue esperando."
     }
@@ -210,4 +236,6 @@ if (-not $enLinea) {
 
 Log ("OK: publicado y visible en linea. " + $resumen + $avisoReiteradas)
 Notificar "Portal actualizado y publicado" ($resumen + $avisoReiteradas)
+# Una actualizacion con complementos sin actualizar se marca ERROR en la pagina de estado, para que se note.
+if ($avisoReiteradas) { Estado "portal_vtr" "ERROR" ("publicado, pero con avisos:" + $avisoReiteradas) } else { Estado "portal_vtr" "OK" "portal publicado y visible en linea" }
 exit 0
