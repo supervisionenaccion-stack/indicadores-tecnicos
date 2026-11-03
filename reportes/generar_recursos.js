@@ -12,6 +12,7 @@ const VIDEOS = [
   { titulo: "Armado del conector", tecnico: "Tomas Ponce", region: "Quinta región", fecha: "2026-10-30", id: "1241466378", foto: "fotos/video_1241466378.jpg", obs: "Insertó la rosca antes de cerrar el seguro" },
   { titulo: "Armado del conector", tecnico: "Andres Rodriguez", region: "RM", fecha: "2026-11-02", id: "1242463711", foto: "fotos/video_1242463711.jpg" },
   { titulo: "Armado del conector", tecnico: "Dario Chambe", region: "Arica", fecha: "2026-11-03", id: "1242812804", foto: "fotos/video_1242812804.jpg", obs: "Olvidó usar OneClick (limpieza del conector)" },
+  { titulo: "Armado del conector", tecnico: "Benjamin Perez", region: "RM", fecha: "2026-11-03", id: "1243031055", foto: "fotos/video_1243031055.jpg", obs: "Sopló las herramientas de precisión; no se debe, porque quedan con partículas (equivale a tocarlas con los dedos)" },
 ];
 const FOTOS = [
   // { titulo: "Texto de la foto", foto: "fotos/archivo.jpg" },
