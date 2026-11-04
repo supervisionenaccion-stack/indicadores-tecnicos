@@ -17,8 +17,8 @@ const VIDEOS = [
   { titulo: "Armado del conector", tecnico: "Carlos Plazo", region: "Quinta región", fecha: "2026-11-04", id: "1243423482", foto: "fotos/video_1243423482.jpg" },
 ];
 const FOTOS = [
-  { titulo: "Reunión operativa", foto: "fotos/reunion_operativa.jpg" },
-  { titulo: "Taller de fusión de fibras ópticas", foto: "fotos/taller_fusion_fibra.jpg" },
+  { titulo: "Reunión operativa", region: "Quinta región", foto: "fotos/reunion_operativa.jpg" },
+  { titulo: "Taller de fusión de fibras ópticas", region: "Quinta región", foto: "fotos/taller_fusion_fibra.jpg" },
 ];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -26,7 +26,7 @@ const dmy = (iso) => iso.split("-").reverse().join("-");
 const css = fs.readFileSync(path.join(__dirname, "estilo-academia.css"), "utf-8");
 
 const videos = VIDEOS.map((v) => `<div class="rc video"><button type="button" class="img" data-id="${esc(v.id)}" data-titulo="${esc(v.titulo)}" aria-label="Ver video: ${esc(v.titulo)}, ${esc(v.tecnico)}"><img src="${SITIO}${v.foto}" alt="" loading="lazy"><span class="play">▶</span></button><div class="tx"><b>${esc(v.titulo)}</b><span>${esc(v.tecnico)} · ${esc(v.region)}</span><span>${dmy(v.fecha)}</span>${v.obs ? `<span class="obs">Observación: ${esc(v.obs)}</span>` : ""}</div></div>`).join("");
-const fotos = FOTOS.map((f) => `<a class="rc" href="${SITIO}${f.foto}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${f.foto}" alt="${esc(f.titulo)}" loading="lazy"></div><div class="tx"><b>${esc(f.titulo)}</b><span>Abrir y guardar</span></div></a>`).join("");
+const fotos = FOTOS.map((f) => `<a class="rc" href="${SITIO}${f.foto}" target="_blank" rel="noopener"><div class="img"><img src="${SITIO}${f.foto}" alt="${esc(f.titulo)}" loading="lazy"></div><div class="tx"><b>${esc(f.titulo)}</b>${f.region ? `<span>${esc(f.region)}</span>` : ""}<span>Abrir y guardar</span></div></a>`).join("");
 
 const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
