@@ -17,7 +17,8 @@ const VIDEOS = [
   { titulo: "Armado del conector", tecnico: "Carlos Plazo", region: "Quinta región", fecha: "2026-11-04", id: "1243423482", foto: "fotos/video_1243423482.jpg" },
 ];
 const FOTOS = [
-  // { titulo: "Texto de la foto", foto: "fotos/archivo.jpg" },
+  { titulo: "Reunión operativa", foto: "fotos/reunion_operativa.jpg" },
+  { titulo: "Taller de fusión de fibras ópticas", foto: "fotos/taller_fusion_fibra.jpg" },
 ];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
