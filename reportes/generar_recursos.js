@@ -15,6 +15,7 @@ const VIDEOS = [
   { titulo: "Armado del conector", tecnico: "Benjamin Perez", region: "RM", fecha: "2026-11-03", id: "1243031055", foto: "fotos/video_1243031055.jpg", obs: "Sopló las herramientas de precisión; no se debe, porque quedan con partículas (equivale a tocarlas con los dedos)" },
   { titulo: "Armado del conector", tecnico: "Eudis Aldama", region: "RM", fecha: "2026-11-04", id: "1243423780", foto: "fotos/video_1243423780.jpg" },
   { titulo: "Armado del conector", tecnico: "Carlos Plazo", region: "Quinta región", fecha: "2026-11-04", id: "1243423482", foto: "fotos/video_1243423482.jpg" },
+  { titulo: "Armado del conector", tecnico: "Marco Benitez", region: "RM", fecha: "2026-11-05", id: "1243979109", foto: "fotos/video_1243979109.jpg" },
 ];
 const FOTOS = [
   { titulo: "Reunión operativa", region: "Quinta región", foto: "fotos/reunion_operativa.jpg" },
