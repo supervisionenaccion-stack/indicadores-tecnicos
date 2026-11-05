@@ -17,12 +17,12 @@ const RAIZ = path.join(__dirname, "..");
 const XLSX_DEFECTO = path.join(
   process.env.USERPROFILE || "",
   "OneDrive - COBRA CHILE SERVICIOS S.A",
-  "AUTOCHEQUEO DE HERRAMIENTAS PARA TRABAJOS DE FIBRA ÓPTICA.xlsx"
+  "Auto chequeo de Herramientas y EPP.xlsx"
 );
-// Columnas fijas del Forms: Id, hora inicio, hora fin, correo, nombre, RUT, nombre del tecnico; desde la 8 van las herramientas.
+// Columnas del Forms "Auto chequeo de Herramientas y EPP": Id, hora inicio, hora fin, correo, nombre (cuenta), NOMBRE (tecnico), RUT, agencia; desde la 9 van los items (herramientas, EPP y documentos) hasta la columna Observaciones.
 const COL_INICIO = 2;
-const COL_NOMBRE = 7;
-const COL_PRIMERA_HERRAMIENTA = 8;
+const COL_NOMBRE = 6;
+const COL_PRIMERA_HERRAMIENTA = 9;
 
 function leerEnv(clave) {
   if (process.env[clave]) return process.env[clave];
@@ -65,7 +65,7 @@ async function main() {
 
   const cab = ws.getRow(1).values.slice(1).map(limpiar);
   const herramientas = [];
-  for (let c = COL_PRIMERA_HERRAMIENTA - 1; c < cab.length; c++) herramientas.push({ col: c + 1, nombre: cab[c] || `Columna ${c + 1}` });
+  for (let c = COL_PRIMERA_HERRAMIENTA - 1; c < cab.length && !/^observaciones/i.test(cab[c]); c++) herramientas.push({ col: c + 1, nombre: cab[c] || `Columna ${c + 1}` });
 
   const data = leerDataSupervisor();
   const tecnicos = data.tecnicos.map((t) => ({ nombre: t.nombre, agencia: t.agencia, supervisor: t.supervisor, w: palabras(t.nombre) }));
@@ -89,8 +89,9 @@ async function main() {
     const falta = [];
     herramientas.forEach((h, k) => {
       const v = limpiar(fila.getCell(h.col).value).toUpperCase();
-      if (v === "SI" || v === "SÍ") si++;
-      else if (v === "NO") { no++; falta.push(k); }
+      if (!v) return;                                                   // sin respuesta: no cuenta
+      if (v === "NO" || v === "MALO" || v === "REGULAR") { no++; falta.push(k); }   // falta o en mal estado
+      else si++;                                                         // Si, Bueno, OK, Ambas, etc.
     });
     if (si + no === 0) return;
     respuestas.push({

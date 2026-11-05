@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
-<title>Autochequeo de herramientas · Cobra</title>
+<title>Autochequeo de herramientas y EPP · Cobra</title>
 <style>
   :root{
     --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --border:#e0e5ea; --text:#22303f; --text-dim:#6b7a8c;
@@ -163,8 +163,8 @@
 <section class="hero sin-foto" aria-label="Portada">
   <svg class="fibers" viewBox="0 0 1100 600" preserveAspectRatio="none" aria-hidden="true"><g class="strand"><path d="M-20 40 C339 12 744 101 1100 178"/><path d="M-20 76 C364 101 649 147 1100 187"/><path d="M-20 112 C389 130 694 193 1100 196"/><path d="M-20 148 C354 159 739 129 1100 205"/><path d="M-20 184 C379 188 644 175 1100 214"/><path d="M-20 220 C344 217 689 221 1100 223"/><path d="M-20 256 C369 246 734 157 1100 232"/><path d="M-20 292 C394 275 639 203 1100 241"/><path d="M-20 328 C359 304 684 249 1100 250"/><path d="M-20 364 C384 393 729 185 1100 259"/><path d="M-20 400 C349 422 634 231 1100 268"/><path d="M-20 436 C374 451 679 277 1100 277"/><path d="M-20 472 C339 480 724 213 1100 286"/><path d="M-20 508 C364 509 629 259 1100 295"/><path d="M-20 544 C389 538 674 305 1100 304"/><path d="M-20 580 C354 567 719 241 1100 313"/></g><path class="pulse p1" d="M-20 76 C364 101 649 147 1100 187"/><path class="pulse p2" d="M-20 184 C379 188 644 175 1100 214"/><path class="pulse p3" d="M-20 292 C394 275 639 203 1100 241"/><path class="pulse p4" d="M-20 400 C349 422 634 231 1100 268"/><path class="pulse p5" d="M-20 508 C364 509 629 259 1100 295"/></svg>
   <div class="wrap"><div>
-    <p class="eyebrow">Cobra &middot; Herramientas</p>
-    <h1>Autochequeo de <b>herramientas</b></h1>
+    <p class="eyebrow">Cobra &middot; Herramientas y EPP</p>
+    <h1>Autochequeo de <b>herramientas y EPP</b></h1>
     <p class="subtitle" id="subtitulo"></p>
   </div></div>
 </section>
@@ -179,8 +179,8 @@
   <div class="kpis" id="resumen"></div>
 
   <div class="panel">
-    <h2>Herramientas que más faltan</h2>
-    <p class="exp">Cuántos técnicos dicen que NO la tienen, según su último autochequeo del período. Pasa el cursor (o toca) el número para ver quiénes son.</p>
+    <h2>Ítems que más faltan</h2>
+    <p class="exp">Cuántos técnicos reportan el ítem como No, Malo o Regular, según su último autochequeo del período. Pasa el cursor (o toca) el número para ver quiénes son.</p>
     <div id="topHerr"></div>
   </div>
 
@@ -306,22 +306,22 @@ function pintar() {
   const conFalta = filas.filter((f) => f.r && f.r.no > 0).length;
   const cumplen = filas.filter((f) => f.r && f.r.no === 0).length;
   document.getElementById('subtitulo').textContent =
-    'Período: ' + per.etiqueta + '. Cada técnico hace el autochequeo una vez por semana; aquí se ve quién lo hizo y qué herramientas faltan.';
+    'Período: ' + per.etiqueta + '. Cada técnico hace el autochequeo una vez por semana; aquí se ve quién lo hizo y qué herramientas, EPP o documentos faltan.';
   const sinResp = N - R;
   document.getElementById('resumen').innerHTML =
     '<div class="kpi k-main">' + dona([{ n: cumplen, c: '#003c71' }, { n: conFalta, c: '#6f93b8' }, { n: sinResp, c: '#e3e8ee' }], 124, 16, pctResp + ' %', 'respondieron') +
       '<div class="leyenda"><div><i style="background:#003c71"></i>Completo<b>' + cumplen + '</b></div><div><i style="background:#6f93b8"></i>Con faltantes<b>' + conFalta + '</b></div><div><i style="background:#e3e8ee"></i>Sin responder<b>' + sinResp + '</b></div></div></div>' +
     '<div class="kpi"><div class="lbl">Técnicos</div><div class="num" style="color:var(--cobra-navy)">' + N + '</div><div class="cap">en el equipo' + (fSup.value ? ' del supervisor' : '') + '</div></div>' +
     '<div class="kpi"><div class="lbl">Sin responder</div><div class="num">' + sinResp + '</div><div class="cap">' + (sinResp ? 'faltan por hacer el autochequeo' : 'todos respondieron') + '</div></div>' +
-    '<div class="kpi"><div class="lbl">Con todo completo</div><div class="num">' + cumplen + '</div><div class="cap">tienen todas sus herramientas</div></div>' +
-    '<div class="kpi"><div class="lbl">Con faltantes</div><div class="num">' + conFalta + '</div><div class="cap">les falta al menos una herramienta</div></div>';
+    '<div class="kpi"><div class="lbl">Con todo completo</div><div class="num">' + cumplen + '</div><div class="cap">tienen todo en orden</div></div>' +
+    '<div class="kpi"><div class="lbl">Con faltantes</div><div class="num">' + conFalta + '</div><div class="cap">tienen al menos un ítem faltante o en mal estado</div></div>';
 
   // herramientas que mas faltan
   const sev = (p) => (p >= 75 ? 's1' : p >= 50 ? 's2' : p >= 25 ? 's3' : 's4');
   document.getElementById('topHerr').innerHTML = top.length
     ? '' +
       top.slice(0, 10).map((h, k) => { const p = Math.round((h.n / R) * 100); return '<div class="hb2"><div class="nom">' + esc(h.nombre) + '</div><div class="pista"><i class="' + sev(p) + '" style="width:' + Math.max(3, p) + '%"></i></div><div class="val" tabindex="0">' + h.n + '<small>' + p + ' %</small><div class="tip"><b>' + esc(h.nombre) + '</b>' + h.quienes.map((q) => '<span>' + esc(q) + '</span>').join('') + '</div></div></div>'; }).join('')
-    : '<div class="vacio">' + (R ? 'Ningún técnico reporta herramientas faltantes en este período.' : 'Todavía no hay autochequeos en este período.') + '</div>';
+    : '<div class="vacio">' + (R ? 'Ningún técnico reporta ítems faltantes en este período.' : 'Todavía no hay autochequeos en este período.') + '</div>';
 
   // por supervisor
   const listaSup = (fSup.value ? [fSup.value] : sups);
@@ -361,7 +361,7 @@ function pintar() {
   document.querySelectorAll('th.ord').forEach((th) => { th.dataset.dir = th.dataset.col === ORD.col ? (ORD.dir === 1 ? 'asc' : 'desc') : ''; });
   const chip = (k) => '<span class="chip" title="' + esc(D.herramientas[k]) + '">' + esc(corto(D.herramientas[k])) + '</span>';
   document.getElementById('filas').innerHTML = orden.map((f) => {
-    const estado = !f.r ? '<span class="pill bad">Sin responder</span>' : f.r.no === 0 ? '<span class="pill ok">Completo</span>' : '<span class="pill warn">Faltan herramientas</span>';
+    const estado = !f.r ? '<span class="pill bad">Sin responder</span>' : f.r.no === 0 ? '<span class="pill ok">Completo</span>' : '<span class="pill warn">Faltan ítems</span>';
     const total = f.r ? f.r.si + f.r.no : 0;
     const clase = f.pct == null ? '' : f.pct >= 90 ? 'f-ok' : f.pct >= 75 ? 'f-warn' : 'f-bad';
     const tiene = f.r ? '<div class="prog2"><div class="pista"><i class="' + clase + '" style="width:' + f.pct + '%"></i></div><b>' + f.pct + ' %</b></div><div class="sub">' + f.r.si + ' de ' + total + ' herramientas</div>' : '—';
@@ -457,7 +457,7 @@ function hoja(filas, o) {
     '<cols>' + ancho + '</cols><sheetData>' + filasXml + '</sheetData>' +
     (o.filtro ? '<autoFilter ref="A1:' + colLetra(cols - 1) + filas.length + '"/>' : '') + '</worksheet>';
 }
-const celdaEstado = (f) => (!f.r ? c('Sin responder', 3) : f.r.no ? c('Faltan herramientas', 4) : c('Completo', 5));
+const celdaEstado = (f) => (!f.r ? c('Sin responder', 3) : f.r.no ? c('Faltan ítems', 4) : c('Completo', 5));
 
 document.getElementById('btnExcel').addEventListener('click', () => {
   const { per, filas, top, resp, supSel } = ULTIMO;
@@ -466,7 +466,7 @@ document.getElementById('btnExcel').addEventListener('click', () => {
   const nombres = (k) => k.map((i) => D.herramientas[i]).join(NL);
 
   const resumen = [
-    [c('Autochequeo de herramientas', 6)],
+    [c('Autochequeo de herramientas y EPP', 6)],
     [c('Período', 7), c(per.etiqueta, 0)],
     [c('Supervisor', 7), c(supSel || 'Todos', 0)],
     [c('Fecha del reporte', 7), c(dmy(D.hoy), 0)],
@@ -475,11 +475,11 @@ document.getElementById('btnExcel').addEventListener('click', () => {
     [c('Hicieron el autochequeo', 7), c(R + ' (' + (N ? Math.round((R / N) * 100) : 0) + ' %)', 0)],
     [c('Sin responder', 7), c(N - R, 0)],
     [c('Con todo completo', 7), c(completos, 0)],
-    [c('Con herramientas faltantes', 7), c(R - completos, 0)],
+    [c('Con ítems faltantes', 7), c(R - completos, 0)],
     [],
     [c('Cómo leer este archivo', 7)],
-    [c('Por técnico: quién respondió, cuánto tiene y qué le falta (una herramienta por línea).', 10)],
-    [c('Herramientas que faltan: cuántos técnicos no tienen cada herramienta y quiénes son.', 10)],
+    [c('Por técnico: quién respondió, cuánto tiene y qué le falta (un ítem por línea).', 10)],
+    [c('Ítems que faltan: cuántos técnicos reportan cada ítem como No, Malo o Regular y quiénes son.', 10)],
     [c('Respuestas: cada autochequeo hecho dentro del período.', 10)],
     [c('Se toma el último autochequeo de cada técnico dentro del período.', 10)],
   ];
@@ -491,7 +491,7 @@ document.getElementById('btnExcel').addEventListener('click', () => {
       c(f.r ? (f.r.x.length ? nombres(f.r.x) : 'Nada, todo completo') : 'Aún no hace el autochequeo', 2),
     ]));
 
-  const herr = [['Herramienta', 'Técnicos que no la tienen', '% de los que respondieron', 'Quiénes (uno por línea)'].map((t) => c(t, 1))]
+  const herr = [['Ítem', 'Técnicos que lo reportan faltante', '% de los que respondieron', 'Quiénes (uno por línea)'].map((t) => c(t, 1))]
     .concat(top.map((h) => [c(h.nombre, 2), c(h.n, 8), c(R ? Math.round((h.n / R) * 100) : 0, 9), c(h.quienes.join(NL), 2)]));
 
   const det = [['Fecha', 'Técnico', 'Supervisor', 'Tiene (SI)', 'Le faltan (NO)', 'Qué le falta'].map((t) => c(t, 1))]
@@ -501,7 +501,7 @@ document.getElementById('btnExcel').addEventListener('click', () => {
   const hojas = [
     ['Resumen', hoja(resumen, { anchos: [30, 48], sinCuadricula: true })],
     ['Por técnico', hoja(porTecnico, { anchos: [34, 32, 14, 20, 16, 14, 12, 12, 60], congelar: true, filtro: true })],
-    ['Herramientas que faltan', hoja(herr, { anchos: [52, 16, 18, 44], congelar: true, filtro: true })],
+    ['Ítems que faltan', hoja(herr, { anchos: [52, 16, 18, 44], congelar: true, filtro: true })],
     ['Respuestas', hoja(det, { anchos: [12, 34, 32, 11, 13, 60], congelar: true, filtro: true })],
   ];
   const arch = [

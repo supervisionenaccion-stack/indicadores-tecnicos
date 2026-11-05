@@ -68,6 +68,8 @@
   .acceso-autochequeo span{ font-size:14px; font-weight:600; color:var(--cobra-navy); line-height:1.25; }
   .acceso-autochequeo a{ flex:none; padding:8px 14px; border-radius:6px; background:var(--cobra-navy); color:#fff; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap; }
   .acceso-autochequeo a:hover{ background:var(--cobra-blue); }
+  .nota-autochequeo{ margin:-6px 0 14px; padding:8px 14px; font-size:13px; line-height:1.35; color:#8a5a12; background:#fdf1e2; border-left:3px solid #f0a500; border-radius:0 0 8px 8px; }
+  @media (max-width:520px){ .acceso-autochequeo{ gap:5px; padding:3px 3px 3px 8px; margin-bottom:5px; border-radius:5px; border-left-width:2px; } .acceso-autochequeo span{ font-size:10.5px; font-weight:600; line-height:1.15; } .acceso-autochequeo a{ padding:4px 7px; font-size:10px; border-radius:4px; } .nota-autochequeo{ margin:-2px 0 5px; padding:3px 8px; font-size:10px; line-height:1.2; } }
   #loginError{ display:none; background:var(--bad-bg); color:var(--bad); border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:14px; text-align:left; }
 
   #appBox{ display:none; }
@@ -317,7 +319,12 @@
   <div id="appBox">
     <div class="acceso-autochequeo">
       <span>Autochequeo semanal de herramientas</span>
-      <a href="https://supervisionenaccion-stack.github.io/capacitacion-tecnica/" target="_blank" rel="noopener">Abrir &rarr;</a>
+      <a href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=zW1hHAxl90uFFXlYtLi6LMKYtFM_AvFFinBf-1N2HSxUOEtZNlVWQk01RjJKN0NVWjNKSU9RWTdPVi4u" target="_blank" rel="noopener">Hacer autochequeo &rarr;</a>
+    </div>
+    <p class="nota-autochequeo">Una vez que completes el autochequeo, si te faltan herramientas, además debes avisarle a tu supervisor.</p>
+    <div class="acceso-autochequeo">
+      <span>Ver video de armado de conector de tus compañeros y protocolo de armado</span>
+      <a href="https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html" target="_blank" rel="noopener">Ver videos &rarr;</a>
     </div>
     <div id="resumenGeneral"></div>
 
