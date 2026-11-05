@@ -113,7 +113,8 @@ async function main() {
   const plantilla = fs.readFileSync(path.join(__dirname, "plantilla-autochequeo.html"), "utf-8");
   const estiloAcademia = fs.readFileSync(path.join(__dirname, "estilo-academia.css"), "utf-8");
   const html = plantilla
-    .replace("Autochequeo de <b>herramientas y EPP</b>","Historial del <b>autochequeo</b>").replace(/<title>[^<]*<\/title>/,"<title>Historial del autochequeo · Cobra</title>").replace("/*__ESTILO_ACADEMIA__*/", () => estiloAcademia)
+    .replace("Autochequeo de <b>herramientas y EPP</b>","Historial del <b>autochequeo</b>")
+    .replace('href="autochequeo_historial.html"', 'href="autochequeo.html"').replace(">Historial anterior</a>", ">&larr; Volver al autochequeo</a>").replace(/<title>[^<]*<\/title>/,"<title>Historial del autochequeo · Cobra</title>").replace("/*__ESTILO_ACADEMIA__*/", () => estiloAcademia)
     .replace("__DATA_AUTOCHEQUEO_JSON__", () => JSON.stringify(salida).replace(/</g, "\\u003c"));
   const errores = [];
   if (!respuestas.length) errores.push("0 respuestas");
