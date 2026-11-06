@@ -15,7 +15,8 @@
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2h. Python (Informe_Ranking_IPTV\ejecutar_todo.py --sin-correo) + reportes\generar_iptv.js -> iptv.html
 #       (boton en supervisor.html); si falla, se deja la version anterior y el resto se publica igual
-#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html, recursos.html e iptv.html (reintenta)
+#   2i. Python (Informe_Ranking_IPTVajar_otros.py + otros.py) + reportes\generar_indicadores.js -> indicadores*.html (5 paginas)
+#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html, recursos.html, iptv.html e indicadores*.html (reintenta)
 #   4. espera a que el sitio publico muestre la version nueva
 #   5. notificacion de Windows con el resultado (exito o error)
 # Cada corrida deja su detalle en logs\actualizacion_AAAA-MM-DD.log
@@ -197,10 +198,36 @@ if ($r.Codigo -ne 0) {
   Estado "iptv" "OK" "iptv.html actualizado"
 }
 
+# 2i. Indicadores de calidad (boton en supervisor.html): NPS, Control de bloqueos, Auditorias QA y OT Digital.
+# Python baja el Power BI con Edge (bajar_otros.py), arma Envios\otros_datos.json (otros.py) y despues se
+# generan las 5 paginas cifradas. Complemento: si falla la descarga se usan los ultimos datos guardados;
+# si falla algun paso posterior, quedan publicadas las versiones anteriores. Se registra cuanto demora.
+$paginasInd = @("indicadores.html", "indicadores_nps.html", "indicadores_bloqueos.html", "indicadores_qa.html", "indicadores_otdigital.html")
+Log "2i/4 Indicadores de calidad (Python + Power BI)..."
+$relojInd = [System.Diagnostics.Stopwatch]::StartNew()
+$r = Correr $Python @("-W", "ignore", "C:\Bases_Vtr\Informe_Ranking_IPTV\bajar_otros.py")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: no se pudo bajar el Power BI de indicadores; se usan los ultimos datos guardados."
+  $avisoReiteradas += " (indicadores: Power BI no se pudo bajar, datos anteriores)"
+}
+$rOtros = Correr $Python @("-W", "ignore", "C:\Bases_Vtr\Informe_Ranking_IPTV\otros.py")
+if ($rOtros.Codigo -eq 0) { $r = Correr $Node @("reportes\generar_indicadores.js") } else { $r = $rOtros }
+$relojInd.Stop()
+Log ("Indicadores de calidad: demoro " + [math]::Round($relojInd.Elapsed.TotalMinutes, 1) + " min.")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: los indicadores no se actualizaron hoy; quedan publicadas las versiones anteriores."
+  Correr $Git (@("checkout", "--") + $paginasInd) | Out-Null
+  $avisoReiteradas += " (indicadores NO actualizados, ver log)"
+  Estado "indicadores" "ERROR" "indicadores no se actualizaron, quedan las versiones anteriores"
+} else {
+  Estado "indicadores" "OK" ("indicadores actualizados (" + [math]::Round($relojInd.Elapsed.TotalMinutes, 1) + " min)")
+}
+
 # 3. Publicar
 Log "3/4 Publicando en GitHub..."
 $paginas = @("index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html", "autochequeo.html", "recursos.html")
 if (Test-Path -LiteralPath "iptv.html") { $paginas += "iptv.html" }
+foreach ($pg in $paginasInd) { if (Test-Path -LiteralPath $pg) { $paginas += $pg } }
 Correr $Git (@("add") + $paginas) | Out-Null
 $r = Correr $Git @("diff", "--cached", "--quiet")
 if ($r.Codigo -eq 0) {
