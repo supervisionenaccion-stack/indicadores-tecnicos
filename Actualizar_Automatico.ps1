@@ -13,7 +13,9 @@
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2e. reportes\generar_graficos.js -> graficos.html (boton en supervisor.html);
 #       si falla, se deja la version anterior y el resto se publica igual
-#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html y recursos.html (reintenta)
+#   2h. Python (Informe_Ranking_IPTV\ejecutar_todo.py --sin-correo) + reportes\generar_iptv.js -> iptv.html
+#       (boton en supervisor.html); si falla, se deja la version anterior y el resto se publica igual
+#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html, recursos.html e iptv.html (reintenta)
 #   4. espera a que el sitio publico muestre la version nueva
 #   5. notificacion de Windows con el resultado (exito o error)
 # Cada corrida deja su detalle en logs\actualizacion_AAAA-MM-DD.log
@@ -173,9 +175,33 @@ if ($r.Codigo -ne 0) {
   Estado "recursos" "OK" "recursos.html actualizado"
 }
 
+# 2h. Calidad de instalacion IPTV (boton en supervisor.html). El flujo en Python
+# (C:\Bases_Vtr\Informe_Ranking_IPTV) baja el Power BI con Edge y deja Envios\iptv_datos.json;
+# despues se genera iptv.html cifrada. Complemento: si falla la descarga se usa el ultimo
+# archivo (la pagina muestra la fecha de los datos); si falla el generador, queda la version anterior.
+Log "2h/4 Calidad de instalacion IPTV (Python + Power BI)..."
+$Python = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $Python) { $Python = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe" }
+$r = Correr $Python @("-W", "ignore", "C:\Bases_Vtr\Informe_Ranking_IPTV\ejecutar_todo.py", "--sin-correo")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: no se pudo bajar el Power BI de IPTV; se usan los ultimos datos guardados."
+  $avisoReiteradas += " (IPTV: Power BI no se pudo bajar, datos anteriores)"
+}
+$r = Correr $Node @("reportes\generar_iptv.js")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: iptv.html no se actualizo hoy; queda publicada la version anterior."
+  Correr $Git @("checkout", "--", "iptv.html") | Out-Null
+  $avisoReiteradas += " (IPTV NO actualizado, ver log)"
+  Estado "iptv" "ERROR" "iptv.html no se actualizo, queda la version anterior"
+} else {
+  Estado "iptv" "OK" "iptv.html actualizado"
+}
+
 # 3. Publicar
 Log "3/4 Publicando en GitHub..."
-Correr $Git @("add", "index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html", "autochequeo.html", "recursos.html") | Out-Null
+$paginas = @("index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html", "autochequeo.html", "recursos.html")
+if (Test-Path -LiteralPath "iptv.html") { $paginas += "iptv.html" }
+Correr $Git (@("add") + $paginas) | Out-Null
 $r = Correr $Git @("diff", "--cached", "--quiet")
 if ($r.Codigo -eq 0) {
   Log "No hay cambios nuevos respecto de lo ya publicado."
