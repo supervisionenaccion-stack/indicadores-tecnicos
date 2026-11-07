@@ -1,4 +1,4 @@
-// "Indicadores de calidad" para el portal del supervisor: un indice (indicadores.html) y una pagina por indicador
+// "Indicadores de calidad" para el portal del supervisor: una pagina por indicador
 // (NPS, Control de Bloqueos, Auditorias QA y OT Digital) de COBRA. Se publican cifradas;
 // la copia sin cifrar queda en privado/. Los datos los deja el flujo en Python
 // (C:\Bases_Vtr\Informe_Ranking_IPTV\Envios\otros_datos.json: sin RUT). Otra ruta del JSON: OTROS_DATOS en el entorno.
@@ -248,53 +248,15 @@ activarAnimacion();
 </body></html>`;
 }
 
-// ---- indice
-function claves() { return ["bloqueos"].concat(Object.keys(PAGINAS).filter((k) => k !== "bloqueos")); }
-function cifra(clave) {
-  const N = DATA.nps || {}, B = DATA.bloqueos || {}, Q = DATA.qa || {};
-  const dec = (x, n) => x.toFixed(n === undefined ? 1 : n).replace(".", ","), pct = (x) => dec(100 * x) + "%";
-  if (clave === "nps") return N.inst !== undefined ? [dec(N.inst, 1) + " / " + dec(N.oper, 1), "instalaciones / operaciones"] : ["—", ""];
-  if (clave === "bloqueos") { const a = (B.tecnicos || []).filter((t) => t.activo); const n = (v) => a.filter((t) => t.nivel === v).length; return [String(a.length), "técnicos con strikes · " + a.filter((t) => t.nivel >= 3).length + " en 3.º o más · " + n(2) + " en 2.º · " + n(1) + " en 1.º"]; }
-  if (clave === "qa") return Q.resumen ? [pct(Q.resumen.nota), Q.resumen.total + " auditorías"] : ["—", ""];
-  if (clave === "otdigital") { const O = DATA.otdigital || {}, T = (O.cumple || 0) + (O.no || 0); return T ? [pct(O.cumple / T), T + " órdenes · 30 días"] : ["—", ""]; }
-  return ["—", ""];
-}
-const EXPL = {
-  nps: "Qué tan satisfechos quedan los clientes con la instalación y la reparación.",
-  bloqueos: "Control de bloqueos: técnicos que acumulan strikes por incumplir controles y quiénes están cerca de un bloqueo.",
-  qa: "Si el técnico sigue el protocolo cuando un auditor lo revisa en la casa del cliente.",
-  otdigital: "Si el técnico cierra bien la orden en el sistema, con todos los pasos digitales.",
-};
-const FICHAS_HTML = '<div class="panel"><h2>Técnicos a mirar primero</h2><p class="exp">Reúne en una sola tabla a los técnicos activos que aparecen en alguno de los controles: strikes, observaciones de auditoría y encuestas de cliente detractor. Parten arriba los de 3.º strike y los que suman más señales.</p><div class="filtro"><label for="sup">Supervisor</label><select id="sup"></select></div><div class="tabla-wrap"><table class="t" id="tFic"></table></div><p class="pie-dato" id="ficPie"></p></div>';
-const HUB_JS = String.raw`
-function pintar() {
-  const s = sup(), arr = (DATA.fichas || []).filter((f) => !s || f.supervisor === s);
-  const cab = '<tr><th>Técnico</th><th class="sup">Supervisor</th><th>Strikes</th><th class="n">Auditorías con observación</th><th class="n">Encuestas detractor</th></tr>';
-  const cu = arr.map((f) => '<tr><td class="nom">' + esc(f.nombre) + '</td><td class="sup">' + esc(f.supervisor) + '</td><td><span class="chip' + (f.nivel >= 3 ? " o" : "") + '">' + esc(f.strikes || "—") + '</span></td><td class="n">' + (f.obs ? f.obs + " de " + f.audit : "—") + '</td><td class="n">' + (f.detr || "—") + "</td></tr>").join("");
-  document.getElementById("tFic").innerHTML = arr.length ? cab + cu : "<tr><td>Sin técnicos en esta selección.</td></tr>";
-  poner("ficPie", arr.length + " técnicos. Datos del " + fechaDatos + ". Detalle de cada control en las páginas de arriba.");
-}
-iniciarFiltro((DATA.fichas || []).map((f) => f.supervisor), pintar);
-pintar();
-`;
-const ICONOS = {
-  nps: '<path d="M12 21s-7-4.6-9-9.2C1.6 8.3 3.7 5 7 5c2 0 3.4 1 5 3 1.6-2 3-3 5-3 3.3 0 5.4 3.3 4 6.8C19 16.4 12 21 12 21z"/>',
-  bloqueos: '<path d="M12 3l10 18H2z"/><path d="M12 10v5"/><path d="M12 18v.5"/>',
-  qa: '<rect x="6" y="4" width="12" height="17" rx="1"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/>',
-  otdigital: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M9.5 9.5l2 2 3-3.5"/>',
-};
-const MENU_HTML = '<div class="panel"><h2>Elige un indicador</h2><div class="menu">' +
-  claves().map((k) => { const c = cifra(k); return '<a class="mcard" data-sup href="' + PAGINAS[k].archivo + '"><svg class="mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONOS[k] + '</svg><span class="mt">' + PAGINAS[k].corto + '</span><span class="mv">' + c[0] + '</span><span class="ms">' + c[1] + '</span><span class="md">' + EXPL[k] + '</span><span class="mg">Ver detalle &rarr;</span></a>'; }).join("") + "</div></div>";
-const indiceMain = MENU_HTML + FICHAS_HTML;
+function claves() { return Object.keys(PAGINAS); }
 
 (async () => {
   try {
-    await publicarProtegida(pagina({ titulo: "Indicadores de calidad", sub: "NPS, bloqueos, auditorías y OT Digital de COBRA · datos del " + DATA.generado.slice(0, 10).split("-").reverse().join("-") + ".", volverHref: "supervisor.html", volverTxt: "Volver al dashboard", main: indiceMain, script: SHARED + HUB_JS }), "indicadores.html", "indicadores", "Indicadores de calidad");
     for (const k of claves()) {
       const P = PAGINAS[k];
       const script = SHARED + ESPECIFICO[k];
       await publicarProtegida(pagina({ titulo: P.titulo, sub: P.sub, volverHref: "supervisor.html", volverTxt: "Volver al dashboard", main: cuerpo(k), script }), P.archivo, P.archivo.replace(".html", ""), P.titulo);
     }
-    console.log("==> Generadas " + (claves().length + 1) + " paginas: indicadores.html + " + claves().map((k) => PAGINAS[k].archivo).join(", "));
+    console.log("==> Generadas " + claves().length + " paginas: " + claves().map((k) => PAGINAS[k].archivo).join(", "));
   } catch (e) { console.error("ERROR:", e.message); process.exit(1); }
 })();

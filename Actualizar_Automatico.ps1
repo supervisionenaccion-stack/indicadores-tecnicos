@@ -1,5 +1,5 @@
 # Actualizacion automatica diaria del portal (la corre el Programador de
-# tareas de Windows, tarea "Portal Tecnicos - Actualizacion diaria", 08:00).
+# tareas de Windows, tarea "Portal Tecnicos - Actualizacion diaria", 07:00).
 # Mismo flujo que Actualizar_Dashboard.bat, pero sin pausas y con controles:
 #   1. generar_portal.js  -> consulta la BD y genera los HTML (todo local)
 #   2. validar_portal.js  -> si algo no cuadra, NO se publica nada
@@ -15,8 +15,8 @@
 #       si falla, se deja la version anterior y el resto se publica igual
 #   2h. Python (Informe_Ranking_IPTV\ejecutar_todo.py --sin-correo) + reportes\generar_iptv.js -> iptv.html
 #       (boton en supervisor.html); si falla, se deja la version anterior y el resto se publica igual
-#   2i. Python (Informe_Ranking_IPTVajar_otros.py + otros.py) + reportes\generar_indicadores.js -> indicadores*.html (5 paginas)
-#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html, recursos.html, iptv.html e indicadores*.html (reintenta)
+#   2i. Python (Informe_Ranking_IPTVajar_otros.py + otros.py) + reportes\generar_indicadores.js -> indicadores_*.html (4 paginas)
+#   3. commit + push de index.html, supervisor.html, reiteradas.html, vecino.html, brecha.html, graficos.html, autochequeo.html, recursos.html, iptv.html e indicadores_*.html (reintenta)
 #   4. espera a que el sitio publico muestre la version nueva
 #   5. notificacion de Windows con el resultado (exito o error)
 # Cada corrida deja su detalle en logs\actualizacion_AAAA-MM-DD.log
@@ -202,7 +202,7 @@ if ($r.Codigo -ne 0) {
 # Python baja el Power BI con Edge (bajar_otros.py), arma Envios\otros_datos.json (otros.py) y despues se
 # generan las 5 paginas cifradas. Complemento: si falla la descarga se usan los ultimos datos guardados;
 # si falla algun paso posterior, quedan publicadas las versiones anteriores. Se registra cuanto demora.
-$paginasInd = @("indicadores.html", "indicadores_nps.html", "indicadores_bloqueos.html", "indicadores_qa.html", "indicadores_otdigital.html")
+$paginasInd = @("indicadores_nps.html", "indicadores_bloqueos.html", "indicadores_qa.html", "indicadores_otdigital.html")
 Log "2i/4 Indicadores de calidad (Python + Power BI)..."
 $relojInd = [System.Diagnostics.Stopwatch]::StartNew()
 $r = Correr $Python @("-W", "ignore", "C:\Bases_Vtr\Informe_Ranking_IPTV\bajar_otros.py")
