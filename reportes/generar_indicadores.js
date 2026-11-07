@@ -1,5 +1,5 @@
 // "Indicadores de calidad" para el portal del supervisor: una pagina por indicador
-// (NPS, Control de Bloqueos, Auditorias QA y OT Digital) de COBRA. Se publican cifradas;
+// (NPS, Control de Bloqueos y Auditorias QA) de COBRA. Se publican cifradas;
 // la copia sin cifrar queda en privado/. Los datos los deja el flujo en Python
 // (C:\Bases_Vtr\Informe_Ranking_IPTV\Envios\otros_datos.json: sin RUT). Otra ruta del JSON: OTROS_DATOS en el entorno.
 const fs = require("fs");
@@ -61,18 +61,15 @@ const AYUDAS = {
   bloqueos: '<div class="lee"><p><b>Qué es:</b> cada vez que un técnico incumple un control (alarmas, interacción sin morador, herramientas, adherencia, etc.) recibe un strike. Los strikes se acumulan: el 1.º y el 2.º son advertencias, el 3.º puede llevar a bloqueo y algunas faltas graves son salida directa.</p><p><b>Cómo leerlo:</b> la lista va de mayor a menor gravedad. Los técnicos de arriba son los que conviene conversar primero. "Eventos" son las veces que quedó registrado en el control.</p></div>',
   qa: '<div class="lee"><p><b>Qué es:</b> auditores revisan en terreno, en la casa del cliente, si el técnico siguió el protocolo de atención y dejó bien la revisión exterior e interior.</p><p><b>Cómo leerlo:</b> el porcentaje es el cumplimiento de cada tramo de la auditoría. Son pocas visitas por mes, así que un solo caso mueve mucho el resultado.</p></div>',
 };
-AYUDAS.otdigital = '<div class="lee"><p><b>Qué es:</b> OT Digital mide si el técnico cierra la orden de trabajo en el sistema como corresponde, completando los pasos digitales de la visita. Cada orden cuenta como "cumple" o "no cumple".</p><p><b>Cómo leerlo:</b> mientras más alto el porcentaje de cumplimiento, mejor. Los técnicos de arriba son los que menos cumplen en los últimos 30 días.</p></div>';
 const GLOSARIO = {
   nps: [["NPS", "Porcentaje de promotores menos porcentaje de detractores. Va de -100 a 100."], ["Promotor / detractor", "Cliente que recomendaría al técnico / cliente que no lo recomendaría."], ["Técnico incidente en detractor", "Técnico al que la encuesta de un cliente detractor le atribuye la causa (mala atención, falta de procedimiento, etc.). No es un NPS por técnico: son pocas encuestas por persona."]],
   bloqueos: [["Strike", "Falta registrada a un técnico en un control. Se acumulan; al 3.º puede haber bloqueo. La salida directa es para faltas graves."], ["Estado Advertencia", "El técnico tiene strikes, pero sigue trabajando con normalidad. Bloqueo indefinido significa que ya no puede trabajar."], ["Eventos", "Veces que el técnico quedó registrado en alguno de los controles."]],
   qa: [["Adherencia", "Cumplimiento del protocolo de trabajo medido en una auditoría presencial."], ["Auditoría completa", "La que revisa exterior e interior de la casa; algunas son solo exterior."]],
-  otdigital: [["OT Digital", "Cierre de la orden de trabajo en el sistema con los pasos digitales completos."], ["Cumple / No cumple", "Orden que se cerró bien digitalmente / orden que quedó con algún paso sin completar."]],
 };
 const PAGINAS = {
   nps: { archivo: "indicadores_nps.html", titulo: "NPS · satisfacción del cliente", corto: "NPS", sub: "Cómo califican los clientes de COBRA las instalaciones y las operaciones (reparaciones).", filtro: true },
   bloqueos: { archivo: "indicadores_bloqueos.html", titulo: "Control de bloqueos · strikes", corto: "Strikes", sub: "Técnicos con strikes por incumplir controles, y cuáles están más cerca de un bloqueo.", filtro: true },
   qa: { archivo: "indicadores_qa.html", titulo: "Auditorías de calidad · adherencia en terreno", corto: "Auditorías de calidad", sub: "Resultado de las auditorías presenciales a técnicos de COBRA.", filtro: true },
-  otdigital: { archivo: "indicadores_otdigital.html", titulo: "OT Digital · cierre correcto de órdenes", corto: "OT Digital", sub: "Cumplimiento de OT Digital de cada técnico de COBRA en los últimos 30 días.", filtro: true },
 };
 
 function cuerpo(clave) {
@@ -84,7 +81,6 @@ function cuerpo(clave) {
     nps: '<div class="panel"><h2>Resumen</h2>' + filtro + cards + "</div>" + '<div class="panel"><h2>Cómo califican los clientes</h2>' + AYUDAS.nps + '<div class="dos"><div class="bloque"><h3>NPS por mes</h3><div id="npsLinea"></div><div class="leyenda"><span style="--k:#1f3a5f">Instalaciones</span><span style="--k:#7f9bb8">Operaciones</span></div></div><div class="bloque"><h3>Atributos · instalaciones</h3><div id="npsAi"></div><h3 style="margin-top:14px">Atributos · operaciones</h3><div id="npsAo"></div></div></div><div class="lect" id="lNps"></div></div>' + '<div class="panel"><h2>Técnicos con encuestas de detractor</h2><p class="exp">Un detractor es un cliente que calificó con nota baja. Aquí están los técnicos activos a los que una encuesta de detractor les atribuye la causa.</p><div class="tabla-wrap"><table class="t" id="tDet"></table></div><p class="pie-dato" id="detPie"></p></div>',
     bloqueos: '<div class="panel"><h2>Resumen</h2>' + filtro + cards + "</div>" + '<div class="panel"><h2>Técnicos con strikes</h2><p class="exp" id="bloqExp"></p>' + AYUDAS.bloqueos + '<div id="bloqProy" class="leyenda" style="margin:0 0 12px"></div><div class="tabla-wrap"><table class="t" id="tBloq"></table></div><p class="pie-dato" id="bloqPie"></p><div class="lect" id="lBloq"></div></div>',
     qa: '<div class="panel"><h2>Resumen</h2>' + filtro + cards + "</div>" + '<div class="panel"><h2>Resultado de las auditorías</h2><p class="exp" id="qaExp"></p>' + AYUDAS.qa + '<div class="dos"><div class="bloque"><h3>Adherencia por segmento</h3><div id="qaSeg"></div></div><div class="bloque"><h3>Nota por mes</h3><div id="qaMes"></div></div></div><h3 style="margin:18px 0 8px;font-size:13px">Técnicos auditados</h3><div class="tabla-wrap"><table class="t" id="tQa"></table></div><div class="lect" id="lQa"></div></div>',
-    otdigital: '<div class="panel"><h2>Resumen</h2>' + filtro + cards + "</div>" + '<div class="panel"><h2>Cumplimiento por técnico</h2><p class="exp" id="odExp"></p>' + AYUDAS.otdigital + '<div class="dos"><div class="bloque"><h3>Por tipo de actividad</h3><div id="odAct"></div></div><div class="bloque"><h3>Por semana</h3><div id="odSem"></div></div></div><h3 style="margin:18px 0 8px;font-size:13px">Técnicos</h3><div class="tabla-wrap"><table class="t" id="tOd"></table></div><p class="pie-dato" id="odPie"></p><div class="lect" id="lOd"></div></div>',
   };
   return piezas[clave] + gl;
 }
@@ -203,27 +199,6 @@ function pintar() {
   poner("lQa", r ? "<b>Lectura:</b> la adherencia general es <b>" + pct(r.nota) + "</b> con solo " + r.total + " auditorías, por eso conviene mirarla como orientación y no como resultado definitivo." + (seg ? " El punto más débil es <b>" + esc(seg.segmento.toLowerCase()) + "</b> (" + pct(seg.pct) + ")." : "") : "");
 }
 iniciarFiltro(qTec.map((t) => t.supervisor), pintar);
-pintar();
-`,
-  otdigital: String.raw`
-function pintar() {
-  const OD = DATA.otdigital || {}, s = sup(), arr = (OD.tecnicos || []).filter((t) => !s || t.supervisor === s);
-  const cu = arr.reduce((a, t) => a + t.cumple, 0), no = arr.reduce((a, t) => a + t.no, 0), tot = cu + no;
-  const ptot = (OD.cumple || 0) + (OD.no || 0);
-  poner("cards", tarjetasHtml([["Cumplimiento " + (s ? "del equipo" : "COBRA"), tot ? pct(cu / tot) : "—", tot + " órdenes en 30 días"], ["Órdenes que no cumplen", String(no), s ? "equipo de " + s : "de " + tot + " órdenes"], ["Técnicos", String(arr.length), "activos de COBRA"]].concat(!s && ptot ? [["Total en Power BI", pct(OD.cumple / ptot), ptot + " órdenes de COBRA"]] : [])));
-  document.getElementById("odExp").textContent = "Órdenes cerradas en los últimos 30 días por técnicos activos de COBRA. Datos del " + fechaDatos + ".";
-  const mp = (z) => (z.cumple + z.no) ? z.cumple / (z.cumple + z.no) : 0;
-  barras("odAct", (OD.actividades || []).map((z) => ({ n: z.actividad, v: mp(z) })), (v) => pct(v), 1);
-  barras("odSem", (OD.semanas || []).map((z) => ({ n: "Semana " + z.semana, v: mp(z) })), (v) => pct(v), 1);
-  const cab = '<tr><th>Técnico</th><th class="sup">Supervisor</th><th class="n">Órdenes</th><th class="n">No cumplen</th><th>Cumplimiento</th></tr>';
-  const fila = (t) => { const T = t.cumple + t.no, p = mp(t); return '<tr><td class="nom">' + esc(t.nombre) + '</td><td class="sup">' + esc(t.supervisor) + '</td><td class="n">' + T + '</td><td class="n">' + (t.no || "—") + '</td><td><span class="bb" style="display:inline-block;width:90px;vertical-align:middle"><i style="width:' + (100 * p) + '%"></i></span> ' + pct(p) + "</td></tr>"; };
-  const ord = arr.slice().sort((a, b) => mp(a) - mp(b));
-  document.getElementById("tOd").innerHTML = arr.length ? cab + ord.map(fila).join("") : "<tr><td>Sin técnicos en esta selección.</td></tr>";
-  poner("odPie", "Ordenados del menor al mayor cumplimiento.");
-  const peor = ord[0];
-  poner("lOd", tot ? "<b>Lectura:</b> " + (s ? "el equipo de " + esc(s) : "COBRA") + " cumple <b>" + pct(cu / tot) + "</b> de sus órdenes (" + no + " no cumplen)." + (peor && peor.no ? " El técnico con menor cumplimiento es <b>" + esc(peor.nombre) + "</b> (" + pct(mp(peor)) + ")." : "") : "");
-}
-iniciarFiltro((DATA.otdigital && DATA.otdigital.tecnicos || []).map((t) => t.supervisor), pintar);
 pintar();
 `,
 };

@@ -62,7 +62,7 @@ function Estado($clave, $estado, $detalle) {
   try {
     & $Node "C:\Bases_Tigo\registrar_estado.js" $clave $estado $detalle 2>&1 | Out-Null
     $bat = "C:\Bases_Tigo\estado_web\Actualizar_Estado.bat"
-    if (Test-Path -LiteralPath $bat) { & cmd.exe /c "`"$bat`"" 2>&1 | Out-Null }
+    if (Test-Path -LiteralPath $bat) { Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$bat`"" -WindowStyle Hidden }   # sin esperar: la pagina se refresca sola
   } catch {
     Log ("No se pudo registrar el estado: " + $_.Exception.Message)
   }
@@ -202,7 +202,7 @@ if ($r.Codigo -ne 0) {
 # Python baja el Power BI con Edge (bajar_otros.py), arma Envios\otros_datos.json (otros.py) y despues se
 # generan las 5 paginas cifradas. Complemento: si falla la descarga se usan los ultimos datos guardados;
 # si falla algun paso posterior, quedan publicadas las versiones anteriores. Se registra cuanto demora.
-$paginasInd = @("indicadores_nps.html", "indicadores_bloqueos.html", "indicadores_qa.html", "indicadores_otdigital.html")
+$paginasInd = @("indicadores_nps.html", "indicadores_bloqueos.html", "indicadores_qa.html")
 Log "2i/4 Indicadores de calidad (Python + Power BI)..."
 $relojInd = [System.Diagnostics.Stopwatch]::StartNew()
 $r = Correr $Python @("-W", "ignore", "C:\Bases_Vtr\Informe_Ranking_IPTV\bajar_otros.py")
