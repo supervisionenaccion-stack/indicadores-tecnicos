@@ -48,10 +48,11 @@ table.t tr:not(:first-child){ animation:fila .6s ease both; } @keyframes fila{ f
 @media (prefers-reduced-motion:reduce){ .rv{ opacity:1; transform:none; } .card,table.t tr,.hb .bb i{ animation:none!important; } }
 @media (max-width:760px){ .dos{ grid-template-columns:1fr; } .hb{ grid-template-columns:110px 1fr 50px; } table.t td.sup, table.t th.sup{ display:none; } }
 
-.menu{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+.menu{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
 .mcard{ display:flex; flex-direction:column; gap:4px; text-decoration:none; color:inherit; border:1px solid var(--border); border-top:3px solid var(--c2); border-radius:10px; padding:14px 16px; background:#fff; transition:box-shadow .15s, transform .15s; animation:entra .8s cubic-bezier(.2,.7,.2,1) both; }
 .mcard:hover{ box-shadow:0 4px 14px rgba(0,60,113,.12); transform:translateY(-2px); }
 .mcard .mt{ font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); } .mcard .mv{ font-size:26px; font-weight:800; color:var(--navy); line-height:1.15; } .mcard .ms{ font-size:12px; color:var(--dim); }
+.mcard{ position:relative; } .mcard .mi{ position:absolute; top:12px; right:14px; width:26px; height:26px; color:var(--c2); } .mcard[href*="bloqueos"] .mi{ color:#b4651c; } .mcard[href*="bloqueos"]{ border-top-color:#b4651c; } .mcard[href*="bloqueos"] .mv{ color:#8a4a12; }
 .mcard .md{ font-size:13px; color:#33414f; line-height:1.45; margin-top:6px; } .mcard .mg{ font-size:12.5px; font-weight:700; color:var(--blue); margin-top:8px; }
 `;
 
@@ -69,7 +70,7 @@ const GLOSARIO = {
 };
 const PAGINAS = {
   nps: { archivo: "indicadores_nps.html", titulo: "NPS · satisfacción del cliente", corto: "NPS", sub: "Cómo califican los clientes de COBRA las instalaciones y las operaciones (reparaciones).", filtro: true },
-  bloqueos: { archivo: "indicadores_bloqueos.html", titulo: "Control de bloqueos · strikes", corto: "Control de bloqueos", sub: "Técnicos con strikes por incumplir controles, y cuáles están más cerca de un bloqueo.", filtro: true },
+  bloqueos: { archivo: "indicadores_bloqueos.html", titulo: "Control de bloqueos · strikes", corto: "Strikes", sub: "Técnicos con strikes por incumplir controles, y cuáles están más cerca de un bloqueo.", filtro: true },
   qa: { archivo: "indicadores_qa.html", titulo: "Auditorías de calidad · adherencia en terreno", corto: "Auditorías de calidad", sub: "Resultado de las auditorías presenciales a técnicos de COBRA.", filtro: true },
   otdigital: { archivo: "indicadores_otdigital.html", titulo: "OT Digital · cierre correcto de órdenes", corto: "OT Digital", sub: "Cumplimiento de OT Digital de cada técnico de COBRA en los últimos 30 días.", filtro: true },
 };
@@ -242,25 +243,25 @@ function pagina({ titulo, sub, volverHref, volverTxt, main, script }) {
 const DATA = ${JSON.stringify(DATA)};
 ${script}
 activarAnimacion();
-(function () { const q = new URLSearchParams(location.search).get("supervisor"); if (q) { document.querySelectorAll("a[data-sup]").forEach((a) => { a.href = a.getAttribute("href").split("?")[0] + "?supervisor=" + encodeURIComponent(q); }); const v = document.getElementById("volver"); if (v && v.getAttribute("href").indexOf("indicadores") === 0) v.href = v.getAttribute("href").split("?")[0] + "?supervisor=" + encodeURIComponent(q); } })();
+(function () { const q = new URLSearchParams(location.search).get("supervisor"); if (q) { document.querySelectorAll("a[data-sup]").forEach((a) => { a.href = a.getAttribute("href").split("?")[0] + "?supervisor=" + encodeURIComponent(q); }); const v = document.getElementById("volver"); if (v) v.href = v.getAttribute("href").split("?")[0] + "?supervisor=" + encodeURIComponent(q); } })();
 </script>
 </body></html>`;
 }
 
 // ---- indice
-function claves() { return Object.keys(PAGINAS); }
+function claves() { return ["bloqueos"].concat(Object.keys(PAGINAS).filter((k) => k !== "bloqueos")); }
 function cifra(clave) {
   const N = DATA.nps || {}, B = DATA.bloqueos || {}, Q = DATA.qa || {};
   const dec = (x, n) => x.toFixed(n === undefined ? 1 : n).replace(".", ","), pct = (x) => dec(100 * x) + "%";
   if (clave === "nps") return N.inst !== undefined ? [dec(N.inst, 1) + " / " + dec(N.oper, 1), "instalaciones / operaciones"] : ["—", ""];
-  if (clave === "bloqueos") { const a = (B.tecnicos || []).filter((t) => t.activo); return [String(a.length), "técnicos con strikes · " + a.filter((t) => t.nivel >= 3).length + " en 3.º o más"]; }
+  if (clave === "bloqueos") { const a = (B.tecnicos || []).filter((t) => t.activo); const n = (v) => a.filter((t) => t.nivel === v).length; return [String(a.length), "técnicos con strikes · " + a.filter((t) => t.nivel >= 3).length + " en 3.º o más · " + n(2) + " en 2.º · " + n(1) + " en 1.º"]; }
   if (clave === "qa") return Q.resumen ? [pct(Q.resumen.nota), Q.resumen.total + " auditorías"] : ["—", ""];
   if (clave === "otdigital") { const O = DATA.otdigital || {}, T = (O.cumple || 0) + (O.no || 0); return T ? [pct(O.cumple / T), T + " órdenes · 30 días"] : ["—", ""]; }
   return ["—", ""];
 }
 const EXPL = {
   nps: "Qué tan satisfechos quedan los clientes con la instalación y la reparación.",
-  bloqueos: "Técnicos con strikes por incumplir controles y quiénes están cerca de un bloqueo.",
+  bloqueos: "Control de bloqueos: técnicos que acumulan strikes por incumplir controles y quiénes están cerca de un bloqueo.",
   qa: "Si el técnico sigue el protocolo cuando un auditor lo revisa en la casa del cliente.",
   otdigital: "Si el técnico cierra bien la orden en el sistema, con todos los pasos digitales.",
 };
@@ -271,13 +272,20 @@ function pintar() {
   const cab = '<tr><th>Técnico</th><th class="sup">Supervisor</th><th>Strikes</th><th class="n">Auditorías con observación</th><th class="n">Encuestas detractor</th></tr>';
   const cu = arr.map((f) => '<tr><td class="nom">' + esc(f.nombre) + '</td><td class="sup">' + esc(f.supervisor) + '</td><td><span class="chip' + (f.nivel >= 3 ? " o" : "") + '">' + esc(f.strikes || "—") + '</span></td><td class="n">' + (f.obs ? f.obs + " de " + f.audit : "—") + '</td><td class="n">' + (f.detr || "—") + "</td></tr>").join("");
   document.getElementById("tFic").innerHTML = arr.length ? cab + cu : "<tr><td>Sin técnicos en esta selección.</td></tr>";
-  poner("ficPie", arr.length + " técnicos. Datos del " + fechaDatos + ". Detalle de cada control en las páginas de abajo.");
+  poner("ficPie", arr.length + " técnicos. Datos del " + fechaDatos + ". Detalle de cada control en las páginas de arriba.");
 }
 iniciarFiltro((DATA.fichas || []).map((f) => f.supervisor), pintar);
 pintar();
 `;
-const indiceMain = FICHAS_HTML + '<div class="panel"><h2>Elige un indicador</h2><p class="exp">Cada indicador explica qué mide, cómo leerlo y qué técnicos conviene mirar. Los datos vienen del Power BI y se actualizan cada día.</p><div class="menu">' +
-  claves().map((k) => { const c = cifra(k); return '<a class="mcard" data-sup href="' + PAGINAS[k].archivo + '"><span class="mt">' + PAGINAS[k].corto + '</span><span class="mv">' + c[0] + '</span><span class="ms">' + c[1] + '</span><span class="md">' + EXPL[k] + '</span><span class="mg">Ver detalle &rarr;</span></a>'; }).join("") + "</div></div>";
+const ICONOS = {
+  nps: '<path d="M12 21s-7-4.6-9-9.2C1.6 8.3 3.7 5 7 5c2 0 3.4 1 5 3 1.6-2 3-3 5-3 3.3 0 5.4 3.3 4 6.8C19 16.4 12 21 12 21z"/>',
+  bloqueos: '<path d="M12 3l10 18H2z"/><path d="M12 10v5"/><path d="M12 18v.5"/>',
+  qa: '<rect x="6" y="4" width="12" height="17" rx="1"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/>',
+  otdigital: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M9.5 9.5l2 2 3-3.5"/>',
+};
+const MENU_HTML = '<div class="panel"><h2>Elige un indicador</h2><div class="menu">' +
+  claves().map((k) => { const c = cifra(k); return '<a class="mcard" data-sup href="' + PAGINAS[k].archivo + '"><svg class="mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONOS[k] + '</svg><span class="mt">' + PAGINAS[k].corto + '</span><span class="mv">' + c[0] + '</span><span class="ms">' + c[1] + '</span><span class="md">' + EXPL[k] + '</span><span class="mg">Ver detalle &rarr;</span></a>'; }).join("") + "</div></div>";
+const indiceMain = MENU_HTML + FICHAS_HTML;
 
 (async () => {
   try {
@@ -285,7 +293,7 @@ const indiceMain = FICHAS_HTML + '<div class="panel"><h2>Elige un indicador</h2>
     for (const k of claves()) {
       const P = PAGINAS[k];
       const script = SHARED + ESPECIFICO[k];
-      await publicarProtegida(pagina({ titulo: P.titulo, sub: P.sub, volverHref: "indicadores.html", volverTxt: "Indicadores de calidad", main: cuerpo(k), script }), P.archivo, P.archivo.replace(".html", ""), P.titulo);
+      await publicarProtegida(pagina({ titulo: P.titulo, sub: P.sub, volverHref: "supervisor.html", volverTxt: "Volver al dashboard", main: cuerpo(k), script }), P.archivo, P.archivo.replace(".html", ""), P.titulo);
     }
     console.log("==> Generadas " + (claves().length + 1) + " paginas: indicadores.html + " + claves().map((k) => PAGINAS[k].archivo).join(", "));
   } catch (e) { console.error("ERROR:", e.message); process.exit(1); }

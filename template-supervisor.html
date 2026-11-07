@@ -88,13 +88,20 @@
   @media (prefers-reduced-motion:reduce){ .comb-dibujar{ animation:none; } }
   /* Botones de reportes: en una fila a la derecha del filtro, del mismo alto que el select. */
   .acciones{ flex:1; }
-  .acciones-row{ display:flex; flex-wrap:wrap; gap:10px; }
-  .btn-reiteradas{
-    display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:8px;
-    background:var(--cobra-navy); color:#fff; font-weight:700; font-size:13.5px; text-decoration:none; white-space:nowrap;
+  .acciones-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .acciones-grupos{ display:flex; flex-direction:column; gap:12px; }
+  .acciones-grupos{ gap:8px; }
+  .acciones-grupo{ display:flex; align-items:flex-start; gap:10px; }
+  .acciones-titulo{ flex:0 0 96px; font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin:0; padding-top:10px; line-height:1.25; }
+  .campo.acciones > label{ font-size:9.5px; margin:0 0 -2px; }
+  @media (max-width:640px){ .acciones-grupo{ flex-direction:column; gap:4px; } .acciones-titulo{ flex:none; padding-top:0; } }
+  .acciones-grupos .btn-reiteradas{
+    display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px;
+    background:var(--cobra-navy); color:#fff; border:1px solid var(--cobra-navy); font-weight:700; font-size:12.5px; line-height:1.2; letter-spacing:0; text-transform:none; text-decoration:none; white-space:nowrap;
+    box-shadow:0 4px 8px rgba(0,60,113,.22), 0 1px 2px rgba(0,60,113,.15); transition:background .15s, color .15s, transform .15s, box-shadow .15s;
   }
-  .btn-reiteradas:hover{ background:var(--cobra-blue); }
-  .btn-reiteradas svg{ width:16px; height:16px; }
+  .acciones-grupos .btn-reiteradas:hover{ background:var(--cobra-blue); color:#fff; border-color:var(--cobra-blue); transform:translateY(-1px); box-shadow:0 6px 12px rgba(0,60,113,.28); }
+  .acciones-grupos .btn-reiteradas svg{ width:15px; height:15px; }
   @media (max-width:520px){ .acciones-row{ flex-direction:column; } .btn-reiteradas{ justify-content:center; white-space:normal; } }
 
   .titulo-seccion{ margin:0 0 3px; font-size:15px; color:var(--cobra-navy); }
@@ -245,8 +252,8 @@
       </div>
     </div>
     <div class="campo acciones">
-      <label>Reportes del equipo</label>
-      <div class="acciones-row">
+      <div class="acciones-grupos">
+      <div class="acciones-grupo"><div class="acciones-titulo">Operación del equipo</div><div class="acciones-row">
       <a class="btn-reiteradas" id="btnReiteradas" href="reiteradas.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
         Reiterados dentro del mes en curso
@@ -267,6 +274,30 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
         Gráficos del equipo
       </a>
+      </div></div>
+      <div class="acciones-grupo"><div class="acciones-titulo">Calidad</div><div class="acciones-row">
+      <a class="btn-reiteradas" id="btnStrikes" href="indicadores_bloqueos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><path d="M12 18v.5"/></svg>
+        Strikes
+      </a>
+      <a class="btn-reiteradas" id="btnNps" href="indicadores_nps.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-9-9.2C1.6 8.3 3.7 5 7 5c2 0 3.4 1 5 3 1.6-2 3-3 5-3 3.3 0 5.4 3.3 4 6.8C19 16.4 12 21 12 21z"/></svg>
+        NPS
+      </a>
+      <a class="btn-reiteradas" id="btnCalidadQa" href="indicadores_qa.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="1"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/></svg>
+        Auditorías de calidad
+      </a>
+      <a class="btn-reiteradas" id="btnOtDigital" href="indicadores_otdigital.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/><path d="M9.5 9.5l2 2 3-3.5"/></svg>
+        OT Digital
+      </a>
+      <a class="btn-reiteradas" id="btnIptv" href="iptv.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M8 11l3 2 5-4"/></svg>
+        Calidad de instalación IPTV
+      </a>
+      </div></div>
+      <div class="acciones-grupo"><div class="acciones-titulo">Herramientas</div><div class="acciones-row">
       <a class="btn-reiteradas" id="btnAutochequeo" href="autochequeo.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11l2 2 4-4"/><path d="M9 17h6"/></svg>
         Autochequeo de herramientas
@@ -275,14 +306,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>
         Recursos del equipo
       </a>
-      <a class="btn-reiteradas" id="btnIptv" href="iptv.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M8 11l3 2 5-4"/></svg>
-        Calidad de instalación IPTV
-      </a>
-      <a class="btn-reiteradas" id="btnIndicadores" href="indicadores.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
-        Indicadores de calidad
-      </a>
+      </div></div>
       </div>
     </div>
   </div>
@@ -1323,7 +1347,10 @@ function actualizarLinkReiteradas() {
   document.getElementById('btnGraficos').href = 'graficos.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnAutochequeo').href = 'autochequeo.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
   document.getElementById('btnIptv').href = 'iptv.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
-  document.getElementById('btnIndicadores').href = 'indicadores.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnStrikes').href = 'indicadores_bloqueos.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnNps').href = 'indicadores_nps.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnCalidadQa').href = 'indicadores_qa.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
+  document.getElementById('btnOtDigital').href = 'indicadores_otdigital.html' + (supervisor ? '?supervisor=' + encodeURIComponent(supervisor) : '');
 }
 
 document.getElementById('filtroSupervisor').addEventListener('change', () => { renderTabla(); renderCombinado(); actualizarLinkReiteradas(); });
