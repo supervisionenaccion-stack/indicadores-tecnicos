@@ -24,6 +24,22 @@
     /* Mismo borde izquierdo que <main> cuando este queda centrado (tope de 1400px). */
     padding:28px max(clamp(16px,3vw,56px), calc((100% - 1400px) / 2 + clamp(16px,3vw,56px))) 30px; position:relative; overflow:hidden; border-bottom:4px solid var(--celeste);
   }
+  .campana{ position:relative; }
+  #campanaBtn{ position:relative; background:none; border:1px solid var(--border); color:var(--cobra-navy); width:36px; height:36px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  #campanaBtn:hover{ background:var(--panel-2); }
+  #campanaBtn svg{ width:18px; height:18px; }
+  #campanaNum{ position:absolute; top:-4px; right:-4px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#d93025; color:#fff; font-size:10.5px; font-weight:800; line-height:17px; text-align:center; }
+  #campanaPanel{ position:absolute; right:0; top:44px; width:min(340px, calc(100vw - 24px)); max-height:70vh; overflow:auto; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,30,60,.18); z-index:50; }
+  @media (max-width:520px){ #campanaPanel{ position:fixed; left:10px; right:10px; width:auto; } }
+  #campanaPanel .cmp-tit{ padding:12px 14px; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--cobra-blue); border-bottom:1px solid var(--border); }
+  #campanaPanel a{ display:flex; gap:10px; padding:11px 14px; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); font-size:13.5px; line-height:1.35; }
+  #campanaPanel a:last-child{ border-bottom:none; }
+  #campanaPanel a:hover{ background:var(--panel-2); }
+  #campanaPanel a.nuevo{ background:#eef5fd; }
+  #campanaPanel .cmp-ico{ flex:none; font-size:17px; }
+  #campanaPanel .cmp-fecha{ display:block; font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+  #campanaPanel .cmp-vacio{ padding:16px 14px; font-size:13px; color:var(--text-dim); }
+  .brand-row .campana{ margin-left:auto; }
   .brand-row{ display:flex; align-items:center; gap:18px; margin-bottom:18px; }
   .brand-row img{ height:40px; }
   .brand-divider{ width:1px; height:30px; background:var(--border); }
@@ -214,7 +230,7 @@
   <div class="wrap brand-row">
     <img src="logo-cobra.png" alt="Cobra" id="logoCobra">
     <div class="brand-divider"></div>
-    <div class="brand-name">Portal <strong>Supervisor</strong></div>
+    <div class="brand-name">Portal <strong>Supervisor</strong></div> <div class="campana" id="campana"> <button id="campanaBtn" type="button" aria-label="Avisos" aria-expanded="false" title="Avisos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="campanaNum" hidden></span></button> <div id="campanaPanel" hidden><div class="cmp-tit">Avisos</div><div id="campanaLista"></div></div>
   </div>
 </header>
 <section class="hero" aria-label="Portada">
@@ -1646,6 +1662,57 @@ try {
     });
   })();
 } catch (e) { /* easter egg opcional: cualquier error aca no debe afectar el dashboard */ }
+// ---------- Campanita de avisos (comunicados, videos nuevos, cambios) ----------
+// La lista sale de avisos.json (la arma reportes/generar_avisos.js). Cada aviso nuevo se marca con el
+// numerito rojo hasta que el tecnico abre la campanita; lo que ya vio se guarda solo en su telefono.
+(function () {
+  const CLAVE = 'portalAvisosVistos';
+  const ICONOS = { video: '🎬', comunicado: '📢', autochequeo: '📝', otro: '🔔' };
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const dmy = (iso) => String(iso || '').split('-').reverse().join('-');
+  const leerVistos = () => { try { return JSON.parse(localStorage.getItem(CLAVE)) || []; } catch (e) { return []; } };
+  const guardarVistos = (ids) => { try { localStorage.setItem(CLAVE, JSON.stringify(ids.slice(-200))); } catch (e) { /* sin almacenamiento */ } };
+  let avisos = [], nuevos = new Set();
+
+  function dibujar() {
+    const num = document.getElementById('campanaNum');
+    num.hidden = nuevos.size === 0;
+    num.textContent = nuevos.size > 9 ? '9+' : String(nuevos.size);
+    document.getElementById('campanaLista').innerHTML = avisos.length
+      ? avisos.map((a) => '<a class="' + (nuevos.has(a.id) ? 'nuevo' : '') + '" href="' + esc(a.enlace) + '" target="_blank" rel="noopener"><span class="cmp-ico">' + (ICONOS[a.tipo] || ICONOS.otro) + '</span><span>' + esc(a.titulo) + '<span class="cmp-fecha">' + dmy(a.fecha) + '</span></span></a>').join('')
+      : '<div class="cmp-vacio">No hay avisos por ahora.</div>';
+  }
+
+  function abrirCerrar(abrir) {
+    const panel = document.getElementById('campanaPanel');
+    panel.hidden = !abrir;
+    if (abrir) panel.style.top = (document.getElementById('campanaBtn').getBoundingClientRect().bottom + 8) + 'px';   // en celular el panel va fijo, a todo el ancho
+    document.getElementById('campanaBtn').setAttribute('aria-expanded', abrir);
+    if (abrir && nuevos.size) {   // al abrirla, todo queda como visto (el resaltado se ve hasta cerrarla)
+      guardarVistos(leerVistos().concat(avisos.map((a) => a.id)));
+      document.getElementById('campanaNum').hidden = true;
+    }
+    if (!abrir) { nuevos = new Set(); dibujar(); }
+  }
+
+  async function iniciarAvisos() {
+    try {
+      const r = await fetch('avisos.json', { cache: 'no-store' });
+      if (!r.ok) return;
+      const j = await r.json();
+      avisos = (j.avisos || []).slice(0, 10);
+      const vistos = new Set(leerVistos());
+      nuevos = new Set(avisos.filter((a) => !vistos.has(a.id)).map((a) => a.id));
+      dibujar();
+      
+    } catch (e) { /* sin avisos: la campanita no se muestra */ }
+  }
+  iniciarAvisos();
+
+  document.getElementById('campanaBtn').addEventListener('click', (e) => { e.stopPropagation(); abrirCerrar(document.getElementById('campanaPanel').hidden); });
+  document.addEventListener('click', (e) => { if (!document.getElementById('campana').contains(e.target)) abrirCerrar(false); });
+})();
+
 </script>
 
 </body>

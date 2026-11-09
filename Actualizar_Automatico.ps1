@@ -198,6 +198,13 @@ if ($r.Codigo -ne 0) {
   Estado "iptv" "OK" "iptv.html actualizado"
 }
 
+# 2h2. Avisos de la campanita (avisos.json): videos nuevos de capacitacion + avisos_manuales.json. Si falla, queda el anterior.
+$r = Correr $Node @("reportes\generar_avisos.js")
+if ($r.Codigo -ne 0) {
+  Log "AVISO: avisos.json no se actualizo hoy; queda la version anterior."
+  Correr $Git @("checkout", "--", "avisos.json") | Out-Null
+}
+
 # 2i. Indicadores de calidad (boton en supervisor.html): NPS, Control de bloqueos, Auditorias QA y OT Digital.
 # Python baja el Power BI con Edge (bajar_otros.py), arma Envios\otros_datos.json (otros.py) y despues se
 # generan las 5 paginas cifradas. Complemento: si falla la descarga se usan los ultimos datos guardados;
@@ -227,6 +234,7 @@ if ($r.Codigo -ne 0) {
 Log "3/4 Publicando en GitHub..."
 $paginas = @("index.html", "supervisor.html", "reiteradas.html", "vecino.html", "brecha.html", "graficos.html", "autochequeo.html", "recursos.html")
 if (Test-Path -LiteralPath "iptv.html") { $paginas += "iptv.html" }
+if (Test-Path -LiteralPath "avisos.json") { $paginas += "avisos.json" }
 foreach ($pg in $paginasInd) { if (Test-Path -LiteralPath $pg) { $paginas += $pg } }
 Correr $Git (@("add") + $paginas) | Out-Null
 $r = Correr $Git @("diff", "--cached", "--quiet")
