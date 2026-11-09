@@ -158,6 +158,11 @@
 
   .callout{ border-left:3px solid var(--celeste); background:linear-gradient(90deg, var(--celeste-soft), transparent); padding:12px 16px; border-radius:0 10px 10px 0; font-size:13px; color:#2c3e50; line-height:1.55; margin-top:14px; }
   .sin-datos{ color:var(--text-dim); font-size:13.5px; font-style:italic; }
+  .iptv-causas{ margin:10px 0 4px; padding:0; list-style:none; font-size:13.5px; }
+  .iptv-causas li{ padding:6px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:10px; }
+  .iptv-causas li:last-child{ border-bottom:none; }
+  .iptv-consejo{ margin:12px 0 0; padding:9px 12px; background:var(--celeste-soft, #eef5fd); border-left:3px solid var(--cobra-blue); border-radius:6px; font-size:13px; line-height:1.45; }
+  .iptv-fuente{ margin:10px 0 0; font-size:11.5px; color:var(--text-dim); }
   .comunicados-embed{ border:1px solid var(--border); border-radius:10px; overflow:hidden; }
   .comunicados-embed iframe{ width:100%; height:420px; border:none; display:block; }
   .rep-card{ border:1px solid var(--panel-2); border-left:4px solid var(--bad, #e2523e); border-radius:10px; padding:10px 12px; margin:8px 0; font-size:13px; line-height:1.45; }
@@ -379,6 +384,7 @@
       <div class="report-card panel" id="seccionCalidad"></div>
       <div class="report-card panel" id="seccionDerivaciones"></div>
       <div class="report-card panel" id="seccionRgu"></div>
+      <div class="report-card panel" id="seccionIptv" style="display:none;"></div>
       <div class="report-card panel" id="seccionVecino" style="display:none;"></div>
       <div class="report-card panel" id="seccionComunicados">
         <div class="cabecera"><span class="icono">📢</span><h2>Comunicados</h2></div>
@@ -526,6 +532,35 @@ function bloqueCalidad(datos) {
       + '</div>').join('');
   }
   html += '</div>';
+  return html;
+}
+
+// Calidad de instalaciones IPTV: cantidades (sin porcentajes). Los datos vienen del informe IPTV (Power BI).
+const CAUSAS_IPTV = { '2.4G': 'Conectados en 2.4G (debe ser 5G)', 'RSSI': 'Señal Wi-Fi débil (RSSI)', 'AMBAS': 'Señal débil y en 2.4G', 'SIN_LECTURA': 'Sin lectura de señal' };
+function bloqueIptv(d) {
+  const icono = '📺', titulo = 'Calidad de instalaciones IPTV';
+  if (!d) return '';
+  const ok = d.eqMal === 0;
+  contadorDetalle++;
+  const idDetalle = 'detalle' + contadorDetalle;
+  let html = cabecera(icono, titulo, 'iptv');
+  html += '<p class="explica">Cuántos de los decodificadores que instalaste quedaron fuera de norma al auditarlos 24 horas después. Mientras menos, mejor.</p>';
+  html += '<p class="iptv-fuente"><b>Aclaración:</b> se cuentan solo los decos auditados (los que se revisaron), no todos los que instalaste.</p>';
+  html += '<div class="estado-pill ' + (ok ? 'ok' : 'warn') + '">' + (ok ? '✅ Todos tus decos están en norma' : '⚠️ Tienes decos fuera de norma') + '</div>';
+  html += '<p class="frase-clave">De tus <b>' + d.eq + '</b> decos auditados, <b>' + d.eqMal + '</b> ' + (d.eqMal === 1 ? 'quedó' : 'quedaron') + ' fuera de norma.</p>';
+  const causas = Object.entries(d.causas || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  if (causas.length) {
+    html += '<ul class="iptv-causas">' + causas.map(([k, n]) => '<li><span>' + (CAUSAS_IPTV[k] || k) + '</span><b>' + n + '</b></li>').join('') + '</ul>';
+  }
+  if (!ok) html += '<div class="iptv-consejo">Instala cada deco en su televisor definitivo, conectado en 5G, y verifica la señal con el equipo ya en su lugar final antes de cerrar la orden.</div>';
+  html += '<div class="detalle-toggle" onclick="toggleDetalle(\x27' + idDetalle + '\x27)">Ver el detalle en números <span id="' + idDetalle + 'Flecha">▾</span></div>';
+  html += '<div class="detalle-body" id="' + idDetalle + '">';
+  html += '<div class="fila-dato"><span class="k">Instalaciones auditadas</span><span class="v">' + d.act + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Instalaciones con algún deco fuera de norma</span><span class="v">' + d.actMal + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Decos auditados</span><span class="v">' + d.eq + '</span></div>';
+  html += '<div class="fila-dato"><span class="k">Decos fuera de norma</span><span class="v">' + d.eqMal + '</span></div>';
+  html += '</div>';
+  if (d.semanas) html += '<p class="iptv-fuente">Semanas ' + d.semanas + (d.fecha ? ' · datos al ' + d.fecha : '') + '</p>';
   return html;
 }
 
@@ -858,6 +893,13 @@ const INFO_METRICAS = {
   },
 };
 
+INFO_METRICAS.iptv = {
+  titulo: 'Calidad de instalaciones IPTV',
+  queMide: 'Cuántos de los decodificadores (decos) auditados quedaron fuera de norma cuando se revisaron 24 horas después de la instalación.',
+  comoSeCalcula: 'Un deco queda fuera de norma si su señal Wi-Fi es débil (RSSI peor que −58 dBm), si quedó conectado en 2.4G en vez de 5G, o si no tiene lectura de señal. Se cuentan los decos de tus instalaciones de las últimas semanas.',
+  meta: 'Que todos tus decos queden dentro de la norma: conectados en 5G y con señal de −58 dBm o mejor.',
+};
+
 function mostrarInfo(clave) {
   const info = INFO_METRICAS[clave];
   if (!info) return;
@@ -916,6 +958,12 @@ function renderResumen(t) {
         estado(p, false, t.vecino.meta, 90), null, 'seccionVecino'));
     }
   }
+  if (t.iptv) {
+    const okIptv = t.iptv.eqMal === 0;
+    cards.push(tarjeta('iptv', 'Instalaciones IPTV', String(t.iptv.eqMal),
+      (t.iptv.eqMal === 1 ? 'deco fuera de norma' : 'decos fuera de norma') + ' de ' + t.iptv.eq + ' auditados',
+      okIptv ? { clase: 'ok', texto: 'Buen desempeño' } : { clase: 'warn', texto: 'Atención' }, null, 'seccionIptv'));
+  }
   const cont = document.getElementById('resumenCards');
   cont.innerHTML = cards.join('') || '<p class="sin-datos">Todavía no hay indicadores para ti en este período.</p>';
   cont.querySelectorAll('.ind-card').forEach((b) => b.addEventListener('click', () => {
@@ -970,6 +1018,9 @@ function mostrarPerfil(t) {
   document.getElementById('seccionCalidad').innerHTML = bloqueCalidad(t.calidad);
   document.getElementById('seccionDerivaciones').innerHTML = bloqueDerivaciones(t.derivaciones);
   document.getElementById('seccionRgu').innerHTML = bloqueRgu(t.rgu);
+  const panelIptv = document.getElementById('seccionIptv');
+  panelIptv.innerHTML = bloqueIptv(t.iptv);
+  panelIptv.style.display = t.iptv ? '' : 'none';
   renderVecino(t);
   window.scrollTo(0, 0);
 }

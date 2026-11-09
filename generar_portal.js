@@ -684,6 +684,33 @@ function construirEvolutivoMensualRgu(baseRows, supervisores) {
 // b = 1 si el tecnico esta de baja (Maestro Estado Z o lista manual).
 const META_DERIVACIONES_GRAF = 35; // igual que META_DERIVACIONES del dashboard
 const MESES_LARGOS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+// ---- Calidad IPTV por tecnico (cruce por nombre; no usa RUT) ----
+function palabrasNombre(s) {
+  return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().split(/[^A-Z]+/).filter((w) => w.length > 1);
+}
+function cargarIptv() {
+  const ruta = process.env.IPTV_DATOS || "C:/Bases_Vtr/Informe_Ranking_IPTV/Envios/iptv_datos.json";
+  try {
+    const d = JSON.parse(fs.readFileSync(ruta, "utf-8"));
+    return { semanas: d.semanas, fecha: d.exportado, tecnicos: (d.tecnicos || []).map((x) => ({ ...x, w: palabrasNombre(x.nombre) })) };
+  } catch (e) {
+    console.warn("AVISO: sin datos IPTV (" + e.message + "). El portal se genera sin esa seccion.");
+    return null;
+  }
+}
+function iptvPara(iptv, nombre) {
+  if (!iptv) return null;
+  const w = palabrasNombre(nombre);
+  let mejor = null, mejorPts = 0, empate = false;
+  for (const x of iptv.tecnicos) {
+    // El informe IPTV corta los apellidos largos: se acepta que una palabra sea el inicio de la otra (3+ letras).
+    const p = w.filter((k) => x.w.some((y) => y === k || (Math.min(y.length, k.length) >= 3 && (y.startsWith(k) || k.startsWith(y))))).length;
+    if (p > mejorPts) { mejorPts = p; mejor = x; empate = false; } else if (p === mejorPts && p > 0) empate = true;
+  }
+  if (!mejor || empate || !(mejorPts >= 3 || (mejorPts >= 2 && (w.length <= 3 || mejorPts >= mejor.w.length)))) return null;
+  return { act: mejor.act, actMal: mejor.actMal, eq: mejor.eq, eqMal: mejor.eqMal, causas: mejor.causas || {}, semanas: iptv.semanas, fecha: iptv.fecha };
+}
+
 function construirDatosGraficos({ porDiaCal, calUltimoParcial, rguRows, supervisores, vecino, rutsBaja, mesParcial }) {
   const mesSiguiente = (ym) => {
     const [a, m] = ym.split("-").map(Number);
@@ -1089,6 +1116,10 @@ async function main() {
   const credenciales = []; // para el Excel: nunca se embebe en el HTML
   const dataParaHtml = {}; // clave: idCAT
 
+  // Calidad IPTV (cantidades, sin %): sale del informe IPTV en Python, por nombre (sin RUT).
+  const iptvPorTecnico = cargarIptv();
+  let iptvCruzados = 0;
+
   for (const t of byRut.values()) {
     const usuario = usuarioFromNombre(t.nombre); // solo para mostrar en el Excel
     const idCat = idCatFromRut(t.rut);
@@ -1149,8 +1180,11 @@ async function main() {
           }
         : null,
       vecino: vecino && vecino.mesInicial ? { meta: vecino.meta, mesInicial: vecino.mesInicial, meses: vecinoPropio } : null,
+      iptv: iptvPara(iptvPorTecnico, t.nombre),
     };
+    if (dataParaHtml[idCat].iptv) iptvCruzados++;
   }
+  console.log(`IPTV: ${iptvCruzados} tecnicos con datos de calidad IPTV`);
   agregarRanking(dataParaHtml);
 
   // ---------- 6. Generar index.html a partir de template.html ----------
