@@ -1,0 +1,74 @@
+{
+ "avisos": [
+  {
+   "id": "video-1245118231",
+   "fecha": "2026-11-09",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Alvaro Herrera (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1245118232",
+   "fecha": "2026-11-09",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Xavier Natera (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "autochequeo-nuevo-2026-11-05",
+   "fecha": "2026-11-05",
+   "tipo": "autochequeo",
+   "titulo": "Nuevo autochequeo de herramientas y EPP: ahora son 27 puntos",
+   "enlace": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=zW1hHAxl90uFFXlYtLi6LMKYtFM_AvFFinBf-1N2HSxUOEtZNlVWQk01RjJKN0NVWjNKSU9RWTdPVi4u"
+  },
+  {
+   "id": "video-1243979109",
+   "fecha": "2026-11-05",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Marco Benitez (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1243423482",
+   "fecha": "2026-11-04",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Carlos Plazo (Quinta región)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1243423780",
+   "fecha": "2026-11-04",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Eudis Aldama (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1242812804",
+   "fecha": "2026-11-03",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Dario Chambe (Arica)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1243031055",
+   "fecha": "2026-11-03",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Benjamin Perez (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1242463711",
+   "fecha": "2026-11-02",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Andres Rodriguez (RM)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
+   "id": "video-1241466378",
+   "fecha": "2026-10-30",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Tomas Ponce (Quinta región)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  }
+ ]
+}

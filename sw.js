@@ -1,4 +1,4 @@
-const CACHE_NAME = "portal-tecnicos-v4";
+const CACHE_NAME = "portal-tecnicos-v5";
 const STATIC_ASSETS = ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "logo-cobra.png", "logo-claro-vtr.png", "manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -20,6 +20,8 @@ self.addEventListener("activate", (event) => {
 // Solo se usa el cache si el dispositivo esta sin internet.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+  // avisos.json (campanita) siempre va directo a la red: no pasa por el cache del service worker.
+  if (req.url.includes("avisos.json")) return;
   const isNavigacion = req.mode === "navigate" || req.url.endsWith("index.html") || req.url.endsWith("/");
 
   if (isNavigacion) {
