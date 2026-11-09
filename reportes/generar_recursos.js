@@ -16,6 +16,8 @@ const VIDEOS = [
   { titulo: "Armado del conector", tecnico: "Eudis Aldama", region: "RM", fecha: "2026-11-04", id: "1243423780", foto: "fotos/video_1243423780.jpg" },
   { titulo: "Armado del conector", tecnico: "Carlos Plazo", region: "Quinta región", fecha: "2026-11-04", id: "1243423482", foto: "fotos/video_1243423482.jpg" },
   { titulo: "Armado del conector", tecnico: "Marco Benitez", region: "RM", fecha: "2026-11-05", id: "1243979109", foto: "fotos/video_1243979109.jpg" },
+  { titulo: "Armado del conector", tecnico: "Alvaro Herrera", region: "RM", fecha: "2026-11-09", id: "1245118231", foto: "fotos/video_1245118231.jpg" },
+  { titulo: "Armado del conector", tecnico: "Xavier Natera", region: "RM", fecha: "2026-11-09", id: "1245118232", foto: "fotos/video_1245118232.jpg" },
 ];
 const FOTOS = [
   { titulo: "Reunión operativa", region: "Quinta región", foto: "fotos/reunion_operativa.jpg" },
