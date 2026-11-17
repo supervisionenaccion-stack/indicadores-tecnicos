@@ -1,6 +1,13 @@
 {
  "avisos": [
   {
+   "id": "video-1247610409",
+   "fecha": "2026-11-17",
+   "tipo": "video",
+   "titulo": "Nuevo video de armado del conector: Miguel Aracena (Arica)",
+   "enlace": "https://supervisionenaccion-stack.github.io/capacitacion-tecnica/videos.html"
+  },
+  {
    "id": "video-1245118231",
    "fecha": "2026-11-09",
    "tipo": "video",
